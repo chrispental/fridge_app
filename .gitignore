@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Env / secrets
+.env
+
+# App data (DB + uploaded images) — runtime, not source
+data/
+
+# OS
+.DS_Store
