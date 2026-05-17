@@ -1,0 +1,31 @@
+services:
+  backend:
+    build: ./backend
+    container_name: fridge_backend
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      # DB file + uploaded images persist here, survive container rebuilds.
+      - ./data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health').status==200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: fridge_frontend
+    ports:
+      # Open the app at http://localhost:8080
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

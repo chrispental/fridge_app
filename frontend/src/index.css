@@ -1,0 +1,354 @@
+/* ============================================================
+   Fridge Chef — dark theme (matches design.pen)
+   ============================================================ */
+:root {
+  --bg: #0a0a0c;
+  --surface-1: #141418;
+  --surface-2: #1d1d22;
+  --surface-3: #27272e;
+  --border: #2b2b33;
+  --border-strong: #3c3c46;
+  --text-primary: #f4f4f5;
+  --text-secondary: #9e9ea9;
+  --text-tertiary: #6b6b77;
+  --accent: #f5a524;
+  --accent-hover: #ffbc52;
+  --accent-fg: #1a1304;
+  --accent-dim: #3a2d10;
+  --success: #4ade80;
+  --success-dim: #16271c;
+  --danger: #f87171;
+  --danger-dim: #2a1719;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.35rem;
+  color: var(--text-primary);
+}
+h3 { margin: 0; color: var(--text-primary); }
+p { color: var(--text-secondary); line-height: 1.55; margin: 0.3rem 0 0; }
+a { color: var(--accent); }
+::placeholder { color: var(--text-tertiary); }
+
+/* ---- App shell -------------------------------------------- */
+.app { display: flex; min-height: 100dvh; }
+
+.content { flex: 1; min-width: 0; padding: 38px 44px 80px; }
+.content > * { max-width: 980px; margin-inline: auto; }
+
+.loading {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 4rem; color: var(--text-tertiary); min-height: 60vh;
+}
+
+/* ---- Navigation (desktop sidebar) ------------------------- */
+.nav {
+  width: 256px;
+  flex-shrink: 0;
+  background: var(--surface-1);
+  border-right: 1px solid var(--border);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 11px;
+  padding: 4px 4px 18px;
+}
+.nav-logo {
+  width: 38px; height: 38px; border-radius: 11px;
+  background: var(--accent); display: flex;
+  align-items: center; justify-content: center; font-size: 19px;
+}
+.nav-brand-text { font-size: 17px; font-weight: 700; }
+
+.nav-links { display: flex; flex-direction: column; gap: 4px; }
+.nav-links a {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 12px; border-radius: 12px;
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 14px; font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-links a:hover { background: var(--surface-2); color: var(--text-primary); }
+.nav-links a.active { background: var(--accent-dim); color: var(--accent); }
+
+.nav-profile {
+  margin-top: auto;
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px; border-radius: 12px; background: var(--surface-2);
+}
+.nav-avatar {
+  width: 36px; height: 36px; border-radius: 100px;
+  background: var(--accent-dim); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px; flex-shrink: 0;
+}
+.nav-profile-text { display: flex; flex-direction: column; gap: 1px; }
+.nav-profile-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.nav-profile-sub { font-size: 11px; color: var(--text-tertiary); }
+
+/* ---- Buttons ---------------------------------------------- */
+button, .btn {
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, opacity 0.15s, border-color 0.15s;
+}
+button:hover, .btn:hover { background: var(--surface-3); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn.primary, button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.btn.primary:hover, button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+.btn.big { font-size: 15px; padding: 14px 22px; }
+.btn.ghost, button.ghost { background: transparent; border-color: var(--border); }
+.btn.ghost:hover, button.ghost:hover { background: var(--surface-2); }
+button.danger { color: var(--danger); border-color: transparent; background: transparent; }
+button.danger:hover { background: var(--danger-dim); }
+
+.link-btn {
+  border: none; background: none; color: var(--accent);
+  padding: 4px 0; font-weight: 600; text-decoration: none;
+}
+.link-btn:hover { background: none; color: var(--accent-hover); }
+
+/* ---- Page header ------------------------------------------ */
+.page-head {
+  display: flex; justify-content: space-between;
+  align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+}
+.page-head > div { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---- Banners / states ------------------------------------- */
+.banner {
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  margin: 14px 0; font-size: 0.92rem; line-height: 1.5;
+}
+.banner.error { background: var(--danger-dim); color: var(--danger); border: 1px solid #50272a; }
+.banner.success { background: var(--success-dim); color: var(--success); border: 1px solid #1f3a2a; }
+.banner a { color: inherit; }
+
+.empty {
+  text-align: center; padding: 3rem 1rem; color: var(--text-tertiary);
+  background: var(--surface-1); border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg); margin-top: 16px;
+}
+.hint { font-size: 0.86rem; color: var(--text-tertiary); font-style: italic; }
+
+/* ---- Forms ------------------------------------------------ */
+input, select, textarea {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input[type='checkbox'] { accent-color: var(--accent); width: 16px; height: 16px; }
+
+.field { margin-bottom: 18px; }
+.field label {
+  display: block; font-weight: 600; margin-bottom: 8px;
+  font-size: 0.9rem; color: var(--text-primary);
+}
+.field .sub { font-weight: 400; color: var(--text-tertiary); font-size: 0.82rem; }
+.field input[type='text'], .field input[type='number'] { width: 100%; }
+
+/* equipment checkboxes → toggle chips */
+.checks { display: flex; flex-wrap: wrap; gap: 8px; }
+.checks label {
+  font-weight: 600; display: flex; align-items: center; gap: 6px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 9px 14px; border-radius: 100px; font-size: 0.86rem;
+  margin: 0; cursor: pointer; text-transform: capitalize;
+}
+.checks label input { display: none; }
+.checks label:has(input:checked) {
+  background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
+}
+
+/* range slider (complexity) */
+input[type='range'] {
+  -webkit-appearance: none; appearance: none;
+  padding: 0; height: 6px; border: none;
+  background: var(--surface-3); border-radius: 100px;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 22px; height: 22px; border-radius: 100px;
+  background: var(--accent); border: 3px solid var(--bg); cursor: pointer;
+}
+input[type='range']::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 100px;
+  background: var(--accent); border: 3px solid var(--bg); cursor: pointer;
+}
+
+/* ---- Inventory rows --------------------------------------- */
+.item-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 8px;
+}
+.item-row.editing { flex-wrap: wrap; }
+.item-row .item-name { font-weight: 600; flex: 1 1 38%; color: var(--text-primary); }
+.item-row .item-qty {
+  color: var(--text-primary); font-size: 0.8rem; font-weight: 600;
+  background: var(--surface-2); padding: 6px 12px; border-radius: 100px;
+}
+.item-row .item-cat {
+  font-size: 0.72rem; font-weight: 600; color: var(--accent);
+  background: var(--accent-dim); padding: 4px 10px; border-radius: 100px;
+  text-transform: capitalize;
+}
+.item-row input { flex: 1 1 30%; min-width: 90px; }
+.item-row input[type='number'] { flex: 0 0 78px; }
+.item-row select { flex: 0 0 100px; }
+.item-row button { padding: 8px 12px; font-size: 0.85rem; }
+.item-row.low-conf { border-color: var(--accent); background: #1a1509; }
+.conf-flag { font-size: 1rem; }
+
+/* ---- Meal cards ------------------------------------------- */
+.meal-card {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px; margin-bottom: 16px;
+}
+.meal-head { cursor: pointer; }
+.meal-head h3 { font-size: 1.15rem; font-weight: 700; }
+.meal-meta {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  color: var(--text-secondary); font-size: 0.82rem; font-weight: 500;
+  margin-top: 8px;
+}
+.ingredients { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+.chip {
+  font-size: 0.76rem; font-weight: 500;
+  padding: 6px 11px; border-radius: 100px;
+  border: 1px solid var(--border);
+}
+.chip.have { background: var(--success-dim); color: var(--success); border-color: #1f3a2a; }
+.chip.missing { background: var(--accent-dim); color: var(--accent); border-color: #4d3c14; }
+.missing-note { font-size: 0.84rem; color: var(--accent); margin: 8px 0; }
+.steps { margin: 12px 0; padding-left: 1.2rem; }
+.steps li { margin-bottom: 8px; line-height: 1.5; color: var(--text-primary); }
+.cook-row {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin-top: 16px;
+  border-top: 1px solid var(--border); padding-top: 14px;
+}
+.cook-row label {
+  font-size: 0.82rem; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 7px;
+}
+.cooked-badge {
+  margin-top: 14px; color: var(--success); font-weight: 600; font-size: 0.9rem;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* ---- Misc ------------------------------------------------- */
+.file-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px;
+  border: 2px dashed var(--border-strong); border-radius: var(--radius-lg);
+  min-height: 280px; cursor: pointer; background: var(--surface-1);
+  color: var(--text-secondary); text-align: center; padding: 1.5rem; margin: 18px 0;
+  font-weight: 600;
+}
+.file-drop:hover { border-color: var(--accent); }
+.preview { max-width: 100%; max-height: 340px; border-radius: var(--radius-md); }
+.actions { margin-top: 18px; }
+
+.filters { display: flex; gap: 8px; margin: 16px 0; }
+.filters button { border-radius: 100px; padding: 8px 16px; font-size: 0.85rem; }
+.filters button.active {
+  background: var(--accent); color: var(--accent-fg); border-color: var(--accent);
+}
+.ts { font-size: 0.76rem; color: var(--text-tertiary); margin: -8px 0 18px; }
+.row-gap > * { margin-bottom: 10px; }
+
+/* ---- Onboarding ------------------------------------------- */
+.onboarding {
+  flex: 1; min-height: 100dvh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px 20px;
+}
+.onboarding-card {
+  width: 100%; max-width: 540px;
+}
+.onboarding-badge {
+  width: 60px; height: 60px; border-radius: 16px;
+  background: var(--accent); display: flex;
+  align-items: center; justify-content: center; font-size: 30px;
+  margin-bottom: 16px;
+}
+
+/* ---- Mobile: bottom pill nav ------------------------------ */
+@media (max-width: 860px) {
+  .app { display: block; }
+
+  .nav {
+    position: fixed;
+    top: auto;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    left: 14px;
+    right: 14px;
+    width: auto;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 36px;
+    padding: 6px;
+    gap: 0;
+    z-index: 50;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  }
+  .nav-brand, .nav-profile { display: none; }
+  .nav-links { flex-direction: row; flex: 1; gap: 4px; }
+  .nav-links a {
+    flex: 1; flex-direction: column; gap: 3px;
+    justify-content: center; padding: 9px 4px;
+    border-radius: 26px; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+
+  .content { padding: 22px 18px 120px; }
+  h1 { font-size: 1.45rem; }
+}
