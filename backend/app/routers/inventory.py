@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
+from ..services.storage import normalize_storage
 from ..services.units import normalize_unit
 from ..services.vision import extract_items, parse_items, preprocess_and_save
 
@@ -33,6 +34,7 @@ def add_item(payload: schemas.InventoryItemCreate, db: Session = Depends(get_db)
         quantity=payload.quantity,
         unit=normalize_unit(payload.unit),
         category=payload.category,
+        storage=normalize_storage(payload.storage),
         source="manual",
     )
     db.add(item)
@@ -59,6 +61,8 @@ def update_item(
         item.unit = normalize_unit(data["unit"])
     if "category" in data:
         item.category = data["category"]
+    if data.get("storage"):
+        item.storage = normalize_storage(data["storage"])
     db.commit()
     db.refresh(item)
     return item
@@ -158,6 +162,7 @@ def confirm_extraction(
             quantity=it.quantity,
             unit=normalize_unit(it.unit),
             category=it.category,
+            storage=normalize_storage(it.storage),
             source="photo",
             extraction_batch_id=batch.id,
         )

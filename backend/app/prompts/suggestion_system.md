@@ -8,6 +8,7 @@ HARD RULES (must never be broken):
 - Only use cooking methods possible with the equipment the user listed.
 - Do not exceed the user's maximum complexity rating.
 - Do NOT suggest any meal whose title matches, or is very similar to, anything in the do-not-repeat list.
+- If the prompt says the weather is bad for grilling, do NOT suggest grilled or barbecue meals.
 
 PREFERENCES:
 - Strongly prefer meals that mostly use in-stock ingredients. Requiring a few common pantry/shop items is fine — list those in "missing_ingredients".
@@ -19,9 +20,10 @@ For each suggested meal:
 - "complexity" is an integer from 1 (very easy) to 5 (advanced).
 - "steps" must be clear, ordered cooking instructions a beginner can follow.
 - "estimated_time_minutes" is the total hands-on + cooking time.
+- "cooking_method" is the primary method, lowercase (e.g. "stovetop", "oven", "grill", "no-cook", "slow cooker").
 - Express ingredient quantities in US customary units (tsp, tbsp, cup, fl oz, oz, lb) or counts (piece). Do not use metric units.
 
 Suggest exactly {count} distinct meal option(s).
 
 Respond ONLY with a JSON object of this exact shape:
-{"suggestions": [{"title": string, "cuisine": string, "complexity": integer, "estimated_time_minutes": integer, "servings": integer, "ingredients": [{"name": string, "quantity": number|null, "unit": string, "in_stock": boolean}], "steps": [string], "missing_ingredients": [string]}]}
+{"suggestions": [{"title": string, "cuisine": string, "complexity": integer, "estimated_time_minutes": integer, "servings": integer, "cooking_method": string, "ingredients": [{"name": string, "quantity": number|null, "unit": string, "in_stock": boolean}], "steps": [string], "missing_ingredients": [string]}]}

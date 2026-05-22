@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { api, UNITS } from '../api/client.js'
+import { api, UNITS, STORAGE } from '../api/client.js'
 
 export default function ItemRow({ item, onChange, onDelete }) {
   const [editing, setEditing] = useState(false)
@@ -7,6 +7,7 @@ export default function ItemRow({ item, onChange, onDelete }) {
   const [quantity, setQuantity] = useState(item.quantity ?? '')
   const [unit, setUnit] = useState(item.unit || 'unknown')
   const [category, setCategory] = useState(item.category || '')
+  const [storage, setStorage] = useState(item.storage || 'unsorted')
   const [busy, setBusy] = useState(false)
 
   async function save() {
@@ -17,6 +18,7 @@ export default function ItemRow({ item, onChange, onDelete }) {
         quantity: quantity === '' ? null : Number(quantity),
         unit,
         category: category || null,
+        storage,
       })
       onChange(updated)
       setEditing(false)
@@ -52,6 +54,11 @@ export default function ItemRow({ item, onChange, onDelete }) {
         <select value={unit} onChange={(e) => setUnit(e.target.value)}>
           {UNITS.map((u) => (
             <option key={u} value={u}>{u}</option>
+          ))}
+        </select>
+        <select value={storage} onChange={(e) => setStorage(e.target.value)}>
+          {STORAGE.map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
           ))}
         </select>
         <input

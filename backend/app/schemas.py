@@ -16,6 +16,7 @@ class PreferencesBase(BaseModel):
     disliked_ingredients: list[str] = []
     disliked_cuisines: list[str] = []
     no_repeat_days: int = Field(default=14, ge=0, le=365)
+    location: str = ""  # city or ZIP — used for grilling-weather and delivery lookups
 
 
 class PreferencesUpdate(PreferencesBase):
@@ -41,6 +42,7 @@ class InventoryItemBase(BaseModel):
     quantity: float | None = None
     unit: str = "unknown"
     category: str | None = None
+    storage: str = "unsorted"
 
 
 class InventoryItemCreate(InventoryItemBase):
@@ -52,6 +54,7 @@ class InventoryItemUpdate(BaseModel):
     quantity: float | None = None
     unit: str | None = None
     category: str | None = None
+    storage: str | None = None
 
 
 class InventoryItemOut(InventoryItemBase):
@@ -71,6 +74,7 @@ class ExtractedItem(BaseModel):
     quantity: float | None = None
     unit: str = "unknown"
     category: str | None = None
+    storage: str = "unsorted"
     confidence: float = Field(default=0.5, ge=0, le=1)
 
 
@@ -95,15 +99,23 @@ class RecipeIngredient(BaseModel):
     in_stock: bool = False
 
 
+class RecipeSource(BaseModel):
+    title: str
+    url: str
+
+
 class MealSuggestion(BaseModel):
     title: str
     cuisine: str | None = None
     complexity: int = 3
     estimated_time_minutes: int | None = None
     servings: int | None = None
+    cooking_method: str = "stovetop"
     ingredients: list[RecipeIngredient] = []
     steps: list[str] = []
     missing_ingredients: list[str] = []
+    image_url: str | None = None  # Brave Image Search result (may be absent)
+    source: RecipeSource | None = None  # Brave web result: "view full recipe" link
 
 
 class MealOut(BaseModel):
@@ -114,8 +126,15 @@ class MealOut(BaseModel):
     status: str
     suggested_at: datetime
     cooked_at: datetime | None = None
+    delivery_ordered_at: datetime | None = None
     model_config = ConfigDict(from_attributes=True)
 
 
 class CookRequest(BaseModel):
     decrement_inventory: bool = False
+
+
+class DeliveryStatusOut(BaseModel):
+    used: bool
+    remaining: int
+    next_available_at: datetime | None = None

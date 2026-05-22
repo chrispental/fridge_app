@@ -1,12 +1,21 @@
 import { useState } from 'react'
 import { api } from '../api/client.js'
 
-export default function MealCard({ meal, onChanged }) {
+export default function MealCard({
+  meal,
+  onChanged,
+  deliveryAvailable = false,
+  nextDeliveryDate = null,
+}) {
   const recipe = meal.recipe_json || {}
   const [expanded, setExpanded] = useState(false)
   const [decrement, setDecrement] = useState(true)
   const [busy, setBusy] = useState(false)
   const [cooked, setCooked] = useState(meal.status === 'cooked')
+  const [ordered, setOrdered] = useState(meal.status === 'ordered')
+  const [deliveryOptions, setDeliveryOptions] = useState(recipe.delivery_options || [])
+  const [orderBusy, setOrderBusy] = useState(false)
+  const [orderError, setOrderError] = useState(null)
 
   async function cook() {
     setBusy(true)
@@ -21,16 +30,36 @@ export default function MealCard({ meal, onChanged }) {
     }
   }
 
+  async function orderDelivery() {
+    setOrderBusy(true)
+    setOrderError(null)
+    try {
+      const updated = await api.orderDelivery(meal.id)
+      setOrdered(true)
+      setDeliveryOptions(updated.recipe_json?.delivery_options || [])
+      onChanged?.()
+    } catch (e) {
+      setOrderError(e.message)
+    } finally {
+      setOrderBusy(false)
+    }
+  }
+
   const ingredients = recipe.ingredients || []
   const steps = recipe.steps || []
   const missing = recipe.missing_ingredients || []
 
   return (
     <div className="meal-card">
+      {recipe.image_url && (
+        <img className="recipe-image" src={recipe.image_url} alt={meal.title} />
+      )}
+
       <div className="meal-head" onClick={() => setExpanded((v) => !v)}>
         <h3>{meal.title}</h3>
         <div className="meal-meta">
           {recipe.cuisine && <span>{recipe.cuisine}</span>}
+          {recipe.cooking_method && <span className="method-chip">{recipe.cooking_method}</span>}
           {recipe.estimated_time_minutes && <span>⏱ {recipe.estimated_time_minutes} min</span>}
           {recipe.complexity && <span>★ {recipe.complexity}/5</span>}
           {recipe.servings && <span>🍽 serves {recipe.servings}</span>}
@@ -52,6 +81,14 @@ export default function MealCard({ meal, onChanged }) {
         <p className="missing-note">🛒 You'll need to buy: {missing.join(', ')}</p>
       )}
 
+      {recipe.source?.url && (
+        <p className="recipe-source">
+          <a href={recipe.source.url} target="_blank" rel="noreferrer">
+            View full recipe ↗
+          </a>
+        </p>
+      )}
+
       {expanded ? (
         steps.length > 0 ? (
           <ol className="steps">
@@ -68,7 +105,22 @@ export default function MealCard({ meal, onChanged }) {
         </button>
       )}
 
-      {cooked ? (
+      {ordered ? (
+        <div className="delivery-block">
+          <div className="cooked-badge">🚚 Ordered for delivery</div>
+          {deliveryOptions.length > 0 && (
+            <ul className="delivery-links">
+              {deliveryOptions.map((o, i) => (
+                <li key={i}>
+                  <a href={o.url} target="_blank" rel="noreferrer">
+                    {o.title || o.url} ↗
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : cooked ? (
         <div className="cooked-badge">✓ Cooked</div>
       ) : (
         <div className="cook-row">
@@ -80,11 +132,29 @@ export default function MealCard({ meal, onChanged }) {
             />
             Subtract used ingredients from inventory
           </label>
-          <button className="primary" onClick={cook} disabled={busy}>
-            {busy ? 'Saving…' : 'I cooked this'}
-          </button>
+          <div className="cook-actions">
+            <button
+              className="btn"
+              onClick={orderDelivery}
+              disabled={orderBusy || !deliveryAvailable}
+              title={
+                deliveryAvailable
+                  ? 'Order this meal for delivery'
+                  : nextDeliveryDate
+                    ? `Weekly delivery used — next available ${nextDeliveryDate}`
+                    : 'Set your location in Settings to order delivery'
+              }
+            >
+              {orderBusy ? 'Ordering…' : '🚚 Order delivery'}
+            </button>
+            <button className="primary" onClick={cook} disabled={busy}>
+              {busy ? 'Saving…' : 'I cooked this'}
+            </button>
+          </div>
         </div>
       )}
+
+      {orderError && <div className="banner error">{orderError}</div>}
     </div>
   )
 }

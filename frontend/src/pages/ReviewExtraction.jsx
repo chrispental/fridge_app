@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { api, UNITS } from '../api/client.js'
+import { api, UNITS, STORAGE } from '../api/client.js'
 
 export default function ReviewExtraction() {
   const { batchId } = useParams()
@@ -25,7 +25,7 @@ export default function ReviewExtraction() {
   function addBlank() {
     setItems((prev) => [
       ...prev,
-      { _key: `new-${Date.now()}`, name: '', quantity: null, unit: 'piece', category: '', confidence: 1 },
+      { _key: `new-${Date.now()}`, name: '', quantity: null, unit: 'piece', category: '', storage: 'fridge', confidence: 1 },
     ])
   }
 
@@ -40,6 +40,7 @@ export default function ReviewExtraction() {
           quantity: it.quantity,
           unit: it.unit,
           category: it.category || null,
+          storage: it.storage || 'unsorted',
         }))
       await api.confirmExtraction(batchId, payload)
       navigate('/inventory')
@@ -94,6 +95,14 @@ export default function ReviewExtraction() {
             >
               {UNITS.map((u) => (
                 <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+            <select
+              value={it.storage || 'unsorted'}
+              onChange={(e) => update(it._key, { storage: e.target.value })}
+            >
+              {STORAGE.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
             <input

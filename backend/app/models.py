@@ -37,6 +37,7 @@ class Preferences(Base):
     disliked_ingredients = Column(JSON, default=list, nullable=False)
     disliked_cuisines = Column(JSON, default=list, nullable=False)
     no_repeat_days = Column(Integer, default=14, nullable=False)
+    location = Column(String, default="", nullable=False)  # city/ZIP for weather & delivery
     onboarded = Column(Boolean, default=False, nullable=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -63,6 +64,7 @@ class InventoryItem(Base):
     quantity = Column(Float, nullable=True)
     unit = Column(String, default="unknown", nullable=False)
     category = Column(String, nullable=True)
+    storage = Column(String, default="unsorted", nullable=False)  # fridge|freezer|pantry|counter|unsorted
     source = Column(String, default="manual", nullable=False)  # manual | photo
     extraction_batch_id = Column(
         Integer, ForeignKey("extraction_batches.id"), nullable=True
@@ -81,6 +83,7 @@ class Meal(Base):
     title_normalized = Column(String, index=True, nullable=False)
     cuisine = Column(String, nullable=True)
     recipe_json = Column(JSON, nullable=False)  # full MealSuggestion payload
-    status = Column(String, default="suggested", nullable=False)  # suggested | cooked
+    status = Column(String, default="suggested", nullable=False)  # suggested | cooked | ordered
     suggested_at = Column(DateTime, default=utcnow, nullable=False)
     cooked_at = Column(DateTime, nullable=True)
+    delivery_ordered_at = Column(DateTime, nullable=True)  # set when ordered for delivery

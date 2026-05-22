@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import ItemRow from '../components/ItemRow.jsx'
-import { api, UNITS } from '../api/client.js'
+import { api, UNITS, STORAGE } from '../api/client.js'
 
-const BLANK = { name: '', quantity: '', unit: 'piece', category: '' }
+const BLANK = { name: '', quantity: '', unit: 'piece', category: '', storage: 'fridge' }
 
 export default function InventoryPage() {
   const [items, setItems] = useState(null)
@@ -24,6 +24,7 @@ export default function InventoryPage() {
         quantity: draft.quantity === '' ? null : Number(draft.quantity),
         unit: draft.unit,
         category: draft.category || null,
+        storage: draft.storage,
       })
       setItems([created, ...items])
       setDraft(BLANK)
@@ -35,6 +36,12 @@ export default function InventoryPage() {
 
   if (error) return <div className="banner error">{error}</div>
   if (!items) return <div className="loading">Loading…</div>
+
+  // Group into storage sections, in the order defined by STORAGE; drop empty ones.
+  const sections = STORAGE.map((s) => ({
+    ...s,
+    items: items.filter((it) => (it.storage || 'unsorted') === s.value),
+  })).filter((s) => s.items.length > 0)
 
   return (
     <div>
@@ -70,6 +77,14 @@ export default function InventoryPage() {
               <option key={u} value={u}>{u}</option>
             ))}
           </select>
+          <select
+            value={draft.storage}
+            onChange={(e) => setDraft({ ...draft, storage: e.target.value })}
+          >
+            {STORAGE.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
           <input
             placeholder="category"
             value={draft.category}
@@ -86,13 +101,22 @@ export default function InventoryPage() {
         </p>
       )}
 
-      {items.map((it) => (
-        <ItemRow
-          key={it.id}
-          item={it}
-          onChange={(u) => setItems(items.map((x) => (x.id === u.id ? u : x)))}
-          onDelete={(id) => setItems(items.filter((x) => x.id !== id))}
-        />
+      {sections.map((section) => (
+        <div key={section.value} className="storage-section">
+          <h2 className="storage-head">
+            <span className="storage-emoji">{section.emoji}</span>
+            {section.label}
+            <span className="storage-count">{section.items.length}</span>
+          </h2>
+          {section.items.map((it) => (
+            <ItemRow
+              key={it.id}
+              item={it}
+              onChange={(u) => setItems(items.map((x) => (x.id === u.id ? u : x)))}
+              onDelete={(id) => setItems(items.filter((x) => x.id !== id))}
+            />
+          ))}
+        </div>
       ))}
     </div>
   )

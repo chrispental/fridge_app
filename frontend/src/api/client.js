@@ -45,6 +45,16 @@ export const UNITS = [
   'oz', 'lb', 'piece', 'dozen', 'pack', 'can', 'jar', 'bottle', 'bunch', 'unknown',
 ]
 
+// Storage locations — kept in sync with backend app/services/storage.py.
+// Order here is the display order of inventory sections.
+export const STORAGE = [
+  { value: 'fridge', label: 'Fridge', emoji: '🧊' },
+  { value: 'freezer', label: 'Freezer', emoji: '❄️' },
+  { value: 'pantry', label: 'Pantry', emoji: '🥫' },
+  { value: 'counter', label: 'Counter', emoji: '🍞' },
+  { value: 'unsorted', label: 'Unsorted', emoji: '📦' },
+]
+
 export const api = {
   // Preferences
   getPreferences: () => request('/preferences'),
@@ -72,4 +82,8 @@ export const api = {
   cookMeal: (id, decrementInventory) =>
     request(`/meals/${id}/cook`, json('POST', { decrement_inventory: decrementInventory })),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
+
+  // Weekly delivery
+  getDeliveryStatus: () => request('/meals/delivery/status'),
+  orderDelivery: (id) => request(`/meals/${id}/order-delivery`, { method: 'POST' }),
 }

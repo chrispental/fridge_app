@@ -12,6 +12,13 @@ class Settings(BaseSettings):
     openrouter_meal_model: str = "anthropic/claude-sonnet-4.6"
     ai_request_timeout: float = 90.0
 
+    # Brave Search (recipe images, source links, weather snippets, delivery lookup)
+    brave_api_key: str = ""
+    brave_base_url: str = "https://api.search.brave.com/res/v1"
+    brave_request_timeout: float = 10.0
+    brave_country: str = "US"
+    weather_cache_ttl: int = 3600  # seconds to cache a location's weather lookup
+
     # Storage
     database_url: str = "sqlite:////app/data/fridge.db"
     upload_dir: str = "/app/data/uploads"

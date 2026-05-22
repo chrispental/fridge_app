@@ -4,6 +4,7 @@ The no-repeat rule and the allergy filter are enforced *server-side* after the
 AI responds — the LLM's cooperation is treated as a hint, never a guarantee.
 """
 import difflib
+import logging
 import re
 
 from sqlalchemy.orm import Session
@@ -11,12 +12,17 @@ from sqlalchemy.orm import Session
 from .. import models
 from ..config import settings
 from ..models import utcnow
-from ..schemas import MealSuggestion, RecipeIngredient
+from ..schemas import MealSuggestion, RecipeIngredient, RecipeSource
+from . import brave_search
 from .ai_client import call_structured
 from .prompts import load_prompt
 from .units import normalize_unit
+from .weather import get_weather
+
+logger = logging.getLogger(__name__)
 
 _REPEAT_SIMILARITY = 0.82  # titles at/above this ratio count as the same meal
+_GRILL_KEYWORDS = ("grill", "barbecue", "bbq", "broil")
 
 SUGGESTION_SCHEMA = {
     "type": "object",
@@ -31,6 +37,7 @@ SUGGESTION_SCHEMA = {
                     "complexity": {"type": "integer"},
                     "estimated_time_minutes": {"type": "integer"},
                     "servings": {"type": "integer"},
+                    "cooking_method": {"type": "string"},
                     "ingredients": {
                         "type": "array",
                         "items": {
@@ -57,6 +64,7 @@ SUGGESTION_SCHEMA = {
                     "complexity",
                     "estimated_time_minutes",
                     "servings",
+                    "cooking_method",
                     "ingredients",
                     "steps",
                     "missing_ingredients",
@@ -105,6 +113,43 @@ def _allergen_violation(suggestion: MealSuggestion, allergies: list[str]) -> boo
     return any(allergen in haystack for allergen in allergens)
 
 
+def _is_grill(suggestion: MealSuggestion) -> bool:
+    """True if the meal is grilled — checks the method field and scans title/steps."""
+    method = (suggestion.cooking_method or "").lower()
+    if any(kw in method for kw in _GRILL_KEYWORDS):
+        return True
+    haystack = " ".join([suggestion.title or ""] + list(suggestion.steps)).lower()
+    return any(kw in haystack for kw in _GRILL_KEYWORDS)
+
+
+def _enrich_with_brave(suggestion: MealSuggestion) -> None:
+    """Attach a food photo and a 'view full recipe' link via Brave. Fully fail-soft."""
+    try:
+        query = f"{suggestion.title} recipe"
+        suggestion.image_url = brave_search.search_image(query)
+        results = brave_search.search_web(query, count=1)
+        if results:
+            suggestion.source = RecipeSource(
+                title=results[0]["title"] or suggestion.title,
+                url=results[0]["url"],
+            )
+    except Exception as exc:  # noqa: BLE001 - enrichment must never break suggestion
+        logger.warning("Brave enrichment failed for %r: %s", suggestion.title, exc)
+
+
+def most_recent_delivery(db: Session) -> "models.Meal | None":
+    """The most recent meal ordered for delivery within the last 7 days, if any."""
+    from datetime import timedelta
+
+    cutoff = utcnow() - timedelta(days=7)
+    return (
+        db.query(models.Meal)
+        .filter(models.Meal.delivery_ordered_at >= cutoff)
+        .order_by(models.Meal.delivery_ordered_at.desc())
+        .first()
+    )
+
+
 def _recent_titles(db: Session, no_repeat_days: int) -> list[str]:
     """Titles of meals suggested or cooked within the no-repeat window."""
     if no_repeat_days <= 0:
@@ -151,6 +196,7 @@ def _parse_suggestions(raw: dict) -> list[MealSuggestion]:
                 complexity=min(max(complexity, 1), 5),
                 estimated_time_minutes=s.get("estimated_time_minutes"),
                 servings=s.get("servings"),
+                cooking_method=str(s.get("cooking_method") or "stovetop").strip().lower(),
                 ingredients=ingredients,
                 steps=[str(x) for x in s.get("steps", []) if str(x).strip()],
                 missing_ingredients=[
@@ -171,7 +217,7 @@ def _annotate_in_stock(suggestion: MealSuggestion, inventory: list) -> None:
         )
 
 
-def _build_user_prompt(prefs, inventory, do_not_repeat: list[str]) -> str:
+def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None) -> str:
     if inventory:
         inv_lines = []
         for i in inventory:
@@ -192,6 +238,16 @@ def _build_user_prompt(prefs, inventory, do_not_repeat: list[str]) -> str:
     def joined(values):
         return ", ".join(values) if values else "none"
 
+    if weather is not None and not weather["grill_ok"]:
+        weather_line = (
+            f"\nCURRENT WEATHER: {weather['summary']}. "
+            "Do NOT suggest grilled / barbecue meals.\n"
+        )
+    elif weather is not None:
+        weather_line = f"\nCURRENT WEATHER: {weather['summary']}.\n"
+    else:
+        weather_line = ""
+
     return f"""USER PREFERENCES
 Household size: {prefs.household_size}
 Allergies (NEVER use these): {joined(prefs.allergies)}
@@ -200,7 +256,7 @@ Equipment available: {joined(prefs.equipment) if prefs.equipment else 'basic sto
 Maximum complexity (1-5): {prefs.max_complexity}
 Disliked ingredients: {joined(prefs.disliked_ingredients)}
 Disliked cuisines: {joined(prefs.disliked_cuisines)}
-
+{weather_line}
 CURRENT INVENTORY
 {inv_text}
 
@@ -210,12 +266,12 @@ DO NOT SUGGEST THESE RECENT MEALS
 Suggest meals I can make right now."""
 
 
-def _generate(db: Session, prefs, inventory, do_not_repeat, count: int) -> list[MealSuggestion]:
-    system_prompt = load_prompt("suggestion_system.txt").replace("{count}", str(count))
+def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None) -> list[MealSuggestion]:
+    system_prompt = load_prompt("suggestion_system.md").replace("{count}", str(count))
     raw = call_structured(
         model=settings.openrouter_meal_model,
         system_prompt=system_prompt,
-        user_content=_build_user_prompt(prefs, inventory, do_not_repeat),
+        user_content=_build_user_prompt(prefs, inventory, do_not_repeat, weather),
         json_schema=SUGGESTION_SCHEMA,
         schema_name="meal_suggestions",
     )
@@ -229,11 +285,17 @@ def suggest_meals(db: Session, count: int = 3) -> list[models.Meal]:
     recent = _recent_titles(db, prefs.no_repeat_days if prefs else 14)
     recent_norm = [normalize_title(t) for t in recent]
 
-    suggestions = _generate(db, prefs, inventory, recent, count)
+    # Grilling is gated on live weather (winter/rain). Skipped when no location is set.
+    weather = get_weather(prefs.location) if (prefs and prefs.location) else None
+    grill_blocked = weather is not None and not weather["grill_ok"]
+
+    suggestions = _generate(db, prefs, inventory, recent, count, weather)
 
     def keep(s: MealSuggestion) -> bool:
-        return not _allergen_violation(s, prefs.allergies) and not _is_repeat(
-            s.title, recent_norm
+        return (
+            not _allergen_violation(s, prefs.allergies)
+            and not _is_repeat(s.title, recent_norm)
+            and not (grill_blocked and _is_grill(s))
         )
 
     safe = [s for s in suggestions if keep(s)]
@@ -241,11 +303,12 @@ def suggest_meals(db: Session, count: int = 3) -> list[models.Meal]:
     # If everything was filtered out, retry once with the rejects also excluded.
     if not safe and suggestions:
         rejected = [s.title for s in suggestions]
-        retry = _generate(db, prefs, inventory, recent + rejected, count)
+        retry = _generate(db, prefs, inventory, recent + rejected, count, weather)
         safe = [s for s in retry if keep(s)]
 
     meals: list[models.Meal] = []
     for s in safe:
+        _enrich_with_brave(s)
         _annotate_in_stock(s, inventory)
         meal = models.Meal(
             title=s.title,

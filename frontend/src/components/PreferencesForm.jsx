@@ -18,6 +18,7 @@ export default function PreferencesForm({ initial, onSubmit, submitLabel = 'Save
   const [dislikedIng, setDislikedIng] = useState(listToText(initial?.disliked_ingredients))
   const [dislikedCuis, setDislikedCuis] = useState(listToText(initial?.disliked_cuisines))
   const [noRepeat, setNoRepeat] = useState(initial?.no_repeat_days ?? 14)
+  const [location, setLocation] = useState(initial?.location ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -41,6 +42,7 @@ export default function PreferencesForm({ initial, onSubmit, submitLabel = 'Save
         disliked_ingredients: textToList(dislikedIng),
         disliked_cuisines: textToList(dislikedCuis),
         no_repeat_days: Number(noRepeat) || 0,
+        location: location.trim(),
       })
     } catch (e) {
       setError(e.message)
@@ -59,6 +61,19 @@ export default function PreferencesForm({ initial, onSubmit, submitLabel = 'Save
           max="20"
           value={householdSize}
           onChange={(e) => setHouseholdSize(e.target.value)}
+        />
+      </div>
+
+      <div className="field">
+        <label>
+          Location{' '}
+          <span className="sub">— city or ZIP. Used for grilling weather & delivery.</span>
+        </label>
+        <input
+          type="text"
+          placeholder="e.g. Austin, TX or 78701"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
         />
       </div>
 
