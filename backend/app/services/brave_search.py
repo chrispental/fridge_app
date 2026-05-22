@@ -20,6 +20,30 @@ logger = logging.getLogger(__name__)
 _client: httpx.Client | None = None
 
 _TAG_RE = re.compile(r"<[^>]+>")
+_ZIP_RE = re.compile(r"^\d{5}(?:-\d{4})?$")
+_CITY_STATE_RE = re.compile(r"^\s*(.+?),\s*([A-Za-z]{2})\.?\s*$")
+
+
+def _location_headers(location: str | None) -> dict:
+    """Map a free-text location (ZIP or 'City, ST') to Brave X-Loc-* request headers.
+
+    Brave biases results toward these even without lat/long, so a delivery search
+    for "06825" returns places that actually serve that area.
+    """
+    loc = (location or "").strip()
+    if not loc:
+        return {}
+    headers = {"X-Loc-Country": settings.brave_country}
+    if _ZIP_RE.match(loc):
+        headers["X-Loc-Postal-Code"] = loc
+    else:
+        m = _CITY_STATE_RE.match(loc)
+        if m:
+            headers["X-Loc-City"] = m.group(1).strip()
+            headers["X-Loc-State"] = m.group(2).upper()
+        else:
+            headers["X-Loc-City"] = loc
+    return headers
 
 
 def get_client() -> httpx.Client:
@@ -46,12 +70,17 @@ def _strip_html(text: str) -> str:
     return _TAG_RE.sub("", text or "").strip()
 
 
-def search_web(query: str, count: int = 3) -> list[dict]:
-    """Return up to `count` web results as {title, url, description}; [] on any failure."""
+def search_web(query: str, count: int = 3, location: str | None = None) -> list[dict]:
+    """Return up to `count` web results as {title, url, description}; [] on any failure.
+
+    Pass `location` (ZIP or "City, ST") to bias results to that area via Brave's
+    X-Loc-* headers — used for delivery lookups so they're geographically relevant.
+    """
     try:
         resp = get_client().get(
             "/web/search",
             params={"q": query, "count": count, "country": settings.brave_country},
+            headers=_location_headers(location) or None,
         )
         resp.raise_for_status()
         results = (resp.json().get("web") or {}).get("results") or []

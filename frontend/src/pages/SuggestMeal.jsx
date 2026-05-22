@@ -21,7 +21,7 @@ export default function SuggestMeal() {
     setError(null)
     setMeals(null)
     try {
-      setMeals(await api.suggestMeals(3))
+      setMeals(await api.suggestMeals(5))
     } catch (e) {
       setError(e.message)
     } finally {

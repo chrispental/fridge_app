@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from app import models
-from app.main import _migrate_inventory_storage
+from app.main import _migrate_inventory_columns
 from app.services.storage import normalize_storage, storage_from_category
 from app.services.vision import parse_items
 
@@ -77,7 +77,7 @@ def test_migration_adds_column_and_backfills():
         )
 
     db = sessionmaker(bind=eng)()
-    _migrate_inventory_storage(db, eng)
+    _migrate_inventory_columns(db, eng)
 
     rows = {r.name: r.storage for r in db.query(models.InventoryItem).all()}
     assert rows == {"milk": "fridge", "peas": "freezer", "mystery": "unsorted"}
@@ -91,7 +91,38 @@ def test_migration_is_idempotent():
     db.add(models.InventoryItem(name="bread", category="bakery", storage="counter"))
     db.commit()
     # Running the migration must not disturb an already-set value.
-    _migrate_inventory_storage(db, eng)
+    _migrate_inventory_columns(db, eng)
     item = db.query(models.InventoryItem).filter_by(name="bread").one()
     assert item.storage == "counter"
+    db.close()
+
+
+# --- image backfill ----------------------------------------------------------
+def test_backfill_images_only_targets_unfetched(monkeypatch):
+    from app.routers import inventory
+    from app.services import brave_search
+
+    eng = _engine()
+    models.Base.metadata.create_all(eng)
+    db = sessionmaker(bind=eng)()
+    db.add(models.InventoryItem(name="milk", storage="fridge"))                       # NULL -> found
+    db.add(models.InventoryItem(name="kale", storage="fridge"))                       # NULL -> none
+    db.add(models.InventoryItem(name="eggs", storage="fridge", image_url=""))         # already tried
+    db.add(models.InventoryItem(name="bread", storage="counter", image_url="http://x"))  # already has
+    db.commit()
+
+    results = {"milk": "http://img/milk.jpg", "kale": None}
+    seen = []
+    monkeypatch.setattr(
+        brave_search, "search_image", lambda q: (seen.append(q), results[q])[1]
+    )
+
+    inventory.backfill_images(db=db)
+
+    assert sorted(seen) == ["kale", "milk"]  # only the two NULL items were fetched
+    by = {i.name: i.image_url for i in db.query(models.InventoryItem).all()}
+    assert by["milk"] == "http://img/milk.jpg"
+    assert by["kale"] == ""        # miss recorded so it won't refetch
+    assert by["eggs"] == ""        # untouched
+    assert by["bread"] == "http://x"  # untouched
     db.close()

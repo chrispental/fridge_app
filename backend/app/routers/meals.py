@@ -28,7 +28,7 @@ def _delivery_status(db: Session) -> schemas.DeliveryStatusOut:
 
 @router.post("/suggest", response_model=list[schemas.MealOut])
 def suggest(
-    count: int = Query(default=3, ge=1, le=3),
+    count: int = Query(default=5, ge=1, le=5),
     db: Session = Depends(get_db),
 ):
     try:
@@ -98,8 +98,9 @@ def order_delivery(meal_id: int, db: Session = Depends(get_db)):
     meal.status = "ordered"
 
     # Best-effort: find places to order this dish nearby. Never blocks the order.
+    # `location` sets Brave's X-Loc-* headers so results actually serve the user's area.
     links = brave_search.search_web(
-        f"{meal.title} delivery near {prefs.location}", count=5
+        f"{meal.title} restaurant delivery", count=5, location=prefs.location
     )
     meal.recipe_json = {**(meal.recipe_json or {}), "delivery_options": links}
 

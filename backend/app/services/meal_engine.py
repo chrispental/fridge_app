@@ -6,6 +6,7 @@ AI responds — the LLM's cooperation is treated as a hint, never a guarantee.
 import difflib
 import logging
 import re
+from urllib.parse import urlparse
 
 from sqlalchemy.orm import Session
 
@@ -23,6 +24,13 @@ logger = logging.getLogger(__name__)
 
 _REPEAT_SIMILARITY = 0.82  # titles at/above this ratio count as the same meal
 _GRILL_KEYWORDS = ("grill", "barbecue", "bbq", "broil")
+# Grocery/commerce domains we'd rather not use as a "view full recipe" source.
+_STORE_DOMAINS = (
+    "kroger.com", "walmart.com", "target.com", "instacart.com", "amazon.",
+    "doordash.com", "ubereats.com", "grubhub.com", "costco.com", "safeway.com",
+    "wholefoodsmarket.com", "wegmans.com", "albertsons.com", "heb.com",
+    "publix.com", "samsclub.com", "shipt.com", "freshdirect.com",
+)
 
 SUGGESTION_SCHEMA = {
     "type": "object",
@@ -122,16 +130,29 @@ def _is_grill(suggestion: MealSuggestion) -> bool:
     return any(kw in haystack for kw in _GRILL_KEYWORDS)
 
 
+def _pick_recipe(results: list[dict]) -> dict | None:
+    """Prefer an actual recipe page over a grocery/store result; fall back to first."""
+    if not results:
+        return None
+
+    def is_store(r: dict) -> bool:
+        host = urlparse(r.get("url", "")).netloc.lower()
+        return any(store in host for store in _STORE_DOMAINS)
+
+    non_store = [r for r in results if not is_store(r)]
+    return (non_store or results)[0]
+
+
 def _enrich_with_brave(suggestion: MealSuggestion) -> None:
     """Attach a food photo and a 'view full recipe' link via Brave. Fully fail-soft."""
     try:
         query = f"{suggestion.title} recipe"
         suggestion.image_url = brave_search.search_image(query)
-        results = brave_search.search_web(query, count=1)
-        if results:
+        best = _pick_recipe(brave_search.search_web(query, count=5))
+        if best:
             suggestion.source = RecipeSource(
-                title=results[0]["title"] or suggestion.title,
-                url=results[0]["url"],
+                title=best["title"] or suggestion.title,
+                url=best["url"],
             )
     except Exception as exc:  # noqa: BLE001 - enrichment must never break suggestion
         logger.warning("Brave enrichment failed for %r: %s", suggestion.title, exc)
@@ -215,6 +236,16 @@ def _annotate_in_stock(suggestion: MealSuggestion, inventory: list) -> None:
         ing.in_stock = bool(
             nm and any(nm in inv or inv in nm for inv in inv_names if inv)
         )
+
+
+def _shortfall(suggestion: MealSuggestion) -> tuple[int, int]:
+    """Sort key: fewer missing ingredients first. Call after `_annotate_in_stock`.
+
+    Meals you can make right now (nothing out of stock) sort to the top; meals that
+    need a shopping trip sink to the bottom, ordered by how much they need.
+    """
+    out_of_stock = sum(1 for ing in suggestion.ingredients if not ing.in_stock)
+    return (out_of_stock, len(suggestion.missing_ingredients))
 
 
 def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None) -> str:
@@ -306,10 +337,14 @@ def suggest_meals(db: Session, count: int = 3) -> list[models.Meal]:
         retry = _generate(db, prefs, inventory, recent + rejected, count, weather)
         safe = [s for s in retry if keep(s)]
 
+    # Recompute in-stock from real inventory, then order makeable-now meals first.
+    for s in safe:
+        _annotate_in_stock(s, inventory)
+    safe.sort(key=_shortfall)
+
     meals: list[models.Meal] = []
     for s in safe:
         _enrich_with_brave(s)
-        _annotate_in_stock(s, inventory)
         meal = models.Meal(
             title=s.title,
             title_normalized=normalize_title(s.title),

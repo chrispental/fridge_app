@@ -65,6 +65,7 @@ class InventoryItem(Base):
     unit = Column(String, default="unknown", nullable=False)
     category = Column(String, nullable=True)
     storage = Column(String, default="unsorted", nullable=False)  # fridge|freezer|pantry|counter|unsorted
+    image_url = Column(String, nullable=True)  # NULL=not fetched, ""=tried/none, else Brave thumbnail
     source = Column(String, default="manual", nullable=False)  # manual | photo
     extraction_batch_id = Column(
         Integer, ForeignKey("extraction_batches.id"), nullable=True

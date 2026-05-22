@@ -8,8 +8,8 @@ from sqlalchemy.orm import sessionmaker
 from app import models
 from app.database import Base
 from app.models import utcnow
-from app.schemas import MealSuggestion
-from app.services import meal_engine, weather
+from app.schemas import MealSuggestion, RecipeIngredient
+from app.services import brave_search, meal_engine, weather
 
 
 @pytest.fixture
@@ -120,6 +120,79 @@ def test_suggest_meals_excludes_grill_in_bad_weather(db, monkeypatch):
     titles = [m.title for m in meals]
     assert "Tomato Soup" in titles
     assert "Grilled Steak" not in titles
+
+
+# --- location-aware delivery headers ----------------------------------------
+def test_location_headers_zip():
+    h = brave_search._location_headers("06825")
+    assert h["X-Loc-Postal-Code"] == "06825"
+    assert h["X-Loc-Country"]
+
+
+def test_location_headers_city_state():
+    h = brave_search._location_headers("Austin, TX")
+    assert h["X-Loc-City"] == "Austin"
+    assert h["X-Loc-State"] == "TX"
+
+
+def test_location_headers_empty():
+    assert brave_search._location_headers("") == {}
+    assert brave_search._location_headers(None) == {}
+
+
+# --- recipe source prefers real recipe sites over stores ---------------------
+def test_pick_recipe_skips_store_domain():
+    results = [
+        {"title": "Kroger", "url": "https://www.kroger.com/r/abc", "description": ""},
+        {"title": "AllRecipes", "url": "https://www.allrecipes.com/x", "description": ""},
+    ]
+    assert meal_engine._pick_recipe(results)["url"] == "https://www.allrecipes.com/x"
+
+
+def test_pick_recipe_falls_back_when_all_stores():
+    results = [{"title": "Kroger", "url": "https://kroger.com/x", "description": ""}]
+    assert meal_engine._pick_recipe(results)["url"] == "https://kroger.com/x"
+    assert meal_engine._pick_recipe([]) is None
+
+
+def test_shortfall_orders_makeable_first():
+    full = MealSuggestion(
+        title="A", ingredients=[RecipeIngredient(name="x", in_stock=True)]
+    )
+    needs = MealSuggestion(
+        title="B",
+        ingredients=[
+            RecipeIngredient(name="x", in_stock=True),
+            RecipeIngredient(name="y", in_stock=False),
+        ],
+        missing_ingredients=["y"],
+    )
+    assert meal_engine._shortfall(full) < meal_engine._shortfall(needs)
+
+
+def test_suggest_meals_puts_in_stock_meals_on_top(db, monkeypatch):
+    db.add(models.Preferences(id=1))
+    db.add(models.InventoryItem(name="eggs", storage="fridge"))
+    db.commit()
+
+    generated = [
+        MealSuggestion(
+            title="Needs Shopping",
+            cooking_method="stovetop",
+            ingredients=[RecipeIngredient(name="eggs"), RecipeIngredient(name="caviar")],
+            missing_ingredients=["caviar"],
+        ),
+        MealSuggestion(
+            title="All In Stock",
+            cooking_method="stovetop",
+            ingredients=[RecipeIngredient(name="eggs")],
+        ),
+    ]
+    monkeypatch.setattr(meal_engine, "_generate", lambda *a, **k: list(generated))
+    monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s: None)
+
+    meals = meal_engine.suggest_meals(db, count=5)
+    assert [m.title for m in meals] == ["All In Stock", "Needs Shopping"]
 
 
 def test_suggest_meals_allows_grill_in_good_weather(db, monkeypatch):

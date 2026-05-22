@@ -60,6 +60,7 @@ class InventoryItemUpdate(BaseModel):
 class InventoryItemOut(InventoryItemBase):
     id: int
     source: str
+    image_url: str | None = None
     extraction_batch_id: int | None = None
     added_at: datetime
     updated_at: datetime | None = None

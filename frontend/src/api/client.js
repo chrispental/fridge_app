@@ -66,6 +66,7 @@ export const api = {
   addItem: (body) => request('/inventory', json('POST', body)),
   updateItem: (id, body) => request(`/inventory/${id}`, json('PATCH', body)),
   deleteItem: (id) => request(`/inventory/${id}`, { method: 'DELETE' }),
+  backfillImages: () => request('/inventory/backfill-images', { method: 'POST' }),
 
   // Photo extraction
   extractPhoto: (formData) =>
@@ -75,7 +76,7 @@ export const api = {
     request(`/inventory/extract/${batchId}/confirm`, json('POST', { items })),
 
   // Meals
-  suggestMeals: (count = 3) =>
+  suggestMeals: (count = 5) =>
     request(`/meals/suggest?count=${count}`, { method: 'POST' }),
   getMeals: (status) =>
     request(`/meals${status ? `?status=${status}` : ''}`),

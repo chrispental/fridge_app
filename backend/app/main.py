@@ -16,19 +16,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def _migrate_inventory_storage(db, db_engine) -> None:
-    """Add the `storage` column to an existing DB and backfill it once.
+def _migrate_inventory_columns(db, db_engine) -> None:
+    """Add columns missing from a pre-existing inventory_items table (no Alembic).
 
-    There is no Alembic; `create_all` only creates missing tables, never new
-    columns. So on a pre-existing `inventory_items` table we add the column via
-    ALTER (existing rows get NULL) and then seed each NULL from its `category`.
-    New databases already have the column with its default, so this no-ops.
+    `create_all` only creates missing tables, never new columns. So on an existing
+    table we ALTER in the new columns. `storage` is then backfilled once from each
+    item's category; `image_url` is left NULL (filled on demand via the backfill
+    endpoint). New databases already have the columns, so this no-ops.
     """
     columns = {c["name"] for c in inspect(db_engine).get_columns("inventory_items")}
-    if "storage" not in columns:
-        with db_engine.begin() as conn:
+    with db_engine.begin() as conn:
+        if "storage" not in columns:
             conn.execute(text("ALTER TABLE inventory_items ADD COLUMN storage VARCHAR"))
-        logger.info("Added inventory_items.storage column")
+            logger.info("Added inventory_items.storage column")
+        if "image_url" not in columns:
+            conn.execute(text("ALTER TABLE inventory_items ADD COLUMN image_url VARCHAR"))
+            logger.info("Added inventory_items.image_url column")
 
     pending = (
         db.query(models.InventoryItem)
@@ -51,7 +54,7 @@ async def lifespan(app: FastAPI):
         if db.get(models.Preferences, 1) is None:
             db.add(models.Preferences(id=1))
             db.commit()
-        _migrate_inventory_storage(db, engine)
+        _migrate_inventory_columns(db, engine)
     finally:
         db.close()
     yield

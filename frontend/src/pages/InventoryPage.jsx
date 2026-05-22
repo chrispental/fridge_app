@@ -1,36 +1,29 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import ItemRow from '../components/ItemRow.jsx'
-import { api, UNITS, STORAGE } from '../api/client.js'
-
-const BLANK = { name: '', quantity: '', unit: 'piece', category: '', storage: 'fridge' }
+import ItemTile from '../components/ItemTile.jsx'
+import ItemModal from '../components/ItemModal.jsx'
+import { api, STORAGE } from '../api/client.js'
 
 export default function InventoryPage() {
   const [items, setItems] = useState(null)
   const [error, setError] = useState(null)
-  const [adding, setAdding] = useState(false)
-  const [draft, setDraft] = useState(BLANK)
+  const [modalItem, setModalItem] = useState(null) // null=closed, {}=new, item=edit
+  const [fetching, setFetching] = useState(false)
 
   function load() {
     api.getInventory().then(setItems).catch((e) => setError(e.message))
   }
   useEffect(load, [])
 
-  async function add() {
-    if (!draft.name.trim()) return
+  async function fetchPhotos() {
+    setFetching(true)
     try {
-      const created = await api.addItem({
-        name: draft.name,
-        quantity: draft.quantity === '' ? null : Number(draft.quantity),
-        unit: draft.unit,
-        category: draft.category || null,
-        storage: draft.storage,
-      })
-      setItems([created, ...items])
-      setDraft(BLANK)
-      setAdding(false)
+      await api.backfillImages()
+      load()
     } catch (e) {
       alert(e.message)
+    } finally {
+      setFetching(false)
     }
   }
 
@@ -43,57 +36,22 @@ export default function InventoryPage() {
     items: items.filter((it) => (it.storage || 'unsorted') === s.value),
   })).filter((s) => s.items.length > 0)
 
+  const missingPhotos = items.some((it) => it.image_url == null)
+
   return (
     <div>
       <div className="page-head">
         <h1>Inventory ({items.length})</h1>
         <div>
           <Link to="/capture" className="btn primary">📷 Scan a photo</Link>
-          <button className="ghost" onClick={() => setAdding((v) => !v)}>
-            + Add item
-          </button>
+          {missingPhotos && (
+            <button className="ghost" onClick={fetchPhotos} disabled={fetching}>
+              {fetching ? 'Fetching…' : '🖼 Fetch photos'}
+            </button>
+          )}
+          <button className="ghost" onClick={() => setModalItem({})}>+ Add item</button>
         </div>
       </div>
-
-      {adding && (
-        <div className="item-row editing">
-          <input
-            placeholder="name"
-            value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-          />
-          <input
-            type="number"
-            step="any"
-            placeholder="qty"
-            value={draft.quantity}
-            onChange={(e) => setDraft({ ...draft, quantity: e.target.value })}
-          />
-          <select
-            value={draft.unit}
-            onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
-          >
-            {UNITS.map((u) => (
-              <option key={u} value={u}>{u}</option>
-            ))}
-          </select>
-          <select
-            value={draft.storage}
-            onChange={(e) => setDraft({ ...draft, storage: e.target.value })}
-          >
-            {STORAGE.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
-          <input
-            placeholder="category"
-            value={draft.category}
-            onChange={(e) => setDraft({ ...draft, category: e.target.value })}
-          />
-          <button className="primary" onClick={add}>Add</button>
-          <button className="ghost" onClick={() => setAdding(false)}>Cancel</button>
-        </div>
-      )}
 
       {items.length === 0 && (
         <p className="empty">
@@ -108,16 +66,28 @@ export default function InventoryPage() {
             {section.label}
             <span className="storage-count">{section.items.length}</span>
           </h2>
-          {section.items.map((it) => (
-            <ItemRow
-              key={it.id}
-              item={it}
-              onChange={(u) => setItems(items.map((x) => (x.id === u.id ? u : x)))}
-              onDelete={(id) => setItems(items.filter((x) => x.id !== id))}
-            />
-          ))}
+          <div className="tile-grid">
+            {section.items.map((it) => (
+              <ItemTile key={it.id} item={it} onEdit={setModalItem} />
+            ))}
+          </div>
         </div>
       ))}
+
+      {modalItem && (
+        <ItemModal
+          item={modalItem}
+          onClose={() => setModalItem(null)}
+          onSaved={() => {
+            setModalItem(null)
+            load()
+          }}
+          onDeleted={() => {
+            setModalItem(null)
+            load()
+          }}
+        />
+      )}
     </div>
   )
 }
