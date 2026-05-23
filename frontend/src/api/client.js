@@ -76,8 +76,8 @@ export const api = {
     request(`/inventory/extract/${batchId}/confirm`, json('POST', { items })),
 
   // Meals
-  suggestMeals: (count = 5) =>
-    request(`/meals/suggest?count=${count}`, { method: 'POST' }),
+  suggestMeals: ({ count = 5, idea = null } = {}) =>
+    request('/meals/suggest', json('POST', { count, idea })),
   getMeals: (status) =>
     request(`/meals${status ? `?status=${status}` : ''}`),
   cookMeal: (id, decrementInventory) =>
@@ -87,4 +87,12 @@ export const api = {
   // Weekly delivery
   getDeliveryStatus: () => request('/meals/delivery/status'),
   orderDelivery: (id) => request(`/meals/${id}/order-delivery`, { method: 'POST' }),
+
+  // Weekly meal plan
+  createPlan: (count) => request('/plans', json('POST', { count })),
+  getCurrentPlan: () => request('/plans/current'),
+  getShoppingList: (planId) => request(`/plans/${planId}/shopping-list`),
+  swapPlanSlot: (planId, slot) =>
+    request(`/plans/${planId}/slots/${slot}/swap`, { method: 'POST' }),
+  deletePlan: (planId) => request(`/plans/${planId}`, { method: 'DELETE' }),
 }

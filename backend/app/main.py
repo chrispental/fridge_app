@@ -9,7 +9,8 @@ from sqlalchemy import inspect, text
 from . import models
 from .config import settings
 from .database import Base, SessionLocal, engine
-from .routers import health, inventory, meals, preferences
+from .routers import health, inventory, meals, plans, preferences
+from .services.staples import DEFAULT_STAPLES
 from .services.storage import storage_from_category
 
 logging.basicConfig(level=logging.INFO)
@@ -45,16 +46,40 @@ def _migrate_inventory_columns(db, db_engine) -> None:
         logger.info("Backfilled storage for %d existing item(s)", len(pending))
 
 
+def _migrate_preferences_columns(db, db_engine) -> None:
+    """Add the pantry_staples column to a pre-existing preferences table (no Alembic).
+
+    `create_all` never adds columns to an existing table, so we ALTER it in and seed
+    the singleton row with the default staples. New databases already have the column
+    (and the row is seeded at creation), so this no-ops.
+    """
+    columns = {c["name"] for c in inspect(db_engine).get_columns("preferences")}
+    if "pantry_staples" not in columns:
+        with db_engine.begin() as conn:
+            conn.execute(text("ALTER TABLE preferences ADD COLUMN pantry_staples JSON"))
+        logger.info("Added preferences.pantry_staples column")
+
+    prefs = db.get(models.Preferences, 1)
+    if prefs is not None and not prefs.pantry_staples:
+        prefs.pantry_staples = list(DEFAULT_STAPLES)
+        db.commit()
+        logger.info("Seeded default pantry staples")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables and ensure the singleton preferences row exists.
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
-        if db.get(models.Preferences, 1) is None:
-            db.add(models.Preferences(id=1))
-            db.commit()
+        # Run column migrations BEFORE any ORM query against these tables: the mapped
+        # models reference columns that create_all won't add to a pre-existing table,
+        # so querying first would fail with "no such column".
         _migrate_inventory_columns(db, engine)
+        _migrate_preferences_columns(db, engine)
+        if db.get(models.Preferences, 1) is None:
+            db.add(models.Preferences(id=1, pantry_staples=list(DEFAULT_STAPLES)))
+            db.commit()
     finally:
         db.close()
     yield
@@ -78,3 +103,4 @@ app.include_router(health.router)
 app.include_router(preferences.router)
 app.include_router(inventory.router)
 app.include_router(meals.router)
+app.include_router(plans.router)

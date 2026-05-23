@@ -17,6 +17,7 @@ from ..schemas import MealSuggestion, RecipeIngredient, RecipeSource
 from . import brave_search
 from .ai_client import call_structured
 from .prompts import load_prompt
+from .staples import is_staple
 from .units import normalize_unit
 from .weather import get_weather
 
@@ -228,13 +229,20 @@ def _parse_suggestions(raw: dict) -> list[MealSuggestion]:
     return out
 
 
-def _annotate_in_stock(suggestion: MealSuggestion, inventory: list) -> None:
-    """Recompute each ingredient's `in_stock` flag from real inventory (don't trust AI)."""
+def _annotate_in_stock(suggestion: MealSuggestion, inventory: list, staples: list[str]) -> None:
+    """Recompute each ingredient's `in_stock` flag from real inventory (don't trust AI).
+
+    Pantry staples count as in-stock too — they're assumed always on hand.
+    """
     inv_names = [i.name.lower().strip() for i in inventory]
     for ing in suggestion.ingredients:
         nm = ing.name.lower().strip()
         ing.in_stock = bool(
-            nm and any(nm in inv or inv in nm for inv in inv_names if inv)
+            nm
+            and (
+                any(nm in inv or inv in nm for inv in inv_names if inv)
+                or is_staple(nm, staples)
+            )
         )
 
 
@@ -248,7 +256,7 @@ def _shortfall(suggestion: MealSuggestion) -> tuple[int, int]:
     return (out_of_stock, len(suggestion.missing_ingredients))
 
 
-def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None) -> str:
+def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None) -> str:
     if inventory:
         inv_lines = []
         for i in inventory:
@@ -269,6 +277,14 @@ def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None)
     def joined(values):
         return ", ".join(values) if values else "none"
 
+    staples = getattr(prefs, "pantry_staples", None) or []
+
+    request_block = (
+        f"\nWHAT THE USER WANTS RIGHT NOW (prioritize this strongly): {idea.strip()}\n"
+        if idea and idea.strip()
+        else ""
+    )
+
     if weather is not None and not weather["grill_ok"]:
         weather_line = (
             f"\nCURRENT WEATHER: {weather['summary']}. "
@@ -287,30 +303,35 @@ Equipment available: {joined(prefs.equipment) if prefs.equipment else 'basic sto
 Maximum complexity (1-5): {prefs.max_complexity}
 Disliked ingredients: {joined(prefs.disliked_ingredients)}
 Disliked cuisines: {joined(prefs.disliked_cuisines)}
+ALWAYS AVAILABLE (assume on hand; mark in_stock and never list as missing): {joined(staples)}
 {weather_line}
 CURRENT INVENTORY
 {inv_text}
 
 DO NOT SUGGEST THESE RECENT MEALS
 {dnr}
-
+{request_block}
 Suggest meals I can make right now."""
 
 
-def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None) -> list[MealSuggestion]:
+def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None) -> list[MealSuggestion]:
     system_prompt = load_prompt("suggestion_system.md").replace("{count}", str(count))
     raw = call_structured(
         model=settings.openrouter_meal_model,
         system_prompt=system_prompt,
-        user_content=_build_user_prompt(prefs, inventory, do_not_repeat, weather),
+        user_content=_build_user_prompt(prefs, inventory, do_not_repeat, weather, idea),
         json_schema=SUGGESTION_SCHEMA,
         schema_name="meal_suggestions",
     )
     return _parse_suggestions(raw)
 
 
-def suggest_meals(db: Session, count: int = 3) -> list[models.Meal]:
-    """Generate meal suggestions, enforce rules, persist them, return Meal rows."""
+def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[models.Meal]:
+    """Generate meal suggestions, enforce rules, persist them, return Meal rows.
+
+    `idea` is optional free text (ingredients, a craving, a cuisine, a mood) that
+    biases the suggestion; None/empty means "surprise me" from inventory + prefs.
+    """
     prefs = db.get(models.Preferences, 1)
     inventory = db.query(models.InventoryItem).all()
     recent = _recent_titles(db, prefs.no_repeat_days if prefs else 14)
@@ -320,7 +341,7 @@ def suggest_meals(db: Session, count: int = 3) -> list[models.Meal]:
     weather = get_weather(prefs.location) if (prefs and prefs.location) else None
     grill_blocked = weather is not None and not weather["grill_ok"]
 
-    suggestions = _generate(db, prefs, inventory, recent, count, weather)
+    suggestions = _generate(db, prefs, inventory, recent, count, weather, idea)
 
     def keep(s: MealSuggestion) -> bool:
         return (
@@ -334,12 +355,13 @@ def suggest_meals(db: Session, count: int = 3) -> list[models.Meal]:
     # If everything was filtered out, retry once with the rejects also excluded.
     if not safe and suggestions:
         rejected = [s.title for s in suggestions]
-        retry = _generate(db, prefs, inventory, recent + rejected, count, weather)
+        retry = _generate(db, prefs, inventory, recent + rejected, count, weather, idea)
         safe = [s for s in retry if keep(s)]
 
     # Recompute in-stock from real inventory, then order makeable-now meals first.
+    staples = (prefs.pantry_staples if prefs else None) or []
     for s in safe:
-        _annotate_in_stock(s, inventory)
+        _annotate_in_stock(s, inventory, staples)
     safe.sort(key=_shortfall)
 
     meals: list[models.Meal] = []
@@ -360,3 +382,40 @@ def suggest_meals(db: Session, count: int = 3) -> list[models.Meal]:
     for m in meals:
         db.refresh(m)
     return meals
+
+
+def create_plan(db: Session, count: int) -> models.MealPlan:
+    """Generate a `count`-meal plan, one slot at a time, reusing suggest_meals.
+
+    Single-meal calls keep each recipe well under the output-token cap and re-read the
+    no-repeat window between calls, so the week's meals come out distinct. Slots where
+    generation yields nothing are skipped (no gaps in slot_index).
+    """
+    plan = models.MealPlan()
+    db.add(plan)
+    db.flush()  # assign plan.id
+
+    slot = 0
+    for _ in range(count):
+        meals = suggest_meals(db, count=1)
+        if not meals:
+            continue
+        db.add(
+            models.MealPlanEntry(plan_id=plan.id, slot_index=slot, meal_id=meals[0].id)
+        )
+        slot += 1
+
+    db.commit()
+    db.refresh(plan)
+    return plan
+
+
+def swap_slot(db: Session, entry: models.MealPlanEntry) -> models.Meal | None:
+    """Re-roll one plan slot with a fresh suggestion; returns the new Meal (or None)."""
+    meals = suggest_meals(db, count=1)
+    if not meals:
+        return None
+    entry.meal_id = meals[0].id
+    db.commit()
+    db.refresh(entry)
+    return meals[0]

@@ -17,6 +17,7 @@ class PreferencesBase(BaseModel):
     disliked_cuisines: list[str] = []
     no_repeat_days: int = Field(default=14, ge=0, le=365)
     location: str = ""  # city or ZIP — used for grilling-weather and delivery lookups
+    pantry_staples: list[str] = []  # basics assumed always on hand (salt, pepper, ...)
 
 
 class PreferencesUpdate(PreferencesBase):
@@ -131,6 +132,11 @@ class MealOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SuggestRequest(BaseModel):
+    count: int = Field(default=5, ge=1, le=5)
+    idea: str | None = None  # free text: ingredients, a craving, a cuisine; None = surprise me
+
+
 class CookRequest(BaseModel):
     decrement_inventory: bool = False
 
@@ -139,3 +145,35 @@ class DeliveryStatusOut(BaseModel):
     used: bool
     remaining: int
     next_available_at: datetime | None = None
+
+
+# --------------------------------------------------------------------------- #
+# Weekly meal plan + shopping list
+# --------------------------------------------------------------------------- #
+class CreatePlanRequest(BaseModel):
+    count: int = Field(default=7, ge=1, le=14)
+
+
+class MealPlanEntryOut(BaseModel):
+    slot_index: int
+    meal: MealOut
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MealPlanOut(BaseModel):
+    id: int
+    created_at: datetime
+    entries: list[MealPlanEntryOut]
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ShoppingListItem(BaseModel):
+    name: str
+    quantity: float | None = None
+    unit: str = "unknown"
+
+
+class ShoppingListOut(BaseModel):
+    to_buy: list[ShoppingListItem]
+    have: list[ShoppingListItem]
+    staples_assumed: list[str]

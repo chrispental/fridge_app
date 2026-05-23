@@ -1,11 +1,33 @@
+from types import SimpleNamespace
+
 from app.schemas import MealSuggestion, RecipeIngredient
 from app.services.meal_engine import (
     _allergen_violation,
     _annotate_in_stock,
+    _build_user_prompt,
     _is_repeat,
     _parse_suggestions,
     normalize_title,
 )
+
+
+def _fake_prefs():
+    return SimpleNamespace(
+        household_size=2, allergies=[], dietary_restrictions=[], equipment=[],
+        max_complexity=3, disliked_ingredients=[], disliked_cuisines=[],
+        pantry_staples=["salt"],
+    )
+
+
+def test_user_prompt_includes_idea():
+    prompt = _build_user_prompt(_fake_prefs(), [], [], None, "spicy thai noodles")
+    assert "spicy thai noodles" in prompt
+    assert "WHAT THE USER WANTS" in prompt
+
+
+def test_user_prompt_omits_idea_section_when_empty():
+    assert "WHAT THE USER WANTS" not in _build_user_prompt(_fake_prefs(), [], [], None, None)
+    assert "WHAT THE USER WANTS" not in _build_user_prompt(_fake_prefs(), [], [], None, "   ")
 
 
 def test_normalize_title():
@@ -86,6 +108,18 @@ def test_annotate_in_stock():
             RecipeIngredient(name="truffle oil"),
         ],
     )
-    _annotate_in_stock(suggestion, [_FakeItem("cheddar cheese"), _FakeItem("bread")])
+    _annotate_in_stock(
+        suggestion, [_FakeItem("cheddar cheese"), _FakeItem("bread")], staples=[]
+    )
     assert suggestion.ingredients[0].in_stock is True
     assert suggestion.ingredients[1].in_stock is False
+
+
+def test_annotate_in_stock_counts_staples():
+    suggestion = MealSuggestion(
+        title="Seasoned Eggs",
+        ingredients=[RecipeIngredient(name="eggs"), RecipeIngredient(name="salt")],
+    )
+    _annotate_in_stock(suggestion, [_FakeItem("eggs")], staples=["salt", "pepper"])
+    assert suggestion.ingredients[0].in_stock is True  # in inventory
+    assert suggestion.ingredients[1].in_stock is True  # staple, assumed on hand

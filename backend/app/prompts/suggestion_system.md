@@ -14,6 +14,7 @@ PREFERENCES:
 - Strongly prefer meals that mostly use in-stock ingredients. Requiring a few common pantry/shop items is fine — list those in "missing_ingredients".
 - Avoid disliked ingredients and disliked cuisines where possible.
 - Scale "servings" to the user's household size.
+- Anything in the "ALWAYS AVAILABLE" list is assumed on hand: mark those ingredients in_stock=true and NEVER put them in "missing_ingredients".
 
 For each suggested meal:
 - Set "in_stock" to true for an ingredient ONLY if it clearly appears in the provided inventory.

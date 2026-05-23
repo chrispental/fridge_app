@@ -4,6 +4,7 @@ import { api } from '../api/client.js'
 export default function MealCard({
   meal,
   onChanged,
+  onSwap = null,
   deliveryAvailable = false,
   nextDeliveryDate = null,
 }) {
@@ -11,6 +12,17 @@ export default function MealCard({
   const [expanded, setExpanded] = useState(false)
   const [decrement, setDecrement] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [swapBusy, setSwapBusy] = useState(false)
+
+  async function handleSwap() {
+    if (!onSwap) return
+    setSwapBusy(true)
+    try {
+      await onSwap()
+    } finally {
+      setSwapBusy(false)
+    }
+  }
   const [cooked, setCooked] = useState(meal.status === 'cooked')
   const [ordered, setOrdered] = useState(meal.status === 'ordered')
   const [deliveryOptions, setDeliveryOptions] = useState(recipe.delivery_options || [])
@@ -65,6 +77,14 @@ export default function MealCard({
           {recipe.servings && <span>🍽 serves {recipe.servings}</span>}
         </div>
       </div>
+
+      {onSwap && (
+        <div className="swap-row">
+          <button className="btn ghost" onClick={handleSwap} disabled={swapBusy}>
+            {swapBusy ? 'Swapping…' : '🔄 Swap this day'}
+          </button>
+        </div>
+      )}
 
       {ingredients.length > 0 && (
         <div className="ingredients">

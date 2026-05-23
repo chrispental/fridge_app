@@ -1,7 +1,7 @@
 """Meal suggestion, history, cook logging, and weekly delivery."""
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
@@ -28,11 +28,11 @@ def _delivery_status(db: Session) -> schemas.DeliveryStatusOut:
 
 @router.post("/suggest", response_model=list[schemas.MealOut])
 def suggest(
-    count: int = Query(default=5, ge=1, le=5),
+    payload: schemas.SuggestRequest = Body(default_factory=schemas.SuggestRequest),
     db: Session = Depends(get_db),
 ):
     try:
-        meals = suggest_meals(db, count=count)
+        meals = suggest_meals(db, count=payload.count, idea=payload.idea)
     except RuntimeError as exc:
         raise HTTPException(502, str(exc))
     if not meals:

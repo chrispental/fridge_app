@@ -38,6 +38,8 @@ class Preferences(Base):
     disliked_cuisines = Column(JSON, default=list, nullable=False)
     no_repeat_days = Column(Integer, default=14, nullable=False)
     location = Column(String, default="", nullable=False)  # city/ZIP for weather & delivery
+    # Basics assumed always on hand (salt, pepper, ...) — never counted as missing or shopped.
+    pantry_staples = Column(JSON, default=list, nullable=False)
     onboarded = Column(Boolean, default=False, nullable=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -88,3 +90,35 @@ class Meal(Base):
     suggested_at = Column(DateTime, default=utcnow, nullable=False)
     cooked_at = Column(DateTime, nullable=True)
     delivery_ordered_at = Column(DateTime, nullable=True)  # set when ordered for delivery
+
+
+class MealPlan(Base):
+    """A planned week: a thin grouping of N Meal rows via MealPlanEntry slots."""
+
+    __tablename__ = "meal_plans"
+
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+
+    entries = relationship(
+        "MealPlanEntry",
+        back_populates="plan",
+        order_by="MealPlanEntry.slot_index",
+        cascade="all, delete-orphan",
+    )
+
+
+class MealPlanEntry(Base):
+    """One slot in a plan, pointing at a Meal. Swapping a day repoints `meal_id`."""
+
+    __tablename__ = "meal_plan_entries"
+
+    id = Column(Integer, primary_key=True)
+    plan_id = Column(Integer, ForeignKey("meal_plans.id"), nullable=False)
+    slot_index = Column(Integer, nullable=False)
+    meal_id = Column(Integer, ForeignKey("meals.id"), nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+
+    plan = relationship("MealPlan", back_populates="entries")
+    meal = relationship("Meal")

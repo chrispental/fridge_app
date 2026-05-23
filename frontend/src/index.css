@@ -160,7 +160,20 @@ button.danger:hover { background: var(--danger-dim); }
 }
 .banner.error { background: var(--danger-dim); color: var(--danger); border: 1px solid #50272a; }
 .banner.success { background: var(--success-dim); color: var(--success); border: 1px solid #1f3a2a; }
+.banner.info { background: var(--surface-2); color: var(--text-secondary); border: 1px solid var(--border-strong); }
 .banner a { color: inherit; }
+
+/* ---- Week plan / shopping list ---------------------------- */
+.swap-row { display: flex; justify-content: flex-end; margin: -4px 0 10px; }
+.plan-toolbar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin: 14px 0; }
+.plan-toolbar .field { margin: 0; }
+.plan-toolbar input[type="number"] { width: 90px; }
+.shopping-card {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px; margin: 16px 0;
+}
+.shopping-group { margin-top: 14px; }
+.shopping-group h3 { font-size: 0.92rem; margin-bottom: 8px; color: var(--text-secondary); }
 
 .empty {
   text-align: center; padding: 3rem 1rem; color: var(--text-tertiary);
@@ -189,6 +202,9 @@ input[type='checkbox'] { accent-color: var(--accent); width: 16px; height: 16px;
 }
 .field .sub { font-weight: 400; color: var(--text-tertiary); font-size: 0.82rem; }
 .field input[type='text'], .field input[type='number'] { width: 100%; }
+.field textarea { width: 100%; resize: vertical; }
+.idea-input { line-height: 1.5; }
+.suggest-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
 
 /* equipment checkboxes → toggle chips */
 .checks { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -201,6 +217,20 @@ input[type='checkbox'] { accent-color: var(--accent); width: 16px; height: 16px;
 }
 .checks label input { display: none; }
 .checks label:has(input:checked) {
+  background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
+}
+
+/* equipment toggle chips (icon + label) */
+.equip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.equip-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  color: var(--text-secondary); font: inherit; font-size: 0.86rem; font-weight: 600;
+  padding: 9px 14px; border-radius: 100px; cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.equip-chip:hover { background: var(--surface-3); color: var(--text-primary); }
+.equip-chip.on {
   background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
 }
 
