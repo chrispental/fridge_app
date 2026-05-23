@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom'
-import { ChefHat, Refrigerator, History, Settings } from 'lucide-react'
+import { ChefHat, CalendarDays, Refrigerator, History, Settings } from 'lucide-react'
 
 const LINKS = [
   { to: '/', label: 'Cook', icon: ChefHat, end: true },
+  { to: '/plan', label: 'Plan', icon: CalendarDays },
   { to: '/inventory', label: 'Fridge', icon: Refrigerator },
   { to: '/history', label: 'History', icon: History },
   { to: '/preferences', label: 'Settings', icon: Settings },

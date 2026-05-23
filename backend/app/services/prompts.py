@@ -1,4 +1,4 @@
-"""Loader for the plain-text prompt templates in `app/prompts/`."""
+"""Loader for the markdown prompt templates in `app/prompts/`."""
 import os
 
 _PROMPTS_DIR = os.path.join(

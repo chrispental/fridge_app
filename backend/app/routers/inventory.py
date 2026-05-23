@@ -7,12 +7,15 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
+from ..services import brave_search
+from ..services.storage import normalize_storage
 from ..services.units import normalize_unit
 from ..services.vision import extract_items, parse_items, preprocess_and_save
 
 router = APIRouter(prefix="/api/inventory", tags=["inventory"])
 
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024  # 12 MB
+MAX_IMAGE_BACKFILL = 100  # cap Brave calls per backfill request
 
 
 # --------------------------------------------------------------------------- #
@@ -33,6 +36,7 @@ def add_item(payload: schemas.InventoryItemCreate, db: Session = Depends(get_db)
         quantity=payload.quantity,
         unit=normalize_unit(payload.unit),
         category=payload.category,
+        storage=normalize_storage(payload.storage),
         source="manual",
     )
     db.add(item)
@@ -59,6 +63,8 @@ def update_item(
         item.unit = normalize_unit(data["unit"])
     if "category" in data:
         item.category = data["category"]
+    if data.get("storage"):
+        item.storage = normalize_storage(data["storage"])
     db.commit()
     db.refresh(item)
     return item
@@ -71,6 +77,27 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "Item not found")
     db.delete(item)
     db.commit()
+
+
+@router.post("/backfill-images", response_model=list[schemas.InventoryItemOut])
+def backfill_images(db: Session = Depends(get_db)):
+    """Fetch a Brave thumbnail for items that don't have one yet (image_url IS NULL).
+
+    Each item is attempted once: stores the URL when found, or "" to record the
+    attempt so it isn't refetched. Fail-soft — a Brave outage just leaves "".
+    """
+    pending = (
+        db.query(models.InventoryItem)
+        .filter(models.InventoryItem.image_url.is_(None))
+        .limit(MAX_IMAGE_BACKFILL)
+        .all()
+    )
+    for item in pending:
+        item.image_url = brave_search.search_image(item.name) or ""
+    db.commit()
+    for item in pending:
+        db.refresh(item)
+    return pending
 
 
 # --------------------------------------------------------------------------- #
@@ -158,6 +185,7 @@ def confirm_extraction(
             quantity=it.quantity,
             unit=normalize_unit(it.unit),
             category=it.category,
+            storage=normalize_storage(it.storage),
             source="photo",
             extraction_batch_id=batch.id,
         )

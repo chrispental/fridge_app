@@ -1,12 +1,66 @@
 import { useState } from 'react'
 import { api } from '../api/client.js'
 
-export default function MealCard({ meal, onChanged }) {
+const FEEDBACK_TAGS = [
+  'Too salty', 'Too bland', 'Too spicy', 'Too sweet',
+  'Too dry', 'Too greasy', 'Too slow', 'Loved it',
+]
+
+export default function MealCard({
+  meal,
+  onChanged,
+  onSwap = null,
+  deliveryAvailable = false,
+  nextDeliveryDate = null,
+}) {
   const recipe = meal.recipe_json || {}
   const [expanded, setExpanded] = useState(false)
   const [decrement, setDecrement] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [swapBusy, setSwapBusy] = useState(false)
+
+  // Post-cook feedback state (also editable later from History).
+  const [rating, setRating] = useState(meal.rating ?? null)
+  const [tags, setTags] = useState(meal.feedback_tags || [])
+  const [notes, setNotes] = useState(meal.feedback_notes || '')
+  const [fbBusy, setFbBusy] = useState(false)
+  const [fbSaved, setFbSaved] = useState(false)
+
+  function setRatingDirty(v) {
+    setRating((cur) => (cur === v ? null : v))
+    setFbSaved(false)
+  }
+  function toggleTag(tag) {
+    setTags((cur) => (cur.includes(tag) ? cur.filter((t) => t !== tag) : [...cur, tag]))
+    setFbSaved(false)
+  }
+  async function saveFeedback() {
+    setFbBusy(true)
+    try {
+      await api.submitFeedback(meal.id, { rating, tags, notes: notes.trim() || null })
+      setFbSaved(true)
+      onChanged?.()
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setFbBusy(false)
+    }
+  }
+
+  async function handleSwap() {
+    if (!onSwap) return
+    setSwapBusy(true)
+    try {
+      await onSwap()
+    } finally {
+      setSwapBusy(false)
+    }
+  }
   const [cooked, setCooked] = useState(meal.status === 'cooked')
+  const [ordered, setOrdered] = useState(meal.status === 'ordered')
+  const [deliveryOptions, setDeliveryOptions] = useState(recipe.delivery_options || [])
+  const [orderBusy, setOrderBusy] = useState(false)
+  const [orderError, setOrderError] = useState(null)
 
   async function cook() {
     setBusy(true)
@@ -21,21 +75,49 @@ export default function MealCard({ meal, onChanged }) {
     }
   }
 
+  async function orderDelivery() {
+    setOrderBusy(true)
+    setOrderError(null)
+    try {
+      const updated = await api.orderDelivery(meal.id)
+      setOrdered(true)
+      setDeliveryOptions(updated.recipe_json?.delivery_options || [])
+      onChanged?.()
+    } catch (e) {
+      setOrderError(e.message)
+    } finally {
+      setOrderBusy(false)
+    }
+  }
+
   const ingredients = recipe.ingredients || []
   const steps = recipe.steps || []
   const missing = recipe.missing_ingredients || []
 
   return (
     <div className="meal-card">
+      {recipe.image_url && (
+        <img className="recipe-image" src={recipe.image_url} alt={meal.title} />
+      )}
+
       <div className="meal-head" onClick={() => setExpanded((v) => !v)}>
         <h3>{meal.title}</h3>
         <div className="meal-meta">
           {recipe.cuisine && <span>{recipe.cuisine}</span>}
+          {recipe.cooking_method && <span className="method-chip">{recipe.cooking_method}</span>}
           {recipe.estimated_time_minutes && <span>⏱ {recipe.estimated_time_minutes} min</span>}
           {recipe.complexity && <span>★ {recipe.complexity}/5</span>}
           {recipe.servings && <span>🍽 serves {recipe.servings}</span>}
         </div>
       </div>
+
+      {onSwap && (
+        <div className="swap-row">
+          <button className="btn ghost" onClick={handleSwap} disabled={swapBusy}>
+            {swapBusy ? 'Swapping…' : '🔄 Swap this day'}
+          </button>
+        </div>
+      )}
 
       {ingredients.length > 0 && (
         <div className="ingredients">
@@ -50,6 +132,14 @@ export default function MealCard({ meal, onChanged }) {
 
       {missing.length > 0 && (
         <p className="missing-note">🛒 You'll need to buy: {missing.join(', ')}</p>
+      )}
+
+      {recipe.source?.url && (
+        <p className="recipe-source">
+          <a href={recipe.source.url} target="_blank" rel="noreferrer">
+            View full recipe ↗
+          </a>
+        </p>
       )}
 
       {expanded ? (
@@ -68,8 +158,71 @@ export default function MealCard({ meal, onChanged }) {
         </button>
       )}
 
-      {cooked ? (
-        <div className="cooked-badge">✓ Cooked</div>
+      {ordered ? (
+        <div className="delivery-block">
+          <div className="cooked-badge">🚚 Ordered for delivery</div>
+          {deliveryOptions.length > 0 && (
+            <ul className="delivery-links">
+              {deliveryOptions.map((o, i) => (
+                <li key={i}>
+                  <a href={o.url} target="_blank" rel="noreferrer">
+                    {o.title || o.url} ↗
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : cooked ? (
+        <div className="feedback">
+          <div className="feedback-head">
+            <span className="cooked-badge">✓ Cooked</span>
+            <div className="rate">
+              <span>How was it?</span>
+              <button
+                className={`thumb${rating === 1 ? ' on' : ''}`}
+                onClick={() => setRatingDirty(1)}
+                aria-label="Liked it"
+              >
+                👍
+              </button>
+              <button
+                className={`thumb${rating === -1 ? ' on' : ''}`}
+                onClick={() => setRatingDirty(-1)}
+                aria-label="Didn't like it"
+              >
+                👎
+              </button>
+            </div>
+          </div>
+
+          <div className="feedback-tags">
+            {FEEDBACK_TAGS.map((t) => (
+              <button
+                key={t}
+                className={`chip-toggle${tags.includes(t) ? ' on' : ''}`}
+                onClick={() => toggleTag(t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            className="idea-input"
+            rows={2}
+            placeholder="Anything to remember for next time? e.g. “a bit too salty”"
+            value={notes}
+            onChange={(e) => {
+              setNotes(e.target.value)
+              setFbSaved(false)
+            }}
+          />
+
+          <button className="btn" onClick={saveFeedback} disabled={fbBusy || fbSaved}>
+            {fbBusy ? 'Saving…' : fbSaved ? 'Saved ✓' : 'Save feedback'}
+          </button>
+        </div>
       ) : (
         <div className="cook-row">
           <label>
@@ -80,11 +233,29 @@ export default function MealCard({ meal, onChanged }) {
             />
             Subtract used ingredients from inventory
           </label>
-          <button className="primary" onClick={cook} disabled={busy}>
-            {busy ? 'Saving…' : 'I cooked this'}
-          </button>
+          <div className="cook-actions">
+            <button
+              className="btn"
+              onClick={orderDelivery}
+              disabled={orderBusy || !deliveryAvailable}
+              title={
+                deliveryAvailable
+                  ? 'Order this meal for delivery'
+                  : nextDeliveryDate
+                    ? `Weekly delivery used — next available ${nextDeliveryDate}`
+                    : 'Set your location in Settings to order delivery'
+              }
+            >
+              {orderBusy ? 'Ordering…' : '🚚 Order delivery'}
+            </button>
+            <button className="primary" onClick={cook} disabled={busy}>
+              {busy ? 'Saving…' : 'I cooked this'}
+            </button>
+          </div>
         </div>
       )}
+
+      {orderError && <div className="banner error">{orderError}</div>}
     </div>
   )
 }

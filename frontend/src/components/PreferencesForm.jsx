@@ -1,8 +1,21 @@
 import { useState } from 'react'
+import {
+  Flame, CookingPot, Microwave, Fan, Blend,
+  Beef, Soup, Sandwich, Coffee, Salad,
+} from 'lucide-react'
 
+// `value` must match what the backend stores/reads; `label` is display only.
 const EQUIPMENT_OPTIONS = [
-  'stovetop', 'oven', 'microwave', 'air fryer', 'blender',
-  'grill', 'slow cooker', 'toaster', 'kettle', 'food processor',
+  { value: 'stovetop', label: 'Stovetop', Icon: Flame },
+  { value: 'oven', label: 'Oven', Icon: CookingPot },
+  { value: 'microwave', label: 'Microwave', Icon: Microwave },
+  { value: 'air fryer', label: 'Air fryer', Icon: Fan },
+  { value: 'blender', label: 'Blender', Icon: Blend },
+  { value: 'grill', label: 'Grill', Icon: Beef },
+  { value: 'slow cooker', label: 'Slow cooker', Icon: Soup },
+  { value: 'toaster', label: 'Toaster', Icon: Sandwich },
+  { value: 'kettle', label: 'Kettle', Icon: Coffee },
+  { value: 'food processor', label: 'Food processor', Icon: Salad },
 ]
 
 const listToText = (l) => (l || []).join(', ')
@@ -18,6 +31,8 @@ export default function PreferencesForm({ initial, onSubmit, submitLabel = 'Save
   const [dislikedIng, setDislikedIng] = useState(listToText(initial?.disliked_ingredients))
   const [dislikedCuis, setDislikedCuis] = useState(listToText(initial?.disliked_cuisines))
   const [noRepeat, setNoRepeat] = useState(initial?.no_repeat_days ?? 14)
+  const [location, setLocation] = useState(initial?.location ?? '')
+  const [staples, setStaples] = useState(listToText(initial?.pantry_staples))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
@@ -41,6 +56,8 @@ export default function PreferencesForm({ initial, onSubmit, submitLabel = 'Save
         disliked_ingredients: textToList(dislikedIng),
         disliked_cuisines: textToList(dislikedCuis),
         no_repeat_days: Number(noRepeat) || 0,
+        location: location.trim(),
+        pantry_staples: textToList(staples),
       })
     } catch (e) {
       setError(e.message)
@@ -59,6 +76,19 @@ export default function PreferencesForm({ initial, onSubmit, submitLabel = 'Save
           max="20"
           value={householdSize}
           onChange={(e) => setHouseholdSize(e.target.value)}
+        />
+      </div>
+
+      <div className="field">
+        <label>
+          Location{' '}
+          <span className="sub">— city or ZIP. Used for grilling weather & delivery.</span>
+        </label>
+        <input
+          type="text"
+          placeholder="e.g. Austin, TX or 78701"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
         />
       </div>
 
@@ -88,17 +118,22 @@ export default function PreferencesForm({ initial, onSubmit, submitLabel = 'Save
 
       <div className="field">
         <label>Kitchen equipment</label>
-        <div className="checks">
-          {EQUIPMENT_OPTIONS.map((item) => (
-            <label key={item}>
-              <input
-                type="checkbox"
-                checked={equipment.includes(item)}
-                onChange={() => toggleEquip(item)}
-              />
-              {item}
-            </label>
-          ))}
+        <div className="equip-grid">
+          {EQUIPMENT_OPTIONS.map(({ value, label, Icon }) => {
+            const on = equipment.includes(value)
+            return (
+              <button
+                type="button"
+                key={value}
+                className={`equip-chip${on ? ' on' : ''}`}
+                onClick={() => toggleEquip(value)}
+                aria-pressed={on}
+              >
+                <Icon size={17} strokeWidth={2} />
+                <span>{label}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -135,6 +170,22 @@ export default function PreferencesForm({ initial, onSubmit, submitLabel = 'Save
           placeholder="e.g. very spicy"
           value={dislikedCuis}
           onChange={(e) => setDislikedCuis(e.target.value)}
+        />
+      </div>
+
+      <div className="field">
+        <label>
+          Pantry staples{' '}
+          <span className="sub">
+            — comma separated. Always assumed on hand, so they're never on your
+            shopping list.
+          </span>
+        </label>
+        <input
+          type="text"
+          placeholder="e.g. salt, pepper, hot sauce"
+          value={staples}
+          onChange={(e) => setStaples(e.target.value)}
         />
       </div>
 

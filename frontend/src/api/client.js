@@ -45,6 +45,16 @@ export const UNITS = [
   'oz', 'lb', 'piece', 'dozen', 'pack', 'can', 'jar', 'bottle', 'bunch', 'unknown',
 ]
 
+// Storage locations — kept in sync with backend app/services/storage.py.
+// Order here is the display order of inventory sections.
+export const STORAGE = [
+  { value: 'fridge', label: 'Fridge', emoji: '🧊' },
+  { value: 'freezer', label: 'Freezer', emoji: '❄️' },
+  { value: 'pantry', label: 'Pantry', emoji: '🥫' },
+  { value: 'counter', label: 'Counter', emoji: '🍞' },
+  { value: 'unsorted', label: 'Unsorted', emoji: '📦' },
+]
+
 export const api = {
   // Preferences
   getPreferences: () => request('/preferences'),
@@ -56,6 +66,7 @@ export const api = {
   addItem: (body) => request('/inventory', json('POST', body)),
   updateItem: (id, body) => request(`/inventory/${id}`, json('PATCH', body)),
   deleteItem: (id) => request(`/inventory/${id}`, { method: 'DELETE' }),
+  backfillImages: () => request('/inventory/backfill-images', { method: 'POST' }),
 
   // Photo extraction
   extractPhoto: (formData) =>
@@ -65,11 +76,25 @@ export const api = {
     request(`/inventory/extract/${batchId}/confirm`, json('POST', { items })),
 
   // Meals
-  suggestMeals: (count = 3) =>
-    request(`/meals/suggest?count=${count}`, { method: 'POST' }),
+  suggestMeals: ({ count = 5, idea = null } = {}) =>
+    request('/meals/suggest', json('POST', { count, idea })),
   getMeals: (status) =>
     request(`/meals${status ? `?status=${status}` : ''}`),
   cookMeal: (id, decrementInventory) =>
     request(`/meals/${id}/cook`, json('POST', { decrement_inventory: decrementInventory })),
+  submitFeedback: (id, { rating = null, tags = [], notes = null } = {}) =>
+    request(`/meals/${id}/feedback`, json('POST', { rating, tags, notes })),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
+
+  // Weekly delivery
+  getDeliveryStatus: () => request('/meals/delivery/status'),
+  orderDelivery: (id) => request(`/meals/${id}/order-delivery`, { method: 'POST' }),
+
+  // Weekly meal plan
+  createPlan: (count) => request('/plans', json('POST', { count })),
+  getCurrentPlan: () => request('/plans/current'),
+  getShoppingList: (planId) => request(`/plans/${planId}/shopping-list`),
+  swapPlanSlot: (planId, slot) =>
+    request(`/plans/${planId}/slots/${slot}/swap`, { method: 'POST' }),
+  deletePlan: (planId) => request(`/plans/${planId}`, { method: 'DELETE' }),
 }

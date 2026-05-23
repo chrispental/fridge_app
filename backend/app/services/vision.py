@@ -10,6 +10,7 @@ from ..config import settings
 from ..schemas import ExtractedItem
 from .ai_client import call_structured
 from .prompts import load_prompt
+from .storage import normalize_storage, storage_from_category
 from .units import normalize_unit
 
 # JSON schema for the strict structured-output attempt.
@@ -25,9 +26,10 @@ EXTRACTION_SCHEMA = {
                     "quantity": {"type": ["number", "null"]},
                     "unit": {"type": "string"},
                     "category": {"type": ["string", "null"]},
+                    "storage": {"type": ["string", "null"]},
                     "confidence": {"type": "number"},
                 },
-                "required": ["name", "quantity", "unit", "category", "confidence"],
+                "required": ["name", "quantity", "unit", "category", "storage", "confidence"],
                 "additionalProperties": False,
             },
         }
@@ -71,12 +73,18 @@ def parse_items(raw: dict) -> list[ExtractedItem]:
             confidence = float(it.get("confidence", 0.5) or 0.5)
         except (TypeError, ValueError):
             confidence = 0.5
+        category = it.get("category") or None
+        # Trust the model's storage guess; fall back to a category-based guess.
+        storage = normalize_storage(it.get("storage"))
+        if storage == "unsorted":
+            storage = storage_from_category(category)
         items.append(
             ExtractedItem(
                 name=name,
                 quantity=it.get("quantity"),
                 unit=normalize_unit(it.get("unit")),
-                category=(it.get("category") or None),
+                category=category,
+                storage=storage,
                 confidence=min(max(confidence, 0.0), 1.0),
             )
         )
@@ -87,7 +95,7 @@ def extract_items(data_url: str) -> tuple[list[ExtractedItem], dict]:
     """Run vision extraction on an image. Returns (items, raw_ai_response)."""
     raw = call_structured(
         model=settings.openrouter_vision_model,
-        system_prompt=load_prompt("extraction_system.txt"),
+        system_prompt=load_prompt("extraction_system.md"),
         user_content=[
             {
                 "type": "text",

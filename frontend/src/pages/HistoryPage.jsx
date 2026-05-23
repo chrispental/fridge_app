@@ -8,10 +8,13 @@ const FILTERS = [
   { value: 'suggested', label: 'Suggested' },
 ]
 
+const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
+
 export default function HistoryPage() {
   const [meals, setMeals] = useState(null)
   const [filter, setFilter] = useState('')
   const [error, setError] = useState(null)
+  const [delivery, setDelivery] = useState(null)
 
   function load() {
     api
@@ -20,6 +23,19 @@ export default function HistoryPage() {
       .catch((e) => setError(e.message))
   }
   useEffect(load, [filter])
+
+  function loadDelivery() {
+    api.getDeliveryStatus().then(setDelivery).catch(() => setDelivery(null))
+  }
+  useEffect(loadDelivery, [])
+
+  const deliveryAvailable = delivery ? !delivery.used : true
+  const nextDeliveryDate = fmtDate(delivery?.next_available_at)
+
+  function onChanged() {
+    load()
+    loadDelivery()
+  }
 
   if (error) return <div className="banner error">{error}</div>
   if (!meals) return <div className="loading">Loading…</div>
@@ -45,11 +61,18 @@ export default function HistoryPage() {
 
       {meals.map((m) => (
         <div key={m.id}>
-          <MealCard meal={m} onChanged={load} />
+          <MealCard
+            meal={m}
+            onChanged={onChanged}
+            deliveryAvailable={deliveryAvailable}
+            nextDeliveryDate={nextDeliveryDate}
+          />
           <div className="ts">
-            {m.status === 'cooked' && m.cooked_at
-              ? `Cooked ${new Date(m.cooked_at + 'Z').toLocaleDateString()}`
-              : `Suggested ${new Date(m.suggested_at + 'Z').toLocaleDateString()}`}
+            {m.status === 'ordered' && m.delivery_ordered_at
+              ? `Ordered ${new Date(m.delivery_ordered_at + 'Z').toLocaleDateString()}`
+              : m.status === 'cooked' && m.cooked_at
+                ? `Cooked ${new Date(m.cooked_at + 'Z').toLocaleDateString()}`
+                : `Suggested ${new Date(m.suggested_at + 'Z').toLocaleDateString()}`}
           </div>
         </div>
       ))}

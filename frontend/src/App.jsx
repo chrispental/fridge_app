@@ -4,6 +4,7 @@ import Nav from './components/Nav.jsx'
 import { api } from './api/client.js'
 import Onboarding from './pages/Onboarding.jsx'
 import SuggestMeal from './pages/SuggestMeal.jsx'
+import WeekPlanPage from './pages/WeekPlanPage.jsx'
 import InventoryPage from './pages/InventoryPage.jsx'
 import PhotoCapture from './pages/PhotoCapture.jsx'
 import ReviewExtraction from './pages/ReviewExtraction.jsx'
@@ -44,6 +45,7 @@ export default function App() {
       <main className="content">
         <Routes>
           <Route path="/" element={<SuggestMeal />} />
+          <Route path="/plan" element={<WeekPlanPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/capture" element={<PhotoCapture />} />
           <Route path="/review/:batchId" element={<ReviewExtraction />} />
