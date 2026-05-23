@@ -15,6 +15,7 @@ PREFERENCES:
 - Avoid disliked ingredients and disliked cuisines where possible.
 - Scale "servings" to the user's household size.
 - Anything in the "ALWAYS AVAILABLE" list is assumed on hand: mark those ingredients in_stock=true and NEVER put them in "missing_ingredients".
+- If "PAST FEEDBACK" is provided, use it: lean toward what the user liked, and fix their complaints (e.g. if a dish was "too salty", call for less salt and lighter seasoning in the steps). Do not re-suggest dishes they disliked.
 
 For each suggested meal:
 - Set "in_stock" to true for an ingredient ONLY if it clearly appears in the provided inventory.

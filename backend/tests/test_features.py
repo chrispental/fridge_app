@@ -114,7 +114,7 @@ def test_suggest_meals_excludes_grill_in_bad_weather(db, monkeypatch):
         lambda loc: {"is_raining": True, "season": "non-winter",
                      "grill_ok": False, "summary": "rain"},
     )
-    monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s: None)
+    monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s, avoid_url=None: None)
 
     meals = meal_engine.suggest_meals(db, count=2)
     titles = [m.title for m in meals]
@@ -189,7 +189,7 @@ def test_suggest_meals_puts_in_stock_meals_on_top(db, monkeypatch):
         ),
     ]
     monkeypatch.setattr(meal_engine, "_generate", lambda *a, **k: list(generated))
-    monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s: None)
+    monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s, avoid_url=None: None)
 
     meals = meal_engine.suggest_meals(db, count=5)
     assert [m.title for m in meals] == ["All In Stock", "Needs Shopping"]
@@ -208,7 +208,70 @@ def test_suggest_meals_allows_grill_in_good_weather(db, monkeypatch):
         lambda loc: {"is_raining": False, "season": "non-winter",
                      "grill_ok": True, "summary": "clear"},
     )
-    monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s: None)
+    monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s, avoid_url=None: None)
 
     meals = meal_engine.suggest_meals(db, count=1)
     assert [m.title for m in meals] == ["Grilled Steak"]
+
+
+# --- post-cook feedback ------------------------------------------------------
+def test_recent_feedback_lines_and_disliked(db):
+    db.add(models.Meal(
+        title="Salty Stew", title_normalized="salty stew", recipe_json={},
+        rating=-1, feedback_tags=["too salty"], feedback_notes="needs less salt",
+        feedback_at=utcnow(),
+    ))
+    db.add(models.Meal(
+        title="Great Tacos", title_normalized="great tacos", recipe_json={},
+        rating=1, feedback_tags=["loved it"], feedback_at=utcnow(),
+    ))
+    db.commit()
+
+    lines, disliked = meal_engine._recent_feedback(db)
+    joined = "\n".join(lines)
+    assert "Salty Stew" in joined and "too salty" in joined and "needs less salt" in joined
+    assert "disliked" in joined and "liked" in joined
+    assert disliked == ["Salty Stew"]
+
+
+def test_prior_source_url(db):
+    db.add(models.Meal(
+        title="Pasta", title_normalized="pasta", suggested_at=utcnow(),
+        recipe_json={"source": {"title": "X", "url": "https://a.com/r"}},
+    ))
+    db.commit()
+    assert meal_engine._prior_source_url(db, "pasta") == "https://a.com/r"
+    assert meal_engine._prior_source_url(db, "nope") is None
+
+
+def test_pick_recipe_avoids_prior_source():
+    results = [
+        {"title": "Old", "url": "https://old.com/r"},
+        {"title": "New", "url": "https://new.com/r"},
+    ]
+    assert meal_engine._pick_recipe(results, "https://old.com/r")["url"] == "https://new.com/r"
+    # If the only option is the avoided one, fall back to it rather than nothing.
+    assert meal_engine._pick_recipe([results[0]], "https://old.com/r")["url"] == "https://old.com/r"
+
+
+def test_disliked_dish_is_excluded_from_suggestions(db, monkeypatch):
+    db.add(models.Meal(
+        title="Mushy Risotto", title_normalized="mushy risotto", recipe_json={},
+        rating=-1, feedback_notes="gluey", feedback_at=utcnow(),
+    ))
+    db.add(models.Preferences(id=1))
+    db.commit()
+
+    monkeypatch.setattr(
+        meal_engine, "_generate",
+        lambda *a, **k: [
+            MealSuggestion(title="Mushy Risotto", cooking_method="stovetop"),
+            MealSuggestion(title="Fresh Salad", cooking_method="no-cook"),
+        ],
+    )
+    monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s, avoid_url=None: None)
+
+    meals = meal_engine.suggest_meals(db, count=2)
+    titles = [m.title for m in meals]
+    assert "Mushy Risotto" not in titles  # disliked dish filtered out
+    assert "Fresh Salad" in titles

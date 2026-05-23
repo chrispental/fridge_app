@@ -129,7 +129,17 @@ class MealOut(BaseModel):
     suggested_at: datetime
     cooked_at: datetime | None = None
     delivery_ordered_at: datetime | None = None
+    rating: int | None = None  # 1 = liked, -1 = disliked, None = no feedback
+    feedback_tags: list[str] | None = None
+    feedback_notes: str | None = None
+    feedback_at: datetime | None = None
     model_config = ConfigDict(from_attributes=True)
+
+
+class FeedbackRequest(BaseModel):
+    rating: int | None = None  # 1 = liked, -1 = disliked, None = clears the rating
+    tags: list[str] = []
+    notes: str | None = None
 
 
 class SuggestRequest(BaseModel):

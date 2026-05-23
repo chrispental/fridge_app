@@ -82,6 +82,8 @@ export const api = {
     request(`/meals${status ? `?status=${status}` : ''}`),
   cookMeal: (id, decrementInventory) =>
     request(`/meals/${id}/cook`, json('POST', { decrement_inventory: decrementInventory })),
+  submitFeedback: (id, { rating = null, tags = [], notes = null } = {}) =>
+    request(`/meals/${id}/feedback`, json('POST', { rating, tags, notes })),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
 
   // Weekly delivery

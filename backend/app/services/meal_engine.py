@@ -131,8 +131,12 @@ def _is_grill(suggestion: MealSuggestion) -> bool:
     return any(kw in haystack for kw in _GRILL_KEYWORDS)
 
 
-def _pick_recipe(results: list[dict]) -> dict | None:
-    """Prefer an actual recipe page over a grocery/store result; fall back to first."""
+def _pick_recipe(results: list[dict], avoid_url: str | None = None) -> dict | None:
+    """Prefer an actual recipe page over a grocery/store result; fall back to first.
+
+    When `avoid_url` is given (the source used last time this dish was suggested),
+    skip it so a re-suggested dish gets a fresh recipe link.
+    """
     if not results:
         return None
 
@@ -140,16 +144,19 @@ def _pick_recipe(results: list[dict]) -> dict | None:
         host = urlparse(r.get("url", "")).netloc.lower()
         return any(store in host for store in _STORE_DOMAINS)
 
-    non_store = [r for r in results if not is_store(r)]
-    return (non_store or results)[0]
+    candidates = [r for r in results if not is_store(r)] or results
+    if avoid_url:
+        fresh = [r for r in candidates if r.get("url") != avoid_url]
+        candidates = fresh or candidates
+    return candidates[0]
 
 
-def _enrich_with_brave(suggestion: MealSuggestion) -> None:
+def _enrich_with_brave(suggestion: MealSuggestion, avoid_url: str | None = None) -> None:
     """Attach a food photo and a 'view full recipe' link via Brave. Fully fail-soft."""
     try:
         query = f"{suggestion.title} recipe"
         suggestion.image_url = brave_search.search_image(query)
-        best = _pick_recipe(brave_search.search_web(query, count=5))
+        best = _pick_recipe(brave_search.search_web(query, count=5), avoid_url)
         if best:
             suggestion.source = RecipeSource(
                 title=best["title"] or suggestion.title,
@@ -157,6 +164,52 @@ def _enrich_with_brave(suggestion: MealSuggestion) -> None:
             )
     except Exception as exc:  # noqa: BLE001 - enrichment must never break suggestion
         logger.warning("Brave enrichment failed for %r: %s", suggestion.title, exc)
+
+
+def _prior_source_url(db: Session, title_normalized: str) -> str | None:
+    """The recipe-source URL used by the most recent earlier meal with this title."""
+    row = (
+        db.query(models.Meal)
+        .filter(models.Meal.title_normalized == title_normalized)
+        .order_by(models.Meal.suggested_at.desc())
+        .first()
+    )
+    if row and row.recipe_json:
+        return ((row.recipe_json.get("source") or {}) if isinstance(row.recipe_json, dict) else {}).get("url")
+    return None
+
+
+def _recent_feedback(db: Session, limit: int = 12) -> tuple[list[str], list[str]]:
+    """Recent post-cook feedback as prompt lines, plus titles of disliked dishes.
+
+    Returns (feedback_lines, disliked_titles). `disliked_titles` are added to the
+    do-not-suggest list so meals the user disliked don't come back.
+    """
+    rows = (
+        db.query(models.Meal)
+        .filter(models.Meal.feedback_at.isnot(None))
+        .order_by(models.Meal.feedback_at.desc())
+        .limit(limit)
+        .all()
+    )
+    lines: list[str] = []
+    disliked: list[str] = []
+    for m in rows:
+        rating = m.rating or 0
+        parts = []
+        if rating > 0:
+            parts.append("liked")
+        elif rating < 0:
+            parts.append("disliked")
+        if m.feedback_tags:
+            parts.append(", ".join(m.feedback_tags))
+        if m.feedback_notes:
+            parts.append(f'"{m.feedback_notes}"')
+        if parts:
+            lines.append(f"- {m.title}: {'; '.join(parts)}")
+        if rating < 0:
+            disliked.append(m.title)
+    return lines, disliked
 
 
 def most_recent_delivery(db: Session) -> "models.Meal | None":
@@ -256,7 +309,7 @@ def _shortfall(suggestion: MealSuggestion) -> tuple[int, int]:
     return (out_of_stock, len(suggestion.missing_ingredients))
 
 
-def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None) -> str:
+def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None, feedback_lines=None) -> str:
     if inventory:
         inv_lines = []
         for i in inventory:
@@ -285,6 +338,15 @@ def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None,
         else ""
     )
 
+    feedback_block = (
+        "\nPAST FEEDBACK (tailor to this — honor what they liked, fix complaints such as "
+        "reducing salt for 'too salty', and do not repeat disliked dishes):\n"
+        + "\n".join(feedback_lines)
+        + "\n"
+        if feedback_lines
+        else ""
+    )
+
     if weather is not None and not weather["grill_ok"]:
         weather_line = (
             f"\nCURRENT WEATHER: {weather['summary']}. "
@@ -310,16 +372,16 @@ CURRENT INVENTORY
 
 DO NOT SUGGEST THESE RECENT MEALS
 {dnr}
-{request_block}
+{feedback_block}{request_block}
 Suggest meals I can make right now."""
 
 
-def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None) -> list[MealSuggestion]:
+def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None, feedback_lines=None) -> list[MealSuggestion]:
     system_prompt = load_prompt("suggestion_system.md").replace("{count}", str(count))
     raw = call_structured(
         model=settings.openrouter_meal_model,
         system_prompt=system_prompt,
-        user_content=_build_user_prompt(prefs, inventory, do_not_repeat, weather, idea),
+        user_content=_build_user_prompt(prefs, inventory, do_not_repeat, weather, idea, feedback_lines),
         json_schema=SUGGESTION_SCHEMA,
         schema_name="meal_suggestions",
     )
@@ -335,18 +397,23 @@ def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[
     prefs = db.get(models.Preferences, 1)
     inventory = db.query(models.InventoryItem).all()
     recent = _recent_titles(db, prefs.no_repeat_days if prefs else 14)
-    recent_norm = [normalize_title(t) for t in recent]
+
+    # Past feedback steers the prompt; disliked dishes are added to the avoid list
+    # so they're filtered out server-side just like recent meals.
+    feedback_lines, disliked = _recent_feedback(db)
+    avoid = recent + disliked
+    avoid_norm = [normalize_title(t) for t in avoid]
 
     # Grilling is gated on live weather (winter/rain). Skipped when no location is set.
     weather = get_weather(prefs.location) if (prefs and prefs.location) else None
     grill_blocked = weather is not None and not weather["grill_ok"]
 
-    suggestions = _generate(db, prefs, inventory, recent, count, weather, idea)
+    suggestions = _generate(db, prefs, inventory, avoid, count, weather, idea, feedback_lines)
 
     def keep(s: MealSuggestion) -> bool:
         return (
             not _allergen_violation(s, prefs.allergies)
-            and not _is_repeat(s.title, recent_norm)
+            and not _is_repeat(s.title, avoid_norm)
             and not (grill_blocked and _is_grill(s))
         )
 
@@ -355,7 +422,7 @@ def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[
     # If everything was filtered out, retry once with the rejects also excluded.
     if not safe and suggestions:
         rejected = [s.title for s in suggestions]
-        retry = _generate(db, prefs, inventory, recent + rejected, count, weather, idea)
+        retry = _generate(db, prefs, inventory, avoid + rejected, count, weather, idea, feedback_lines)
         safe = [s for s in retry if keep(s)]
 
     # Recompute in-stock from real inventory, then order makeable-now meals first.
@@ -366,7 +433,8 @@ def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[
 
     meals: list[models.Meal] = []
     for s in safe:
-        _enrich_with_brave(s)
+        # Re-suggested dish? Skip the source it used last time for a fresh recipe.
+        _enrich_with_brave(s, _prior_source_url(db, normalize_title(s.title)))
         meal = models.Meal(
             title=s.title,
             title_normalized=normalize_title(s.title),

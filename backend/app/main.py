@@ -66,6 +66,22 @@ def _migrate_preferences_columns(db, db_engine) -> None:
         logger.info("Seeded default pantry staples")
 
 
+def _migrate_meal_columns(db_engine) -> None:
+    """Add post-cook feedback columns to a pre-existing meals table (no Alembic)."""
+    columns = {c["name"] for c in inspect(db_engine).get_columns("meals")}
+    additions = {
+        "rating": "INTEGER",
+        "feedback_tags": "JSON",
+        "feedback_notes": "VARCHAR",
+        "feedback_at": "DATETIME",
+    }
+    with db_engine.begin() as conn:
+        for name, sql_type in additions.items():
+            if name not in columns:
+                conn.execute(text(f"ALTER TABLE meals ADD COLUMN {name} {sql_type}"))
+                logger.info("Added meals.%s column", name)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables and ensure the singleton preferences row exists.
@@ -77,6 +93,7 @@ async def lifespan(app: FastAPI):
         # so querying first would fail with "no such column".
         _migrate_inventory_columns(db, engine)
         _migrate_preferences_columns(db, engine)
+        _migrate_meal_columns(engine)
         if db.get(models.Preferences, 1) is None:
             db.add(models.Preferences(id=1, pantry_staples=list(DEFAULT_STAPLES)))
             db.commit()

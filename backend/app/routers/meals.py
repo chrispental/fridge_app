@@ -127,6 +127,26 @@ def cook_meal(
     return meal
 
 
+@router.post("/{meal_id}/feedback", response_model=schemas.MealOut)
+def submit_feedback(
+    meal_id: int,
+    payload: schemas.FeedbackRequest,
+    db: Session = Depends(get_db),
+):
+    """Record (or update) post-cook feedback used to tailor future suggestions."""
+    meal = db.get(models.Meal, meal_id)
+    if meal is None:
+        raise HTTPException(404, "Meal not found")
+    # Normalize rating to 1 / -1 / None so downstream logic is simple.
+    meal.rating = 1 if (payload.rating or 0) > 0 else -1 if (payload.rating or 0) < 0 else None
+    meal.feedback_tags = [t.strip() for t in payload.tags if t and t.strip()]
+    meal.feedback_notes = (payload.notes or "").strip() or None
+    meal.feedback_at = utcnow()
+    db.commit()
+    db.refresh(meal)
+    return meal
+
+
 @router.delete("/{meal_id}", status_code=204)
 def delete_meal(meal_id: int, db: Session = Depends(get_db)):
     meal = db.get(models.Meal, meal_id)

@@ -30,6 +30,18 @@ def test_user_prompt_omits_idea_section_when_empty():
     assert "WHAT THE USER WANTS" not in _build_user_prompt(_fake_prefs(), [], [], None, "   ")
 
 
+def test_user_prompt_includes_feedback():
+    prompt = _build_user_prompt(
+        _fake_prefs(), [], [], None, None, ["- Salty Stew: disliked; too salty"]
+    )
+    assert "PAST FEEDBACK" in prompt
+    assert "too salty" in prompt
+
+
+def test_user_prompt_omits_feedback_when_empty():
+    assert "PAST FEEDBACK" not in _build_user_prompt(_fake_prefs(), [], [], None, None, [])
+
+
 def test_normalize_title():
     assert normalize_title("Chicken Stir-Fry!") == "chicken stir fry"
     assert normalize_title("  Spaghetti   Bolognese  ") == "spaghetti bolognese"

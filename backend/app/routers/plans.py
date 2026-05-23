@@ -36,6 +36,10 @@ def _serialize_plan(db: Session, plan: models.MealPlan) -> schemas.MealPlanOut:
             suggested_at=m.suggested_at,
             cooked_at=m.cooked_at,
             delivery_ordered_at=m.delivery_ordered_at,
+            rating=m.rating,
+            feedback_tags=m.feedback_tags,
+            feedback_notes=m.feedback_notes,
+            feedback_at=m.feedback_at,
         )
         entries.append(schemas.MealPlanEntryOut(slot_index=e.slot_index, meal=meal_out))
     return schemas.MealPlanOut(id=plan.id, created_at=plan.created_at, entries=entries)

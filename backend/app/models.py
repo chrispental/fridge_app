@@ -90,6 +90,11 @@ class Meal(Base):
     suggested_at = Column(DateTime, default=utcnow, nullable=False)
     cooked_at = Column(DateTime, nullable=True)
     delivery_ordered_at = Column(DateTime, nullable=True)  # set when ordered for delivery
+    # Post-cook feedback: rating 1=liked / -1=disliked / NULL=none; tags like "too salty".
+    rating = Column(Integer, nullable=True)
+    feedback_tags = Column(JSON, nullable=True)
+    feedback_notes = Column(String, nullable=True)
+    feedback_at = Column(DateTime, nullable=True)
 
 
 class MealPlan(Base):

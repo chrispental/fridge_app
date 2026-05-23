@@ -220,6 +220,33 @@ input[type='checkbox'] { accent-color: var(--accent); width: 16px; height: 16px;
   background: var(--accent-dim); border-color: var(--accent); color: var(--accent);
 }
 
+/* post-cook feedback */
+.feedback { display: flex; flex-direction: column; gap: 11px; }
+.feedback-head {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+}
+.feedback-head .rate {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.86rem; color: var(--text-secondary);
+}
+.thumb {
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: 100px; padding: 5px 11px; cursor: pointer; font-size: 0.95rem;
+  line-height: 1; transition: background 0.12s ease, border-color 0.12s ease;
+}
+.thumb:hover { background: var(--surface-3); }
+.thumb.on { background: var(--accent-dim); border-color: var(--accent); }
+.feedback-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-toggle {
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  color: var(--text-secondary); border-radius: 100px;
+  padding: 6px 11px; font-size: 0.76rem; font-weight: 500; cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.chip-toggle:hover { background: var(--surface-3); color: var(--text-primary); }
+.chip-toggle.on { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
 /* equipment toggle chips (icon + label) */
 .equip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .equip-chip {

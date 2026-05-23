@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { api } from '../api/client.js'
 
+const FEEDBACK_TAGS = [
+  'Too salty', 'Too bland', 'Too spicy', 'Too sweet',
+  'Too dry', 'Too greasy', 'Too slow', 'Loved it',
+]
+
 export default function MealCard({
   meal,
   onChanged,
@@ -13,6 +18,34 @@ export default function MealCard({
   const [decrement, setDecrement] = useState(true)
   const [busy, setBusy] = useState(false)
   const [swapBusy, setSwapBusy] = useState(false)
+
+  // Post-cook feedback state (also editable later from History).
+  const [rating, setRating] = useState(meal.rating ?? null)
+  const [tags, setTags] = useState(meal.feedback_tags || [])
+  const [notes, setNotes] = useState(meal.feedback_notes || '')
+  const [fbBusy, setFbBusy] = useState(false)
+  const [fbSaved, setFbSaved] = useState(false)
+
+  function setRatingDirty(v) {
+    setRating((cur) => (cur === v ? null : v))
+    setFbSaved(false)
+  }
+  function toggleTag(tag) {
+    setTags((cur) => (cur.includes(tag) ? cur.filter((t) => t !== tag) : [...cur, tag]))
+    setFbSaved(false)
+  }
+  async function saveFeedback() {
+    setFbBusy(true)
+    try {
+      await api.submitFeedback(meal.id, { rating, tags, notes: notes.trim() || null })
+      setFbSaved(true)
+      onChanged?.()
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      setFbBusy(false)
+    }
+  }
 
   async function handleSwap() {
     if (!onSwap) return
@@ -141,7 +174,55 @@ export default function MealCard({
           )}
         </div>
       ) : cooked ? (
-        <div className="cooked-badge">✓ Cooked</div>
+        <div className="feedback">
+          <div className="feedback-head">
+            <span className="cooked-badge">✓ Cooked</span>
+            <div className="rate">
+              <span>How was it?</span>
+              <button
+                className={`thumb${rating === 1 ? ' on' : ''}`}
+                onClick={() => setRatingDirty(1)}
+                aria-label="Liked it"
+              >
+                👍
+              </button>
+              <button
+                className={`thumb${rating === -1 ? ' on' : ''}`}
+                onClick={() => setRatingDirty(-1)}
+                aria-label="Didn't like it"
+              >
+                👎
+              </button>
+            </div>
+          </div>
+
+          <div className="feedback-tags">
+            {FEEDBACK_TAGS.map((t) => (
+              <button
+                key={t}
+                className={`chip-toggle${tags.includes(t) ? ' on' : ''}`}
+                onClick={() => toggleTag(t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            className="idea-input"
+            rows={2}
+            placeholder="Anything to remember for next time? e.g. “a bit too salty”"
+            value={notes}
+            onChange={(e) => {
+              setNotes(e.target.value)
+              setFbSaved(false)
+            }}
+          />
+
+          <button className="btn" onClick={saveFeedback} disabled={fbBusy || fbSaved}>
+            {fbBusy ? 'Saving…' : fbSaved ? 'Saved ✓' : 'Save feedback'}
+          </button>
+        </div>
       ) : (
         <div className="cook-row">
           <label>
