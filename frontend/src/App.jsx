@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Nav from './components/Nav.jsx'
 import { api } from './api/client.js'
 import Onboarding from './pages/Onboarding.jsx'
+import Home from './pages/Home.jsx'
 import SuggestMeal from './pages/SuggestMeal.jsx'
 import WeekPlanPage from './pages/WeekPlanPage.jsx'
 import InventoryPage from './pages/InventoryPage.jsx'
@@ -44,7 +45,8 @@ export default function App() {
       <Nav />
       <main className="content">
         <Routes>
-          <Route path="/" element={<SuggestMeal />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/cook" element={<SuggestMeal />} />
           <Route path="/plan" element={<WeekPlanPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/capture" element={<PhotoCapture />} />

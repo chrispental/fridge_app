@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Camera, RefreshCw } from 'lucide-react'
 import { api } from '../api/client.js'
+import { PageHeader } from '../components/ui.jsx'
 
 export default function PhotoCapture() {
   const [file, setFile] = useState(null)
@@ -33,9 +35,12 @@ export default function PhotoCapture() {
   }
 
   return (
-    <div>
-      <h1>Add inventory from a photo</h1>
-      <p>Take or upload a clear photo of your fridge or pantry shelves.</p>
+    <div className="narrow">
+      <PageHeader
+        eyebrow="Inventory"
+        title="Scan your fridge"
+        subtitle="Take or upload a clear photo of your fridge or pantry shelves."
+      />
 
       <label className="file-drop">
         <input
@@ -46,15 +51,29 @@ export default function PhotoCapture() {
           hidden
         />
         {preview ? (
-          <img src={preview} alt="Selected" className="preview" />
+          <>
+            <img src={preview} alt="Selected" className="preview" />
+            <span className="btn ghost">
+              <RefreshCw size={16} strokeWidth={2.2} /> Retake
+            </span>
+          </>
         ) : (
-          <span>📷 Tap to take or choose a photo</span>
+          <>
+            <div className="drop-ico">
+              <Camera size={28} strokeWidth={2} />
+            </div>
+            <span>Tap to take or choose a photo</span>
+          </>
         )}
       </label>
 
       {error && <div className="banner error">{error}</div>}
 
-      <button className="btn primary big" onClick={scan} disabled={!file || busy}>
+      <button
+        className="btn primary big block"
+        onClick={scan}
+        disabled={!file || busy}
+      >
         {busy ? 'Analyzing photo…' : 'Analyze photo'}
       </button>
 

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { Truck, ChefHat, CalendarDays, History } from 'lucide-react'
 import MealCard from '../components/MealCard.jsx'
 import { api } from '../api/client.js'
+import { PageHeader, SegmentedControl, Skeleton, EmptyState } from '../components/ui.jsx'
 
 const FILTERS = [
   { value: '', label: 'All' },
@@ -37,45 +39,70 @@ export default function HistoryPage() {
     loadDelivery()
   }
 
-  if (error) return <div className="banner error">{error}</div>
-  if (!meals) return <div className="loading">Loading…</div>
+  function tsLine(m) {
+    if (m.status === 'ordered' && m.delivery_ordered_at) {
+      return (
+        <>
+          <Truck size={12} strokeWidth={2.4} style={{ verticalAlign: '-2px' }} />{' '}
+          Ordered {new Date(m.delivery_ordered_at + 'Z').toLocaleDateString()}
+        </>
+      )
+    }
+    if (m.status === 'cooked' && m.cooked_at) {
+      return (
+        <>
+          <ChefHat size={12} strokeWidth={2.4} style={{ verticalAlign: '-2px' }} />{' '}
+          Cooked {new Date(m.cooked_at + 'Z').toLocaleDateString()}
+        </>
+      )
+    }
+    return (
+      <>
+        <CalendarDays size={12} strokeWidth={2.4} style={{ verticalAlign: '-2px' }} />{' '}
+        Suggested {new Date(m.suggested_at + 'Z').toLocaleDateString()}
+      </>
+    )
+  }
 
   return (
     <div>
-      <h1>Meal history</h1>
-      <p>Every suggestion is logged here — that's how meals avoid repeating.</p>
+      <PageHeader
+        eyebrow="Your kitchen"
+        title="Meal history"
+        subtitle="Every suggestion is logged here — that's how meals avoid repeating."
+      />
 
-      <div className="filters">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            className={filter === f.value ? 'active' : ''}
-            onClick={() => setFilter(f.value)}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      {error && <div className="banner error">{error}</div>}
 
-      {meals.length === 0 && <p className="empty">No meals yet.</p>}
+      <SegmentedControl options={FILTERS} value={filter} onChange={setFilter} />
 
-      {meals.map((m) => (
-        <div key={m.id}>
-          <MealCard
-            meal={m}
-            onChanged={onChanged}
-            deliveryAvailable={deliveryAvailable}
-            nextDeliveryDate={nextDeliveryDate}
-          />
-          <div className="ts">
-            {m.status === 'ordered' && m.delivery_ordered_at
-              ? `Ordered ${new Date(m.delivery_ordered_at + 'Z').toLocaleDateString()}`
-              : m.status === 'cooked' && m.cooked_at
-                ? `Cooked ${new Date(m.cooked_at + 'Z').toLocaleDateString()}`
-                : `Suggested ${new Date(m.suggested_at + 'Z').toLocaleDateString()}`}
-          </div>
+      {!meals ? (
+        <div className="stack" style={{ gap: 18, marginTop: 18 }}>
+          <Skeleton height={360} radius={20} />
+          <Skeleton height={360} radius={20} />
+          <Skeleton height={360} radius={20} />
         </div>
-      ))}
+      ) : meals.length === 0 ? (
+        <EmptyState
+          icon={<History size={22} strokeWidth={2} />}
+          title="No meals yet"
+          message="Once you get a suggestion or cook something, it'll show up here."
+        />
+      ) : (
+        <div className="stack" style={{ gap: 18, marginTop: 18 }}>
+          {meals.map((m) => (
+            <div key={m.id}>
+              <MealCard
+                meal={m}
+                onChanged={onChanged}
+                deliveryAvailable={deliveryAvailable}
+                nextDeliveryDate={nextDeliveryDate}
+              />
+              <div className="ts">{tsLine(m)}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

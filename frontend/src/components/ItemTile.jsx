@@ -3,9 +3,11 @@
 // "" = fetched but none found, otherwise a Brave thumbnail URL.
 export default function ItemTile({ item, onEdit }) {
   const hasPhoto = Boolean(item.image_url)
+  const lowStock = item.quantity != null && item.quantity <= 1
 
   return (
     <button className="item-tile" onClick={() => onEdit(item)} title="Edit item">
+      {lowStock && <span className="tile-low" />}
       <div className="tile-photo">
         {hasPhoto ? (
           <img src={item.image_url} alt={item.name} loading="lazy" />
