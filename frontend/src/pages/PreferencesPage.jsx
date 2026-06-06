@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import PreferencesForm from '../components/PreferencesForm.jsx'
+import { PageHeader } from '../components/ui.jsx'
 import { api } from '../api/client.js'
 
 export default function PreferencesPage() {
@@ -14,10 +15,15 @@ export default function PreferencesPage() {
 
   return (
     <div>
-      <h1>Preferences</h1>
+      <PageHeader
+        eyebrow="Settings"
+        title="Preferences"
+        subtitle="Tune your household, taste, kitchen, and cooking rules so every suggestion fits you."
+      />
       {saved && <div className="banner success">Preferences saved.</div>}
       <PreferencesForm
         initial={initial}
+        grouped
         submitLabel="Save preferences"
         onSubmit={async (body) => {
           const updated = await api.updatePreferences(body)

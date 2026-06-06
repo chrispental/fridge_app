@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CalendarDays, RefreshCw, AlertCircle } from 'lucide-react'
 import MealCard from '../components/MealCard.jsx'
 import { api } from '../api/client.js'
+import { PageHeader, HeroPanel, Bento, BentoItem } from '../components/ui.jsx'
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
 
@@ -122,8 +124,11 @@ export default function WeekPlanPage() {
   // ---- No plan yet: the create form ----
   if (!plan) {
     return (
-      <div>
-        <h1>Plan your week</h1>
+      <HeroPanel compact>
+        <div className="home-hero-greeting">
+          <span className="eyebrow rule">Weekly plan</span>
+          <h1>Plan your week</h1>
+        </div>
         <p>
           Generate a few days of meals at once, then see exactly what you already
           have and what you'll need to buy.
@@ -141,7 +146,8 @@ export default function WeekPlanPage() {
             />
           </div>
           <button className="btn primary big" onClick={create} disabled={busy}>
-            {busy ? 'Planning…' : '🗓 Plan my week'}
+            <CalendarDays size={18} strokeWidth={2.2} />
+            {busy ? 'Planning…' : 'Plan my week'}
           </button>
         </div>
 
@@ -153,46 +159,64 @@ export default function WeekPlanPage() {
 
         {error && (
           <div className="banner error">
-            {error}
+            <AlertCircle size={16} strokeWidth={2.2} style={{ verticalAlign: '-3px' }} /> {error}
             <div style={{ marginTop: '0.5rem' }}>
               <Link to="/inventory">Check your inventory</Link> ·{' '}
               <Link to="/preferences">adjust preferences</Link>
             </div>
           </div>
         )}
-      </div>
+      </HeroPanel>
     )
   }
 
   // ---- Existing plan ----
   return (
-    <div>
-      <h1>Your week</h1>
-      <p>{plan.entries.length} meal{plan.entries.length === 1 ? '' : 's'} planned.</p>
-
-      <div className="plan-toolbar">
-        <button className="btn" onClick={newPlan} disabled={busy}>
-          {busy ? 'Working…' : '↺ Start a new plan'}
+    <div className="wide">
+      <PageHeader
+        eyebrow="Weekly plan"
+        title="Your week"
+        subtitle={`${plan.entries.length} meal${plan.entries.length === 1 ? '' : 's'} planned`}
+      >
+        <button className="btn ghost" onClick={newPlan} disabled={busy}>
+          <RefreshCw size={16} strokeWidth={2.2} />
+          {busy ? 'Working…' : 'Start a new plan'}
         </button>
-      </div>
+      </PageHeader>
 
-      {error && <div className="banner error">{error}</div>}
+      {error && (
+        <div className="banner error">
+          <AlertCircle size={16} strokeWidth={2.2} style={{ verticalAlign: '-3px' }} /> {error}
+        </div>
+      )}
 
-      <ShoppingList data={shopping} />
+      <Bento>
+        {/* LEFT: the week's meals, with per-day swap */}
+        <BentoItem span={8}>
+          <div className="stack">
+            {plan.entries.map((entry) => (
+              <MealCard
+                key={entry.meal.id}
+                meal={entry.meal}
+                onChanged={() => {
+                  loadDelivery()
+                  loadShopping(plan.id)
+                }}
+                onSwap={() => swap(entry.slot_index)}
+                deliveryAvailable={deliveryAvailable}
+                nextDeliveryDate={nextDeliveryDate}
+              />
+            ))}
+          </div>
+        </BentoItem>
 
-      {plan.entries.map((entry) => (
-        <MealCard
-          key={entry.meal.id}
-          meal={entry.meal}
-          onChanged={() => {
-            loadDelivery()
-            loadShopping(plan.id)
-          }}
-          onSwap={() => swap(entry.slot_index)}
-          deliveryAvailable={deliveryAvailable}
-          nextDeliveryDate={nextDeliveryDate}
-        />
-      ))}
+        {/* RIGHT: sticky shopping-list rail */}
+        <BentoItem span={4}>
+          <div style={{ position: 'sticky', top: 24 }}>
+            <ShoppingList data={shopping} />
+          </div>
+        </BentoItem>
+      </Bento>
     </div>
   )
 }

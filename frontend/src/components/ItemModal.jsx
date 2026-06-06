@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Trash2, Check } from 'lucide-react'
 import { api, UNITS, STORAGE } from '../api/client.js'
 
 // Add (no id) or edit (has id) a single inventory item. Used by InventoryPage.
@@ -106,13 +107,13 @@ export default function ItemModal({ item, onSaved, onDeleted, onClose }) {
         <div className="modal-actions">
           {isEdit && (
             <button className="ghost danger" onClick={remove} disabled={busy}>
-              Delete
+              <Trash2 size={15} strokeWidth={2.2} /> Delete
             </button>
           )}
           <div className="modal-actions-right">
             <button className="ghost" onClick={onClose} disabled={busy}>Cancel</button>
             <button className="primary" onClick={save} disabled={busy || !name.trim()}>
-              {busy ? 'Saving…' : isEdit ? 'Save' : 'Add'}
+              <Check size={15} strokeWidth={2.4} /> {busy ? 'Saving…' : isEdit ? 'Save' : 'Add'}
             </button>
           </div>
         </div>

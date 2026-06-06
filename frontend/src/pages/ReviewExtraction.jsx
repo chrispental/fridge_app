@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Plus, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { api, UNITS, STORAGE } from '../api/client.js'
+import { PageHeader, StickyActionBar, EmptyState } from '../components/ui.jsx'
 
 export default function ReviewExtraction() {
   const { batchId } = useParams()
@@ -57,14 +59,18 @@ export default function ReviewExtraction() {
 
   return (
     <div>
-      <h1>Review detected items</h1>
-      <p>
-        These are the AI's best guesses — fix anything wrong, remove mistakes,
-        then add them to your inventory. ⚠️ marks low-confidence items.
-      </p>
+      <PageHeader
+        eyebrow="Inventory"
+        title="Review detected items"
+        subtitle="These are the AI's best guesses — fix anything wrong, remove mistakes, then add them to your inventory. ⚠️ marks low-confidence items."
+      />
 
       {items.length === 0 && (
-        <p className="empty">No items detected. You can add some manually below.</p>
+        <EmptyState
+          icon={<AlertTriangle size={22} strokeWidth={2} />}
+          title="No items detected"
+          message="You can add some manually below."
+        />
       )}
 
       <div className="row-gap">
@@ -114,23 +120,24 @@ export default function ReviewExtraction() {
               <span className="conf-flag" title="Low confidence — please check">⚠️</span>
             )}
             <button className="ghost danger" onClick={() => remove(it._key)}>
-              Remove
+              <Trash2 size={15} strokeWidth={2.2} style={{ verticalAlign: '-3px' }} /> Remove
             </button>
           </div>
         ))}
       </div>
 
       <button className="ghost" onClick={addBlank} style={{ marginTop: '0.6rem' }}>
-        + Add missed item
+        <Plus size={16} strokeWidth={2.4} style={{ verticalAlign: '-3px' }} /> Add missed item
       </button>
 
       {error && <div className="banner error">{error}</div>}
 
-      <div className="actions">
+      <StickyActionBar info={`${namedCount} item${namedCount === 1 ? '' : 's'} ready`}>
         <button className="btn primary big" onClick={confirm} disabled={busy || namedCount === 0}>
+          <CheckCircle2 size={18} strokeWidth={2.2} />
           {busy ? 'Saving…' : `Add ${namedCount} item${namedCount === 1 ? '' : 's'} to inventory`}
         </button>
-      </div>
+      </StickyActionBar>
     </div>
   )
 }
