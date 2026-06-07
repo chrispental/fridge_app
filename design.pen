@@ -1105,53 +1105,27 @@
                       "type": "frame",
                       "id": "X8gbE",
                       "name": "brand-icon",
-                      "width": 38,
-                      "height": 38,
+                      "width": 52,
+                      "height": 52,
                       "fill": {
-                        "type": "gradient",
-                        "gradientType": "linear",
+                        "type": "image",
                         "enabled": true,
-                        "rotation": 180,
-                        "size": {
-                          "height": 1
-                        },
-                        "colors": [
-                          {
-                            "color": "$accent-hover",
-                            "position": 0
-                          },
-                          {
-                            "color": "$accent-deep",
-                            "position": 1
-                          }
-                        ]
+                        "url": "frontend/public/logo-mark.png",
+                        "mode": "fit"
                       },
-                      "cornerRadius": 11,
                       "effect": {
                         "type": "shadow",
                         "shadowType": "outer",
-                        "color": "#F5A52466",
+                        "color": "#00000073",
                         "offset": {
                           "x": 0,
-                          "y": 4
+                          "y": 2
                         },
-                        "blur": 16,
-                        "spread": -4
+                        "blur": 6
                       },
                       "layout": "vertical",
                       "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "DZWR3",
-                          "fill": "$accent-fg",
-                          "content": "🍳",
-                          "fontFamily": "Inter",
-                          "fontSize": 20,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                      "alignItems": "center"
                     },
                     {
                       "type": "text",
@@ -4623,43 +4597,27 @@
                   "type": "frame",
                   "id": "rZBMf",
                   "name": "badge",
-                  "width": 60,
-                  "height": 60,
+                  "width": 84,
+                  "height": 84,
                   "fill": {
-                    "type": "gradient",
-                    "gradientType": "linear",
+                    "type": "image",
                     "enabled": true,
-                    "rotation": 180,
-                    "size": {
-                      "height": 1
-                    },
-                    "colors": [
-                      {
-                        "color": "$accent-hover",
-                        "position": 0
-                      },
-                      {
-                        "color": "$accent-deep",
-                        "position": 1
-                      }
-                    ]
+                    "url": "frontend/public/logo-mark.png",
+                    "mode": "fit"
                   },
-                  "cornerRadius": "$radius-lg",
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#00000073",
+                    "offset": {
+                      "x": 0,
+                      "y": 6
+                    },
+                    "blur": 16
+                  },
                   "layout": "vertical",
                   "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "GkT7k",
-                      "name": "icon",
-                      "width": 30,
-                      "height": 30,
-                      "icon": "chef-hat",
-                      "library": "lucide",
-                      "fill": "$accent-fg"
-                    }
-                  ]
+                  "alignItems": "center"
                 },
                 {
                   "type": "text",

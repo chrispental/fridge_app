@@ -35,7 +35,7 @@ export default function Nav() {
       {/* ---- Desktop sidebar ---- */}
       <nav className="nav">
         <div className="nav-brand">
-          <span className="nav-logo">🍳</span>
+          <img className="nav-logo" src="/logo-mark.png" alt="" width="52" height="52" />
           <span className="nav-brand-text">Fridge Chef</span>
         </div>
 

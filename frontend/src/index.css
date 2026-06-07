@@ -444,10 +444,10 @@ input[type='range']::-moz-range-thumb {
 }
 .nav-brand { display: flex; align-items: center; gap: 11px; padding: 4px 8px 14px; }
 .nav-logo {
-  width: 38px; height: 38px; border-radius: 11px;
-  background: linear-gradient(135deg, var(--accent-hover), var(--accent-deep));
-  display: flex; align-items: center; justify-content: center; font-size: 19px;
-  box-shadow: var(--glow-accent);
+  width: 52px; height: 52px; border-radius: 11px;
+  object-fit: contain;
+  display: flex; align-items: center; justify-content: center;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
 }
 .nav-brand-text { font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
 
@@ -845,11 +845,12 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
   padding: clamp(24px, 4vw, 40px); box-shadow: var(--shadow-pop);
 }
 .onboarding-badge {
-  width: 60px; height: 60px; border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--accent-hover), var(--accent-deep));
-  display: flex; align-items: center; justify-content: center; color: var(--accent-fg);
-  margin-bottom: 18px; box-shadow: var(--glow-accent);
+  width: 84px; height: 84px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 18px;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
 }
+.onboarding-badge img { width: 100%; height: 100%; object-fit: contain; }
 .onboarding-card h1 { font-family: var(--font-display); }
 
 /* ============================================================

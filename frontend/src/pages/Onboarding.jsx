@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { ChefHat } from 'lucide-react'
 import PreferencesForm from '../components/PreferencesForm.jsx'
 import { api } from '../api/client.js'
 
@@ -16,7 +15,7 @@ export default function Onboarding({ onDone }) {
     <div className="onboarding">
       <div className="onboarding-card">
         <div className="onboarding-badge">
-          <ChefHat size={30} strokeWidth={2} />
+          <img src="/logo-mark.png" alt="" width="76" height="76" />
         </div>
         <h1>Welcome to Fridge Chef</h1>
         <p>
