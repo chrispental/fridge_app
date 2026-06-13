@@ -901,14 +901,6 @@
               ]
             },
             {
-              "type": "rectangle",
-              "id": "DIQdq",
-              "name": "divider",
-              "fill": "$border",
-              "width": "fill_container",
-              "height": 1
-            },
-            {
               "id": "X3LlM4",
               "type": "ref",
               "ref": "RTWdT",
@@ -922,6 +914,14 @@
                   "content": "Begin cooking"
                 }
               }
+            },
+            {
+              "type": "rectangle",
+              "id": "DIQdq",
+              "name": "divider",
+              "fill": "$border",
+              "width": "fill_container",
+              "height": 1
             },
             {
               "type": "frame",
@@ -12011,6 +12011,118 @@
         },
         {
           "type": "frame",
+          "id": "j5oqsD",
+          "name": "timerBar",
+          "width": "fill_container",
+          "gap": 8,
+          "padding": [
+            10,
+            20,
+            0,
+            20
+          ],
+          "justifyContent": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "P9gfy",
+              "name": "timerChip",
+              "fill": "$surface-2",
+              "cornerRadius": 100,
+              "stroke": "$border-strong",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "gap": 2,
+              "padding": [
+                3,
+                4,
+                3,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "IXUA5",
+                  "name": "chipMain",
+                  "gap": 6,
+                  "padding": 2,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "e8nBJp",
+                      "name": "time",
+                      "fill": "$text-primary",
+                      "content": "4:12",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "CSoab",
+                      "name": "label",
+                      "fill": "$text-tertiary",
+                      "content": "Step 2",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cuuqr",
+                  "name": "pauseBtn",
+                  "width": 26,
+                  "height": 26,
+                  "fill": "$surface-3",
+                  "cornerRadius": 100,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "C6hUmu",
+                      "name": "ic",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "pause",
+                      "library": "lucide",
+                      "fill": "$text-secondary"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hEorW",
+                  "name": "xBtn",
+                  "width": 26,
+                  "height": 26,
+                  "fill": "$surface-3",
+                  "cornerRadius": 100,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "O4MMK",
+                      "name": "ic",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "x",
+                      "library": "lucide",
+                      "fill": "$text-secondary"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
           "id": "L0Vqyz",
           "name": "slide",
           "width": "fill_container",
@@ -12960,6 +13072,7 @@
                       "type": "frame",
                       "id": "kwTMz",
                       "name": "chip",
+                      "opacity": 0.5,
                       "fill": "$success-dim",
                       "cornerRadius": 100,
                       "gap": 4,
@@ -12995,6 +13108,7 @@
                       "type": "frame",
                       "id": "YTBpP",
                       "name": "chip",
+                      "opacity": 0.5,
                       "fill": "$success-dim",
                       "cornerRadius": 100,
                       "gap": 4,
