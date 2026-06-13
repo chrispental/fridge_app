@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import {
-  Clock, Star, Users, Check, Truck, RefreshCw, ChevronDown,
-  ThumbsUp, ThumbsDown, ExternalLink,
+  Clock, Star, Users, Check, Truck, RefreshCw, ChevronDown, ChevronUp,
+  ThumbsUp, ThumbsDown, ExternalLink, Play,
 } from 'lucide-react'
 import { api } from '../api/client.js'
+import CookMode from './CookMode.jsx'
 
 const FEEDBACK_TAGS = [
   'Too salty', 'Too bland', 'Too spicy', 'Too sweet',
@@ -19,6 +20,7 @@ export default function MealCard({
 }) {
   const recipe = meal.recipe_json || {}
   const [expanded, setExpanded] = useState(false)
+  const [cooking, setCooking] = useState(false)
   const [decrement, setDecrement] = useState(true)
   const [busy, setBusy] = useState(false)
   const [swapBusy, setSwapBusy] = useState(false)
@@ -160,18 +162,29 @@ export default function MealCard({
         )}
 
         {expanded ? (
-          steps.length > 0 ? (
-            <ol className="steps">
-              {steps.map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ol>
-          ) : (
-            <p>No instructions provided.</p>
-          )
+          <>
+            {steps.length > 0 ? (
+              <ol className="steps">
+                {steps.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ol>
+            ) : (
+              <p>No instructions provided.</p>
+            )}
+            <button className="link-btn" onClick={() => setExpanded(false)}>
+              Hide instructions <ChevronUp size={15} strokeWidth={2.2} style={{ verticalAlign: '-3px' }} />
+            </button>
+          </>
         ) : (
           <button className="link-btn" onClick={() => setExpanded(true)}>
             Show instructions <ChevronDown size={15} strokeWidth={2.2} style={{ verticalAlign: '-3px' }} />
+          </button>
+        )}
+
+        {steps.length > 0 && (
+          <button className="btn primary begin-cooking" onClick={() => setCooking(true)}>
+            <Play size={15} strokeWidth={2.4} /> {cooked ? 'Cook again' : 'Begin cooking'}
           </button>
         )}
 
@@ -265,7 +278,7 @@ export default function MealCard({
               >
                 <Truck size={15} strokeWidth={2.2} /> {orderBusy ? 'Ordering…' : 'Order delivery'}
               </button>
-              <button className="btn primary" onClick={cook} disabled={busy}>
+              <button className="btn" onClick={cook} disabled={busy}>
                 <Check size={15} strokeWidth={2.4} /> {busy ? 'Saving…' : 'I cooked this'}
               </button>
             </div>
@@ -274,6 +287,18 @@ export default function MealCard({
 
         {orderError && <div className="banner error">{orderError}</div>}
       </div>
+
+      {cooking && (
+        <CookMode
+          meal={meal}
+          onClose={() => setCooking(false)}
+          onCook={async (dec) => {
+            await api.cookMeal(meal.id, dec)
+            setCooked(true)
+            onChanged?.()
+          }}
+        />
+      )}
     </div>
   )
 }

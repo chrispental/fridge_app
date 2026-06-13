@@ -854,6 +854,197 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .onboarding-card h1 { font-family: var(--font-display); }
 
 /* ============================================================
+   Cook Mode — full-screen guided cooking
+   ============================================================ */
+.cook-overlay {
+  position: fixed; inset: 0; z-index: 70;
+  display: flex; flex-direction: column;
+  background-color: var(--bg);
+  background-image: var(--mesh);
+  animation: rise-in var(--dur-3) var(--ease-out) both;
+}
+
+.cook-header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px clamp(18px, 4vw, 40px) 12px;
+}
+.cook-head-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cook-title {
+  font-family: var(--font-display); font-weight: 600; font-size: var(--fs-h3);
+  color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cook-step-count {
+  font-size: var(--fs-caption); text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-tertiary); font-weight: 600;
+}
+.cook-close {
+  margin-left: auto; flex: 0 0 auto; width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-pill); background: var(--surface-2);
+  border: 1px solid var(--border); color: var(--text-secondary);
+}
+.cook-close:hover { background: var(--surface-3); color: var(--text-primary); }
+
+.cook-progress {
+  height: 4px; margin: 0 clamp(18px, 4vw, 40px);
+  background: var(--surface-2); border-radius: var(--radius-pill); overflow: hidden;
+}
+.cook-progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-radius: var(--radius-pill);
+  transition: width var(--dur-3) var(--ease-out);
+}
+
+.cook-slide-area {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  overflow-y: auto; padding: clamp(20px, 4vw, 48px); touch-action: pan-y;
+}
+.cook-slide {
+  position: relative; width: 100%; max-width: var(--container-narrow);
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  animation-duration: var(--dur-3); animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
+}
+
+/* Step slide */
+.cook-step { display: flex; flex-direction: column; align-items: center; gap: 22px; width: 100%; }
+.cook-step-num {
+  width: 52px; height: 52px; border-radius: var(--radius-pill);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 600;
+  background: var(--accent-dim-2); color: var(--accent-bright);
+  border: 1px solid var(--accent-line);
+}
+.cook-step-text {
+  font-family: var(--font-display); font-size: clamp(1.4rem, 1.1rem + 1.6vw, 2.1rem);
+  line-height: 1.4; color: var(--text-primary); margin: 0; max-width: 30ch;
+}
+.cook-long-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--radius-pill);
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  color: var(--text-secondary); font-weight: 600; font-size: var(--fs-small);
+}
+.cook-timers { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
+
+/* Persistent bar: timers started on other steps keep counting here */
+.cook-timer-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  padding: 10px clamp(18px, 4vw, 40px) 0;
+}
+.timer-chip {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill); padding: 3px 4px 3px 12px;
+}
+.timer-chip.done { background: var(--success-dim); border-color: var(--success-line); }
+.timer-chip-main {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  background: none; border: none; padding: 2px 2px;
+  color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.timer-chip.done .timer-chip-main { color: var(--success); }
+.timer-chip-time { font-size: var(--fs-small); }
+.timer-chip-label { font-size: var(--fs-caption); color: var(--text-tertiary); font-weight: 500; }
+.timer-chip-btn {
+  width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-pill); background: var(--surface-3); border: none; color: var(--text-secondary);
+}
+.timer-chip-btn:hover { background: var(--surface-4); color: var(--text-primary); }
+
+/* "Begin cooking" sits below the instructions toggle on the card, available in any state */
+.begin-cooking { width: 100%; margin-top: 4px; }
+
+/* Tappable mise en place checklist */
+.cook-ingredients .chip { cursor: pointer; font: inherit; transition: opacity var(--dur-2) var(--ease); }
+.cook-ingredients .chip.checked { opacity: 0.5; text-decoration: line-through; }
+
+/* Mise en place + finish shared bits */
+.cook-mise, .cook-finish {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%;
+}
+.cook-mise h2, .cook-finish h2 {
+  font-family: var(--font-display); font-size: var(--fs-h1); margin: 0; color: var(--text-primary);
+}
+.cook-sub { color: var(--text-secondary); margin: 0; max-width: 40ch; }
+.cook-icon-badge {
+  width: 72px; height: 72px; border-radius: var(--radius-pill);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-dim-2); color: var(--accent-bright);
+  border: 1px solid var(--accent-line); box-shadow: var(--glow-accent);
+}
+.cook-icon-badge.pop { animation: rise-in var(--dur-3) var(--ease-spring) both; }
+.cook-ingredients {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px;
+}
+.cook-decrement {
+  display: flex; align-items: center; gap: 10px; margin-top: 8px;
+  color: var(--text-secondary); font-size: var(--fs-small); cursor: pointer;
+}
+.cook-decrement input { accent-color: var(--accent); width: 17px; height: 17px; }
+.cook-cta { margin-top: 6px; }
+
+/* Footer nav */
+.cook-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px clamp(18px, 4vw, 40px);
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface-1) 70%, transparent);
+  backdrop-filter: blur(10px);
+}
+.cook-footer .btn { min-width: 120px; justify-content: center; }
+
+/* Countdown ring */
+.timer-ring {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+.timer-svg { width: 168px; height: 168px; transform: rotate(-90deg); }
+.timer-track { fill: none; stroke: var(--surface-3); stroke-width: 9; }
+.timer-arc {
+  fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round;
+  transition: stroke-dashoffset var(--dur-2) linear;
+}
+.timer-time {
+  position: absolute; top: 84px; left: 0; right: 0; transform: translateY(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none;
+}
+.timer-digits {
+  font-family: var(--font-display); font-size: 2rem; font-weight: 600; color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.timer-label { font-size: var(--fs-caption); color: var(--text-tertiary); }
+.timer-controls { display: flex; gap: 8px; }
+.timer-ring.done .timer-arc { stroke: var(--success); }
+.timer-ring.done { animation: timer-done-flash 0.5s var(--ease) 3; }
+.timer-ring.done .timer-digits { color: var(--success); }
+
+/* Confetti */
+.confetti { position: absolute; inset: -40px 0 auto 0; height: 0; pointer-events: none; overflow: visible; }
+.confetti-piece {
+  position: absolute; top: 0; width: 9px; height: 14px; border-radius: 2px;
+  opacity: 0; animation-name: confetti-fall; animation-timing-function: var(--ease);
+  animation-fill-mode: forwards;
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(36px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-36px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes confetti-fall {
+  0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(70vh) rotate(540deg); }
+}
+@keyframes timer-done-flash {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/* ============================================================
    Responsive — mobile (<= 860px)
    ============================================================ */
 @media (max-width: 860px) {
@@ -923,4 +1114,10 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
   .sticky-action-bar .btn, .sticky-action-bar button { flex: 1; }
 
   .meal-media { aspect-ratio: 16 / 11; }
+
+  /* Cook Mode is full-screen above the mobile nav */
+  .cook-overlay { z-index: 70; }
+  .cook-footer .btn { min-width: 0; flex: 1; }
+  .timer-svg { width: 148px; height: 148px; }
+  .timer-time { top: 74px; }
 }
