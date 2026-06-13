@@ -925,6 +925,39 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
   background: var(--surface-2); border: 1px solid var(--border-strong);
   color: var(--text-secondary); font-weight: 600; font-size: var(--fs-small);
 }
+.cook-timers { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
+
+/* Persistent bar: timers started on other steps keep counting here */
+.cook-timer-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  padding: 10px clamp(18px, 4vw, 40px) 0;
+}
+.timer-chip {
+  display: flex; align-items: center; gap: 2px;
+  background: var(--surface-2); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill); padding: 3px 4px 3px 12px;
+}
+.timer-chip.done { background: var(--success-dim); border-color: var(--success-line); }
+.timer-chip-main {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  background: none; border: none; padding: 2px 2px;
+  color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.timer-chip.done .timer-chip-main { color: var(--success); }
+.timer-chip-time { font-size: var(--fs-small); }
+.timer-chip-label { font-size: var(--fs-caption); color: var(--text-tertiary); font-weight: 500; }
+.timer-chip-btn {
+  width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-pill); background: var(--surface-3); border: none; color: var(--text-secondary);
+}
+.timer-chip-btn:hover { background: var(--surface-4); color: var(--text-primary); }
+
+/* "Begin cooking" sits below the instructions toggle on the card, available in any state */
+.begin-cooking { width: 100%; margin-top: 4px; }
+
+/* Tappable mise en place checklist */
+.cook-ingredients .chip { cursor: pointer; font: inherit; transition: opacity var(--dur-2) var(--ease); }
+.cook-ingredients .chip.checked { opacity: 0.5; text-decoration: line-through; }
 
 /* Mise en place + finish shared bits */
 .cook-mise, .cook-finish {

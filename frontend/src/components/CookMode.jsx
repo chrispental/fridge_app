@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   X, ChevronLeft, ChevronRight, Check, ChefHat, PartyPopper, Clock,
 } from 'lucide-react'
-import CountdownTimer from './CountdownTimer.jsx'
-import { parseStepDuration, MAX_TIMER_SECONDS } from '../utils/parseStepDuration.js'
+import { useTimers, TimerRing, TimerChip } from './CountdownTimer.jsx'
+import { parseStepDurations, MAX_TIMER_SECONDS } from '../utils/parseStepDuration.js'
 
 const CONFETTI_COLORS = ['#f5a524', '#ffbc52', '#4ade80', '#60a5fa', '#f472b6', '#faf7f3']
 
@@ -22,6 +22,9 @@ const prefersReducedMotion =
   typeof window !== 'undefined' &&
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
+// Timer id for the di-th duration of step stepIdx (0-based step).
+const tid = (stepIdx, di) => `s${stepIdx}-${di}`
+
 export default function CookMode({ meal, onClose, onCook }) {
   const recipe = meal.recipe_json || {}
   const steps = recipe.steps || []
@@ -37,13 +40,16 @@ export default function CookMode({ meal, onClose, onCook }) {
   const [cooked, setCooked] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [checked, setChecked] = useState(() => new Set())
+
+  const { timers, start, pause, reset, dismiss } = useTimers()
 
   const isMise = index === 0
   const isFinish = index === finishIndex
   const stepIdx = index - 1 // valid only on step slides
   const stepText = !isMise && !isFinish ? steps[stepIdx] : null
 
-  const dur = useMemo(() => (stepText ? parseStepDuration(stepText) : null), [stepText])
+  const durs = useMemo(() => (stepText ? parseStepDurations(stepText) : []), [stepText])
 
   const go = (dir) => {
     setDirection(dir)
@@ -71,6 +77,30 @@ export default function CookMode({ meal, onClose, onCook }) {
     }
   }, [])
 
+  // Keep the screen awake while cooking. Wake locks drop when the tab is hidden, so
+  // re-acquire on visibility change.
+  useEffect(() => {
+    let lock = null
+    let cancelled = false
+    const acquire = async () => {
+      try {
+        lock = (await navigator.wakeLock?.request('screen')) || null
+      } catch {
+        /* unsupported or denied — harmless */
+      }
+    }
+    acquire()
+    const onVis = () => {
+      if (document.visibilityState === 'visible' && !cancelled) acquire()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      cancelled = true
+      document.removeEventListener('visibilitychange', onVis)
+      lock?.release?.().catch(() => {})
+    }
+  }, [])
+
   // Swipe handling.
   const swipe = useMemo(() => ({ x: 0 }), [])
   function onPointerDown(e) {
@@ -94,12 +124,24 @@ export default function CookMode({ meal, onClose, onCook }) {
     }
   }
 
+  function toggleChecked(i) {
+    setChecked((cur) => {
+      const next = new Set(cur)
+      next.has(i) ? next.delete(i) : next.add(i)
+      return next
+    })
+  }
+
   const confetti = useMemo(
     () => (isFinish && !prefersReducedMotion ? buildConfetti(36) : []),
     [isFinish],
   )
 
-  // Progress bar: fraction of the way through all slides.
+  // Persistent timer bar: any running/finished timer that didn't originate on this step.
+  const otherTimers = Object.entries(timers)
+    .filter(([id]) => !id.startsWith(`s${stepIdx}-`))
+    .map(([id, t]) => ({ id, t, jump: Number(id.slice(1).split('-')[0]) + 1 }))
+
   const progressPct = (index / finishIndex) * 100
   const slideAnim = direction >= 0 ? 'slide-in-right' : 'slide-in-left'
 
@@ -124,6 +166,23 @@ export default function CookMode({ meal, onClose, onCook }) {
         <div className="cook-progress-fill" style={{ width: `${progressPct}%` }} />
       </div>
 
+      {otherTimers.length > 0 && (
+        <div className="cook-timer-bar">
+          {otherTimers.map(({ id, t, jump }) => (
+            <TimerChip
+              key={id}
+              timer={t}
+              onToggle={() => (t.running ? pause(id) : start(id, t.seconds, t.label))}
+              onDismiss={() => dismiss(id)}
+              onJump={() => {
+                setDirection(jump > index ? 1 : -1)
+                setIndex(jump)
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       <div
         className="cook-slide-area"
         onPointerDown={onPointerDown}
@@ -134,15 +193,22 @@ export default function CookMode({ meal, onClose, onCook }) {
             <div className="cook-mise">
               <div className="cook-icon-badge"><ChefHat size={30} strokeWidth={2} /></div>
               <h2>Mise en place</h2>
-              <p className="cook-sub">Gather everything before you start cooking.</p>
+              <p className="cook-sub">Gather everything before you start — tap each as you go.</p>
               {ingredients.length > 0 ? (
                 <div className="cook-ingredients">
-                  {ingredients.map((ing, i) => (
-                    <span key={i} className={`chip ${ing.in_stock ? 'have' : 'missing'}`}>
-                      {ing.in_stock ? '✓' : '+'} {ing.name}
-                      {ing.quantity != null ? ` (${ing.quantity} ${ing.unit})` : ''}
-                    </span>
-                  ))}
+                  {ingredients.map((ing, i) => {
+                    const on = checked.has(i)
+                    return (
+                      <button
+                        key={i}
+                        className={`chip ${ing.in_stock ? 'have' : 'missing'}${on ? ' checked' : ''}`}
+                        onClick={() => toggleChecked(i)}
+                      >
+                        {on ? '✓' : ing.in_stock ? '✓' : '+'} {ing.name}
+                        {ing.quantity != null ? ` (${ing.quantity} ${ing.unit})` : ''}
+                      </button>
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="cook-sub">No ingredient list for this recipe.</p>
@@ -204,14 +270,28 @@ export default function CookMode({ meal, onClose, onCook }) {
             <div className="cook-step">
               <span className="cook-step-num">{stepIdx + 1}</span>
               <p className="cook-step-text">{stepText}</p>
-              {dur &&
-                (dur.seconds <= MAX_TIMER_SECONDS ? (
-                  <CountdownTimer key={index} seconds={dur.seconds} label={dur.label} />
-                ) : (
-                  <span className="cook-long-chip">
-                    <Clock size={15} strokeWidth={2.2} /> ~{dur.label}
-                  </span>
-                ))}
+              {durs.length > 0 && (
+                <div className="cook-timers">
+                  {durs.map((d, di) =>
+                    d.seconds <= MAX_TIMER_SECONDS ? (
+                      <TimerRing
+                        key={di}
+                        id={tid(stepIdx, di)}
+                        seconds={d.seconds}
+                        label={d.label}
+                        timer={timers[tid(stepIdx, di)]}
+                        onStart={() => start(tid(stepIdx, di), d.seconds, d.label)}
+                        onPause={() => pause(tid(stepIdx, di))}
+                        onReset={() => reset(tid(stepIdx, di), d.seconds)}
+                      />
+                    ) : (
+                      <span key={di} className="cook-long-chip">
+                        <Clock size={15} strokeWidth={2.2} /> ~{d.label}
+                      </span>
+                    ),
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

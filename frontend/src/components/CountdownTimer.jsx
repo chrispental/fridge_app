@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { Play, Pause, RotateCcw } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Play, Pause, RotateCcw, X, Check } from 'lucide-react'
 
 const RADIUS = 52
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-function mmss(total) {
+export function mmss(total) {
   const t = Math.max(0, Math.ceil(total))
   const h = Math.floor(t / 3600)
   const m = Math.floor((t % 3600) / 60)
@@ -13,8 +13,8 @@ function mmss(total) {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`
 }
 
-// One short oscillator beep. Lazily creates the AudioContext (unlocked by the user's
-// Start tap) and is fully best-effort — any failure is swallowed.
+// One short oscillator chime. Lazily creates the AudioContext (unlocked by the user's
+// first Start tap) and is fully best-effort — any failure is swallowed.
 function playBeeps(ctxRef) {
   try {
     if (!ctxRef.current) {
@@ -42,55 +42,90 @@ function playBeeps(ctxRef) {
   }
 }
 
-export default function CountdownTimer({ seconds, label }) {
-  const [remaining, setRemaining] = useState(seconds)
-  const [running, setRunning] = useState(false)
-  const [done, setDone] = useState(false)
-  const endRef = useRef(0) // wall-clock target, so backgrounding doesn't drift
-  const intervalRef = useRef(null)
+/**
+ * Shared timer store. One interval drives every timer, so countdowns keep running
+ * after you navigate away from the step that started them. Timers are clock-based
+ * (`endTime`) so they don't drift when the tab is backgrounded.
+ */
+export function useTimers() {
+  const [timers, setTimers] = useState({})
   const audioRef = useRef(null)
 
-  const stopTicking = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setTimers((prev) => {
+        const ids = Object.keys(prev)
+        if (!ids.length) return prev
+        let changed = false
+        let justFinished = false
+        const next = {}
+        for (const id of ids) {
+          const t = prev[id]
+          if (t.running) {
+            const left = (t.endTime - Date.now()) / 1000
+            if (left <= 0) {
+              next[id] = { ...t, remaining: 0, running: false, done: true }
+              justFinished = true
+              changed = true
+            } else {
+              next[id] = { ...t, remaining: left }
+              changed = true
+            }
+          } else {
+            next[id] = t
+          }
+        }
+        if (justFinished) {
+          playBeeps(audioRef)
+          navigator.vibrate?.([200, 100, 200])
+        }
+        return changed ? next : prev
+      })
+    }, 250)
+    return () => clearInterval(iv)
   }, [])
 
-  useEffect(() => stopTicking, [stopTicking])
-
-  function start() {
-    if (done) return
-    endRef.current = Date.now() + remaining * 1000
-    setRunning(true)
-    stopTicking()
-    intervalRef.current = setInterval(() => {
-      const left = (endRef.current - Date.now()) / 1000
-      if (left <= 0) {
-        stopTicking()
-        setRemaining(0)
-        setRunning(false)
-        setDone(true)
-        playBeeps(audioRef)
-        navigator.vibrate?.([200, 100, 200])
-      } else {
-        setRemaining(left)
+  const start = (id, seconds, label) =>
+    setTimers((p) => {
+      const ex = p[id]
+      const rem = ex && !ex.done && ex.remaining > 0 ? ex.remaining : seconds
+      return {
+        ...p,
+        [id]: { seconds, label, remaining: rem, running: true, done: false, endTime: Date.now() + rem * 1000 },
       }
-    }, 250)
-  }
+    })
 
-  function pause() {
-    stopTicking()
-    setRunning(false)
-    setRemaining((r) => Math.max(0, (endRef.current - Date.now()) / 1000) || r)
-  }
+  const pause = (id) =>
+    setTimers((p) => {
+      const t = p[id]
+      if (!t) return p
+      const rem = Math.max(0, (t.endTime - Date.now()) / 1000)
+      return { ...p, [id]: { ...t, running: false, remaining: rem } }
+    })
 
-  function reset() {
-    stopTicking()
-    setRunning(false)
-    setDone(false)
-    setRemaining(seconds)
-  }
+  const reset = (id, seconds) =>
+    setTimers((p) => {
+      const t = p[id]
+      const s = seconds ?? t?.seconds ?? 0
+      return { ...p, [id]: { seconds: s, label: t?.label, remaining: s, running: false, done: false, endTime: 0 } }
+    })
+
+  const dismiss = (id) =>
+    setTimers((p) => {
+      const n = { ...p }
+      delete n[id]
+      return n
+    })
+
+  return { timers, start, pause, reset, dismiss }
+}
+
+/** Big ring for the active step. Reads its state from the shared store by id. */
+export function TimerRing({ id, seconds, label, timer, onStart, onPause, onReset }) {
+  const remaining = timer ? timer.remaining : seconds
+  const running = timer?.running
+  const done = timer?.done
+  const fresh = !timer || (timer.remaining === timer.seconds && !timer.running && !timer.done)
 
   const progress = seconds > 0 ? remaining / seconds : 0
   const offset = CIRCUMFERENCE * (1 - Math.min(1, Math.max(0, progress)))
@@ -115,24 +150,45 @@ export default function CountdownTimer({ seconds, label }) {
 
       <div className="timer-controls">
         {done ? (
-          <button className="btn ghost" onClick={reset}>
+          <button className="btn ghost" onClick={onReset}>
             <RotateCcw size={15} strokeWidth={2.2} /> Reset
           </button>
         ) : running ? (
-          <button className="btn ghost" onClick={pause}>
+          <button className="btn ghost" onClick={onPause}>
             <Pause size={15} strokeWidth={2.2} /> Pause
           </button>
         ) : (
-          <button className="btn primary" onClick={start}>
-            <Play size={15} strokeWidth={2.2} /> {remaining < seconds ? 'Resume' : 'Start timer'}
+          <button className="btn primary" onClick={onStart}>
+            <Play size={15} strokeWidth={2.2} /> {fresh ? 'Start timer' : 'Resume'}
           </button>
         )}
-        {!done && remaining < seconds && !running && (
-          <button className="btn ghost" onClick={reset}>
+        {!done && !fresh && !running && (
+          <button className="btn ghost" onClick={onReset}>
             <RotateCcw size={15} strokeWidth={2.2} /> Reset
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+/** Compact chip for the persistent bar — a timer started on another step. */
+export function TimerChip({ timer, onToggle, onDismiss, onJump }) {
+  return (
+    <div className={`timer-chip${timer.done ? ' done' : ''}`}>
+      <button className="timer-chip-main" onClick={onJump} title="Go to this step">
+        {timer.done ? <Check size={14} strokeWidth={2.6} /> : null}
+        <span className="timer-chip-time">{timer.done ? 'Done' : mmss(timer.remaining)}</span>
+        {timer.label && !timer.done && <span className="timer-chip-label">{timer.label}</span>}
+      </button>
+      {!timer.done && (
+        <button className="timer-chip-btn" onClick={onToggle} aria-label={timer.running ? 'Pause' : 'Resume'}>
+          {timer.running ? <Pause size={13} strokeWidth={2.4} /> : <Play size={13} strokeWidth={2.4} />}
+        </button>
+      )}
+      <button className="timer-chip-btn" onClick={onDismiss} aria-label="Dismiss timer">
+        <X size={13} strokeWidth={2.4} />
+      </button>
     </div>
   )
 }

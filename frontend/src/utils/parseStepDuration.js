@@ -39,23 +39,41 @@ function humanLabel(seconds) {
 }
 
 /**
+ * Parse every time duration out of a cooking step, in order of appearance.
+ * Handles ranges (uses the upper bound) and "per side"/"each side" (doubles, since
+ * the stated time is for one side only).
+ * @param {string} text
+ * @returns {Array<{ seconds: number, label: string, perSide: boolean }>}
+ */
+export function parseStepDurations(text) {
+  if (!text || typeof text !== 'string') return []
+  const re = new RegExp(DURATION_RE.source, 'gi')
+  const out = []
+  let m
+  while ((m = re.exec(text))) {
+    const key = unitKey(m[3])
+    if (!key) continue
+    // For a range ("10–15 minutes") use the upper bound — better the timer runs a touch
+    // long than alert early.
+    const upper = m[2] != null ? parseFloat(m[2]) : parseFloat(m[1])
+    if (!Number.isFinite(upper) || upper <= 0) continue
+    let seconds = Math.round(upper * UNIT_SECONDS[key])
+
+    // "...3 minutes per side" / "each side" means the time is per side — double it.
+    const after = text.slice(re.lastIndex, re.lastIndex + 14).toLowerCase()
+    const perSide = /^[\s,]*(per|each|a|on each)\s+side/.test(after)
+    if (perSide) seconds *= 2
+
+    out.push({ seconds, label: humanLabel(seconds) + (perSide ? ' total' : ''), perSide })
+  }
+  return out
+}
+
+/**
  * Parse the first time duration out of a cooking step.
  * @param {string} text
  * @returns {{ seconds: number, label: string } | null}
  */
 export function parseStepDuration(text) {
-  if (!text || typeof text !== 'string') return null
-  const m = DURATION_RE.exec(text)
-  if (!m) return null
-
-  const key = unitKey(m[3])
-  if (!key) return null
-
-  // For a range ("10–15 minutes") use the upper bound — better the timer runs a touch
-  // long than alert early.
-  const upper = m[2] != null ? parseFloat(m[2]) : parseFloat(m[1])
-  if (!Number.isFinite(upper) || upper <= 0) return null
-
-  const seconds = Math.round(upper * UNIT_SECONDS[key])
-  return { seconds, label: humanLabel(seconds) }
+  return parseStepDurations(text)[0] || null
 }

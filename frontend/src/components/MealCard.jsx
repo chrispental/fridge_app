@@ -182,6 +182,12 @@ export default function MealCard({
           </button>
         )}
 
+        {steps.length > 0 && (
+          <button className="btn primary begin-cooking" onClick={() => setCooking(true)}>
+            <Play size={15} strokeWidth={2.4} /> {cooked ? 'Cook again' : 'Begin cooking'}
+          </button>
+        )}
+
         {ordered ? (
           <div className="delivery-block">
             <div className="cooked-badge"><Truck size={16} strokeWidth={2.2} /> Ordered for delivery</div>
@@ -258,11 +264,6 @@ export default function MealCard({
               Subtract used ingredients from inventory
             </label>
             <div className="cook-actions">
-              {steps.length > 0 && (
-                <button className="btn primary" onClick={() => setCooking(true)}>
-                  <Play size={15} strokeWidth={2.4} /> Begin cooking
-                </button>
-              )}
               <button
                 className="btn"
                 onClick={orderDelivery}
