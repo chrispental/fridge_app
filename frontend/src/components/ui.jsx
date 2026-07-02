@@ -38,6 +38,22 @@ export function Skeleton({ width = '100%', height = 16, radius, className = '', 
   )
 }
 
+// Standard full-page loading state: a header bar + content blocks.
+export function PageSkeleton({ caption }) {
+  return (
+    <div className="page-skeleton">
+      <Skeleton width="34%" height={38} radius={10} />
+      <Skeleton width="58%" height={16} radius={8} />
+      <div className="page-skeleton-body">
+        <Skeleton height={120} radius={14} />
+        <Skeleton height={120} radius={14} />
+        <Skeleton height={120} radius={14} />
+      </div>
+      {caption && <p className="hint">{caption}</p>}
+    </div>
+  )
+}
+
 export function EmptyState({ icon, title, message, action }) {
   return (
     <div className="empty">

@@ -1,5 +1,5 @@
 """Pydantic request/response models and AI-output models."""
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # Preferences
 # --------------------------------------------------------------------------- #
 class PreferencesBase(BaseModel):
+    name: str = ""  # display name used for greetings around the app
     household_size: int = Field(default=1, ge=1, le=20)
     allergies: list[str] = []
     dietary_restrictions: list[str] = []
@@ -44,6 +45,7 @@ class InventoryItemBase(BaseModel):
     unit: str = "unknown"
     category: str | None = None
     storage: str = "unsorted"
+    expires_at: date | None = None
 
 
 class InventoryItemCreate(InventoryItemBase):
@@ -56,6 +58,7 @@ class InventoryItemUpdate(BaseModel):
     unit: str | None = None
     category: str | None = None
     storage: str | None = None
+    expires_at: date | None = None
 
 
 class InventoryItemOut(InventoryItemBase):
@@ -77,6 +80,7 @@ class ExtractedItem(BaseModel):
     unit: str = "unknown"
     category: str | None = None
     storage: str = "unsorted"
+    expires_at: date | None = None  # heuristic prefill — the user reviews it
     confidence: float = Field(default=0.5, ge=0, le=1)
 
 
@@ -187,3 +191,76 @@ class ShoppingListOut(BaseModel):
     to_buy: list[ShoppingListItem]
     have: list[ShoppingListItem]
     staples_assumed: list[str]
+
+
+# --------------------------------------------------------------------------- #
+# Standalone shopping list (the shopping_list_items table)
+# --------------------------------------------------------------------------- #
+class ShoppingItemCreate(BaseModel):
+    name: str
+    quantity: float | None = None
+    unit: str = "unknown"
+
+
+class ShoppingItemUpdate(BaseModel):
+    name: str | None = None
+    quantity: float | None = None
+    unit: str | None = None
+    checked: bool | None = None
+
+
+class ShoppingItemOut(BaseModel):
+    id: int
+    name: str
+    quantity: float | None = None
+    unit: str
+    checked: bool
+    source: str
+    created_at: datetime
+    checked_at: datetime | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+# --------------------------------------------------------------------------- #
+# Meal history stats (the /meals/stats endpoint)
+# --------------------------------------------------------------------------- #
+class StatsTotals(BaseModel):
+    total: int
+    suggested: int
+    cooked: int
+    ordered: int
+
+
+class TopRatedMeal(BaseModel):
+    id: int
+    title: str
+    cooked_at: datetime | None = None
+
+
+class CuisineCount(BaseModel):
+    cuisine: str
+    count: int
+
+
+class WeekCount(BaseModel):
+    week_start: date
+    count: int
+
+
+class IngredientCount(BaseModel):
+    name: str
+    count: int
+
+
+class TagCount(BaseModel):
+    tag: str
+    count: int
+
+
+class MealStatsOut(BaseModel):
+    totals: StatsTotals
+    top_rated: list[TopRatedMeal]
+    cuisines: list[CuisineCount]
+    cooks_per_week: list[WeekCount]
+    top_ingredients: list[IngredientCount]
+    feedback_tags: list[TagCount]

@@ -28,7 +28,9 @@ async function request(path, options = {}) {
         : detail
           ? JSON.stringify(detail)
           : res.statusText || 'Request failed'
-    throw new Error(message)
+    const err = new Error(message)
+    err.status = res.status
+    throw err
   }
   return data
 }
@@ -78,13 +80,21 @@ export const api = {
   // Meals
   suggestMeals: ({ count = 5, idea = null } = {}) =>
     request('/meals/suggest', json('POST', { count, idea })),
-  getMeals: (status) =>
-    request(`/meals${status ? `?status=${status}` : ''}`),
+  getMeals: ({ status, q, limit, offset } = {}) => {
+    const params = new URLSearchParams()
+    if (status) params.set('status', status)
+    if (q) params.set('q', q)
+    if (limit != null) params.set('limit', limit)
+    if (offset != null) params.set('offset', offset)
+    const qs = params.toString()
+    return request(`/meals${qs ? `?${qs}` : ''}`)
+  },
   cookMeal: (id, decrementInventory) =>
     request(`/meals/${id}/cook`, json('POST', { decrement_inventory: decrementInventory })),
   submitFeedback: (id, { rating = null, tags = [], notes = null } = {}) =>
     request(`/meals/${id}/feedback`, json('POST', { rating, tags, notes })),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
+  getMealStats: () => request('/meals/stats'),
 
   // Weekly delivery
   getDeliveryStatus: () => request('/meals/delivery/status'),
@@ -97,4 +107,14 @@ export const api = {
   swapPlanSlot: (planId, slot) =>
     request(`/plans/${planId}/slots/${slot}/swap`, { method: 'POST' }),
   deletePlan: (planId) => request(`/plans/${planId}`, { method: 'DELETE' }),
+
+  // Shopping list
+  getShoppingListItems: () => request('/shopping-list'),
+  addShoppingItem: (body) => request('/shopping-list', json('POST', body)),
+  updateShoppingItem: (id, body) => request(`/shopping-list/${id}`, json('PATCH', body)),
+  deleteShoppingItem: (id) => request(`/shopping-list/${id}`, { method: 'DELETE' }),
+  clearChecked: () => request('/shopping-list/clear-checked', { method: 'POST' }),
+  checkedToInventory: () => request('/shopping-list/checked-to-inventory', { method: 'POST' }),
+  importPlanToList: (planId) => request(`/shopping-list/import/plan/${planId}`, { method: 'POST' }),
+  importMealToList: (mealId) => request(`/shopping-list/import/meal/${mealId}`, { method: 'POST' }),
 }

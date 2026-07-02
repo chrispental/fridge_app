@@ -1,14 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   Sparkles, Dices, Truck, Camera, CalendarDays, Plus,
-  SlidersHorizontal, ArrowRight, Snowflake, AlertCircle,
+  SlidersHorizontal, ArrowRight, Snowflake, AlertCircle, Timer,
 } from 'lucide-react'
-import { api, STORAGE } from '../api/client.js'
+import { STORAGE } from '../api/client.js'
+import {
+  useCurrentPlan, useDeliveryStatus, useInventory, useMeals,
+  usePlanShoppingList, usePreferences,
+} from '../api/queries.js'
 import {
   HeroPanel, Bento, BentoItem, StatCard, QuickAction,
   SectionHeader, MealPreviewCard, PlanStrip, EmptyState, Skeleton,
 } from '../components/ui.jsx'
+import { expiryInfo } from '../utils/dates.js'
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
 
@@ -24,39 +29,23 @@ export default function Home() {
   const navigate = useNavigate()
   const [idea, setIdea] = useState('')
 
-  const [inventory, setInventory] = useState(null)
-  const [plan, setPlan] = useState(null)
-  const [suggested, setSuggested] = useState(null)
-  const [delivery, setDelivery] = useState(null)
-  const [prefs, setPrefs] = useState(null)
-  const [toBuy, setToBuy] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const inventoryQ = useInventory()
+  const planQ = useCurrentPlan()
+  const suggestedQ = useMeals('suggested')
+  const deliveryQ = useDeliveryStatus()
+  const prefsQ = usePreferences()
+  const shoppingQ = usePlanShoppingList(planQ.data?.id)
 
-  useEffect(() => {
-    let alive = true
-    Promise.allSettled([
-      api.getInventory(),
-      api.getCurrentPlan(),
-      api.getMeals('suggested'),
-      api.getDeliveryStatus(),
-      api.getPreferences(),
-    ]).then(([inv, pl, sug, del, pr]) => {
-      if (!alive) return
-      setInventory(inv.status === 'fulfilled' ? inv.value : [])
-      const planVal = pl.status === 'fulfilled' ? pl.value : null
-      setPlan(planVal)
-      setSuggested(sug.status === 'fulfilled' ? sug.value : [])
-      setDelivery(del.status === 'fulfilled' ? del.value : null)
-      setPrefs(pr.status === 'fulfilled' ? pr.value : null)
-      setLoading(false)
-      if (planVal?.id) {
-        api.getShoppingList(planVal.id)
-          .then((s) => alive && setToBuy((s.to_buy || []).length))
-          .catch(() => {})
-      }
-    })
-    return () => { alive = false }
-  }, [])
+  const loading =
+    inventoryQ.isPending || planQ.isPending || suggestedQ.isPending ||
+    deliveryQ.isPending || prefsQ.isPending
+
+  const inventory = inventoryQ.data
+  const plan = planQ.data
+  const suggested = suggestedQ.data
+  const delivery = deliveryQ.data
+  const prefs = prefsQ.data
+  const toBuy = shoppingQ.data ? (shoppingQ.data.to_buy || []).length : null
 
   const hasIdea = idea.trim().length > 0
   const go = (run, useIdea) =>
@@ -71,9 +60,14 @@ export default function Home() {
     count: items.filter((it) => (it.storage || 'unsorted') === s.value).length,
   })).filter((s) => s.count > 0)
   const lowItems = items.filter((it) => it.quantity != null && it.quantity <= 1).slice(0, 3)
+  const expiringItems = items
+    .map((it) => ({ ...it, _expiry: expiryInfo(it.expires_at) }))
+    .filter((it) => it._expiry)
+    .sort((a, b) => a._expiry.days - b._expiry.days)
 
   const deliveryAvailable = delivery ? !delivery.used : false
   const hasLocation = Boolean(prefs?.location)
+  const name = prefs?.name?.trim()
 
   return (
     <div className="wide">
@@ -82,7 +76,7 @@ export default function Home() {
         <BentoItem span={8} className="tall">
           <HeroPanel bgImage={heroImg}>
             <div className="home-hero-greeting">
-              <span className="eyebrow rule">{greeting()}, Chris</span>
+              <span className="eyebrow rule">{greeting()}{name ? `, ${name}` : ''}</span>
               <h1 className="display">What's for dinner?</h1>
             </div>
             <p>Tell me what you're craving, or let me surprise you with something from your fridge.</p>
@@ -181,6 +175,35 @@ export default function Home() {
             </div>
           </StatCard>
         </BentoItem>
+
+        {/* C2. Expiring soon — only when something needs attention */}
+        {!loading && expiringItems.length > 0 && (
+          <BentoItem span={12}>
+            <StatCard
+              icon={<Timer size={20} strokeWidth={2} />}
+              iconTone="warn"
+              title="Use these first"
+              to="/inventory"
+            >
+              <div className="ingredients" style={{ margin: 0 }}>
+                {expiringItems.slice(0, 6).map((it) => (
+                  <span
+                    key={it.id}
+                    className={`chip ${it._expiry.expired ? 'missing' : 'warn'}`}
+                  >
+                    {it.name} · {it._expiry.label}
+                  </span>
+                ))}
+                {expiringItems.length > 6 && (
+                  <span className="chip">+{expiringItems.length - 6} more</span>
+                )}
+              </div>
+              <p style={{ marginTop: 8 }}>
+                Meal suggestions will prioritize these ingredients.
+              </p>
+            </StatCard>
+          </BentoItem>
+        )}
 
         {/* D. Tonight's picks */}
         <BentoItem span={7}>

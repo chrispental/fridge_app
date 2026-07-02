@@ -8,7 +8,8 @@ from .. import models, schemas
 from ..database import get_db
 from ..models import utcnow
 from ..services import brave_search
-from ..services.meal_engine import most_recent_delivery, suggest_meals
+from ..services.meal_engine import most_recent_delivery, normalize_title, suggest_meals
+from ..services.meal_stats import compute_stats
 from ..services.units import try_subtract
 
 router = APIRouter(prefix="/api/meals", tags=["meals"])
@@ -47,6 +48,7 @@ def suggest(
 @router.get("", response_model=list[schemas.MealOut])
 def list_meals(
     status: str | None = None,
+    q: str | None = None,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -54,6 +56,10 @@ def list_meals(
     query = db.query(models.Meal)
     if status:
         query = query.filter(models.Meal.status == status)
+    if q and q.strip():
+        query = query.filter(
+            models.Meal.title_normalized.contains(normalize_title(q))
+        )
     return (
         query.order_by(models.Meal.suggested_at.desc())
         .offset(offset)
@@ -66,6 +72,15 @@ def list_meals(
 @router.get("/delivery/status", response_model=schemas.DeliveryStatusOut)
 def delivery_status(db: Session = Depends(get_db)):
     return _delivery_status(db)
+
+
+# Also declared before /{meal_id} so "stats" isn't read as an id.
+@router.get("/stats", response_model=schemas.MealStatsOut)
+def meal_stats(db: Session = Depends(get_db)):
+    prefs = db.get(models.Preferences, 1)
+    staples = (prefs.pantry_staples if prefs else None) or []
+    meals = db.query(models.Meal).all()
+    return compute_stats(meals, staples=staples, now=utcnow())
 
 
 @router.get("/{meal_id}", response_model=schemas.MealOut)

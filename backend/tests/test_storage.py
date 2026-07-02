@@ -97,6 +97,36 @@ def test_migration_is_idempotent():
     db.close()
 
 
+# --- migration: preferences.name ----------------------------------------------
+def test_preferences_name_migration():
+    from app.main import _migrate_preferences_columns
+
+    eng = _engine()
+    # A legacy preferences table predating pantry_staples and name.
+    with eng.begin() as conn:
+        conn.execute(
+            text(
+                "CREATE TABLE preferences ("
+                "id INTEGER PRIMARY KEY, household_size INTEGER, allergies JSON, "
+                "dietary_restrictions JSON, equipment JSON, max_complexity INTEGER, "
+                "disliked_ingredients JSON, disliked_cuisines JSON, no_repeat_days INTEGER, "
+                "location VARCHAR, onboarded BOOLEAN, updated_at DATETIME)"
+            )
+        )
+        conn.execute(text("INSERT INTO preferences (id, household_size) VALUES (1, 2)"))
+
+    db = sessionmaker(bind=eng)()
+    _migrate_preferences_columns(db, eng)
+
+    prefs = db.get(models.Preferences, 1)
+    assert prefs.name == ""  # empty default, row readable
+    assert prefs.pantry_staples  # staples seeded by the same migration
+    prefs.name = "Chris"
+    db.commit()
+    assert db.get(models.Preferences, 1).name == "Chris"
+    db.close()
+
+
 # --- image backfill ----------------------------------------------------------
 def test_backfill_images_only_targets_unfetched(monkeypatch):
     from app.routers import inventory

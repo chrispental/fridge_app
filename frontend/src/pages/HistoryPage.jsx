@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Truck, ChefHat, CalendarDays, History } from 'lucide-react'
+import { Truck, ChefHat, CalendarDays, History, Search } from 'lucide-react'
 import MealCard from '../components/MealCard.jsx'
-import { api } from '../api/client.js'
+import { useDeliveryStatus, useInfiniteMeals } from '../api/queries.js'
 import { PageHeader, SegmentedControl, Skeleton, EmptyState } from '../components/ui.jsx'
 
 const FILTERS = [
@@ -13,31 +13,23 @@ const FILTERS = [
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
 
 export default function HistoryPage() {
-  const [meals, setMeals] = useState(null)
   const [filter, setFilter] = useState('')
-  const [error, setError] = useState(null)
-  const [delivery, setDelivery] = useState(null)
+  const [search, setSearch] = useState('')
+  const [q, setQ] = useState('') // debounced
 
-  function load() {
-    api
-      .getMeals(filter || undefined)
-      .then(setMeals)
-      .catch((e) => setError(e.message))
-  }
-  useEffect(load, [filter])
+  useEffect(() => {
+    const t = setTimeout(() => setQ(search.trim()), 300)
+    return () => clearTimeout(t)
+  }, [search])
 
-  function loadDelivery() {
-    api.getDeliveryStatus().then(setDelivery).catch(() => setDelivery(null))
-  }
-  useEffect(loadDelivery, [])
+  const mealsQ = useInfiniteMeals({ status: filter, q })
+  const deliveryQ = useDeliveryStatus()
 
+  const delivery = deliveryQ.data
   const deliveryAvailable = delivery ? !delivery.used : true
   const nextDeliveryDate = fmtDate(delivery?.next_available_at)
 
-  function onChanged() {
-    load()
-    loadDelivery()
-  }
+  const meals = mealsQ.data?.pages.flat()
 
   function tsLine(m) {
     if (m.status === 'ordered' && m.delivery_ordered_at) {
@@ -72,11 +64,23 @@ export default function HistoryPage() {
         subtitle="Every suggestion is logged here — that's how meals avoid repeating."
       />
 
-      {error && <div className="banner error">{error}</div>}
+      {mealsQ.isError && <div className="banner error">{mealsQ.error.message}</div>}
 
-      <SegmentedControl options={FILTERS} value={filter} onChange={setFilter} />
+      <div className="inv-toolbar">
+        <div className="search-box">
+          <Search size={15} strokeWidth={2.2} />
+          <input
+            type="search"
+            placeholder="Search meals…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search meal history"
+          />
+        </div>
+        <SegmentedControl options={FILTERS} value={filter} onChange={setFilter} />
+      </div>
 
-      {!meals ? (
+      {mealsQ.isPending ? (
         <div className="stack" style={{ gap: 18, marginTop: 18 }}>
           <Skeleton height={360} radius={20} />
           <Skeleton height={360} radius={20} />
@@ -85,23 +89,39 @@ export default function HistoryPage() {
       ) : meals.length === 0 ? (
         <EmptyState
           icon={<History size={22} strokeWidth={2} />}
-          title="No meals yet"
-          message="Once you get a suggestion or cook something, it'll show up here."
+          title={q ? 'No matches' : 'No meals yet'}
+          message={
+            q
+              ? `No meals match “${q}”.`
+              : "Once you get a suggestion or cook something, it'll show up here."
+          }
         />
       ) : (
-        <div className="stack" style={{ gap: 18, marginTop: 18 }}>
-          {meals.map((m) => (
-            <div key={m.id}>
-              <MealCard
-                meal={m}
-                onChanged={onChanged}
-                deliveryAvailable={deliveryAvailable}
-                nextDeliveryDate={nextDeliveryDate}
-              />
-              <div className="ts">{tsLine(m)}</div>
+        <>
+          <div className="stack" style={{ gap: 18, marginTop: 18 }}>
+            {meals.map((m) => (
+              <div key={m.id}>
+                <MealCard
+                  meal={m}
+                  deliveryAvailable={deliveryAvailable}
+                  nextDeliveryDate={nextDeliveryDate}
+                />
+                <div className="ts">{tsLine(m)}</div>
+              </div>
+            ))}
+          </div>
+          {mealsQ.hasNextPage && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
+              <button
+                className="btn"
+                onClick={() => mealsQ.fetchNextPage()}
+                disabled={mealsQ.isFetchingNextPage}
+              >
+                {mealsQ.isFetchingNextPage ? 'Loading…' : 'Load more'}
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   )

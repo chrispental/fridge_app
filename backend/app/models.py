@@ -9,6 +9,7 @@ from sqlalchemy import (
     JSON,
     Boolean,
     Column,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -29,6 +30,7 @@ class Preferences(Base):
     __tablename__ = "preferences"
 
     id = Column(Integer, primary_key=True)  # always 1 (singleton)
+    name = Column(String, default="", nullable=False)  # display name for greetings
     household_size = Column(Integer, default=1, nullable=False)
     allergies = Column(JSON, default=list, nullable=False)
     dietary_restrictions = Column(JSON, default=list, nullable=False)
@@ -69,6 +71,7 @@ class InventoryItem(Base):
     storage = Column(String, default="unsorted", nullable=False)  # fridge|freezer|pantry|counter|unsorted
     image_url = Column(String, nullable=True)  # NULL=not fetched, ""=tried/none, else Brave thumbnail
     source = Column(String, default="manual", nullable=False)  # manual | photo
+    expires_at = Column(Date, nullable=True)  # best-before; NULL = unknown/not tracked
     extraction_batch_id = Column(
         Integer, ForeignKey("extraction_batches.id"), nullable=True
     )
@@ -95,6 +98,23 @@ class Meal(Base):
     feedback_tags = Column(JSON, nullable=True)
     feedback_notes = Column(String, nullable=True)
     feedback_at = Column(DateTime, nullable=True)
+
+
+class ShoppingListItem(Base):
+    """Standalone shopping list (not tied to a plan). Items arrive manually or are
+    imported from a plan's to-buy list / a meal's missing ingredients; checked items
+    can be converted into inventory in one call."""
+
+    __tablename__ = "shopping_list_items"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)  # stored lowercased, like inventory
+    quantity = Column(Float, nullable=True)
+    unit = Column(String, default="unknown", nullable=False)
+    checked = Column(Boolean, default=False, nullable=False)
+    source = Column(String, default="manual", nullable=False)  # manual | plan | meal
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    checked_at = Column(DateTime, nullable=True)
 
 
 class MealPlan(Base):

@@ -1,22 +1,24 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Plus, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { api, UNITS, STORAGE } from '../api/client.js'
-import { PageHeader, StickyActionBar, EmptyState } from '../components/ui.jsx'
+import { UNITS, STORAGE } from '../api/client.js'
+import { useConfirmExtraction, useExtraction } from '../api/queries.js'
+import { toast } from '../components/Toast.jsx'
+import { PageHeader, StickyActionBar, EmptyState, PageSkeleton } from '../components/ui.jsx'
 
 export default function ReviewExtraction() {
   const { batchId } = useParams()
   const navigate = useNavigate()
-  const [items, setItems] = useState(null)
-  const [error, setError] = useState(null)
-  const [busy, setBusy] = useState(false)
+  const extractionQ = useExtraction(batchId)
+  const confirmMutation = useConfirmExtraction()
 
+  // The fetched proposal seeds an editable local list; the user owns it from there.
+  const [items, setItems] = useState(null)
   useEffect(() => {
-    api
-      .getExtraction(batchId)
-      .then((r) => setItems(r.items.map((it, i) => ({ ...it, _key: i }))))
-      .catch((e) => setError(e.message))
-  }, [batchId])
+    if (extractionQ.data && items === null) {
+      setItems(extractionQ.data.items.map((it, i) => ({ ...it, _key: i })))
+    }
+  }, [extractionQ.data]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function update(key, patch) {
     setItems((prev) => prev.map((it) => (it._key === key ? { ...it, ...patch } : it)))
@@ -27,42 +29,46 @@ export default function ReviewExtraction() {
   function addBlank() {
     setItems((prev) => [
       ...prev,
-      { _key: `new-${Date.now()}`, name: '', quantity: null, unit: 'piece', category: '', storage: 'fridge', confidence: 1 },
+      { _key: `new-${Date.now()}`, name: '', quantity: null, unit: 'piece', category: '', storage: 'fridge', expires_at: null, confidence: 1 },
     ])
   }
 
-  async function confirm() {
-    setBusy(true)
-    setError(null)
-    try {
-      const payload = items
-        .filter((it) => it.name.trim())
-        .map((it) => ({
-          name: it.name,
-          quantity: it.quantity,
-          unit: it.unit,
-          category: it.category || null,
-          storage: it.storage || 'unsorted',
-        }))
-      await api.confirmExtraction(batchId, payload)
-      navigate('/inventory')
-    } catch (e) {
-      setError(e.message)
-      setBusy(false)
-    }
+  function confirm() {
+    const payload = items
+      .filter((it) => it.name.trim())
+      .map((it) => ({
+        name: it.name,
+        quantity: it.quantity,
+        unit: it.unit,
+        category: it.category || null,
+        storage: it.storage || 'unsorted',
+        expires_at: it.expires_at || null,
+      }))
+    confirmMutation.mutate(
+      { batchId, items: payload },
+      {
+        onSuccess: (saved) => {
+          toast.success(`Added ${saved.length} item${saved.length === 1 ? '' : 's'} to your fridge`)
+          navigate('/inventory')
+        },
+      },
+    )
   }
 
-  if (error && !items) return <div className="banner error">{error}</div>
-  if (!items) return <div className="loading">Analyzing…</div>
+  if (extractionQ.isError && !items) {
+    return <div className="banner error">{extractionQ.error.message}</div>
+  }
+  if (!items) return <PageSkeleton caption="Analyzing your photo…" />
 
   const namedCount = items.filter((i) => i.name.trim()).length
+  const busy = confirmMutation.isPending
 
   return (
     <div>
       <PageHeader
         eyebrow="Inventory"
         title="Review detected items"
-        subtitle="These are the AI's best guesses — fix anything wrong, remove mistakes, then add them to your inventory. ⚠️ marks low-confidence items."
+        subtitle="These are the AI's best guesses — fix anything wrong, remove mistakes, then add them to your inventory. ⚠️ marks low-confidence items. Expiry dates are rough estimates."
       />
 
       {items.length === 0 && (
@@ -116,6 +122,12 @@ export default function ReviewExtraction() {
               value={it.category || ''}
               onChange={(e) => update(it._key, { category: e.target.value })}
             />
+            <input
+              type="date"
+              title="Expiry date (optional)"
+              value={it.expires_at || ''}
+              onChange={(e) => update(it._key, { expires_at: e.target.value || null })}
+            />
             {it.confidence < 0.5 && (
               <span className="conf-flag" title="Low confidence — please check">⚠️</span>
             )}
@@ -130,7 +142,9 @@ export default function ReviewExtraction() {
         <Plus size={16} strokeWidth={2.4} style={{ verticalAlign: '-3px' }} /> Add missed item
       </button>
 
-      {error && <div className="banner error">{error}</div>}
+      {confirmMutation.isError && (
+        <div className="banner error">{confirmMutation.error.message}</div>
+      )}
 
       <StickyActionBar info={`${namedCount} item${namedCount === 1 ? '' : 's'} ready`}>
         <button className="btn primary big" onClick={confirm} disabled={busy || namedCount === 0}>

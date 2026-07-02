@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, RefreshCw, AlertCircle } from 'lucide-react'
+import { CalendarDays, RefreshCw, AlertCircle, ShoppingCart } from 'lucide-react'
 import MealCard from '../components/MealCard.jsx'
-import { api } from '../api/client.js'
-import { PageHeader, HeroPanel, Bento, BentoItem } from '../components/ui.jsx'
+import {
+  useCreatePlan, useCurrentPlan, useDeletePlan, useDeliveryStatus,
+  useImportPlanToList, usePlanShoppingList, useSwapPlanSlot,
+} from '../api/queries.js'
+import { toast } from '../components/Toast.jsx'
+import { PageHeader, HeroPanel, Bento, BentoItem, PageSkeleton } from '../components/ui.jsx'
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
 
-function ShoppingList({ data }) {
+function ShoppingList({ data, onAddAll, adding }) {
   if (!data) return null
   const { to_buy = [], have = [], staples_assumed = [] } = data
   const line = (it) =>
@@ -29,11 +33,22 @@ function ShoppingList({ data }) {
         {to_buy.length === 0 ? (
           <p className="hint">You already have everything for this plan. 🎉</p>
         ) : (
-          <div className="ingredients">
-            {to_buy.map((it, i) => (
-              <span key={i} className="chip missing">+ {line(it)}</span>
-            ))}
-          </div>
+          <>
+            <div className="ingredients">
+              {to_buy.map((it, i) => (
+                <span key={i} className="chip missing">+ {line(it)}</span>
+              ))}
+            </div>
+            <button
+              className="btn"
+              style={{ marginTop: 12 }}
+              onClick={onAddAll}
+              disabled={adding}
+            >
+              <ShoppingCart size={15} strokeWidth={2.2} />
+              {adding ? 'Adding…' : 'Add all to shopping list'}
+            </button>
+          </>
         )}
       </div>
 
@@ -52,72 +67,37 @@ function ShoppingList({ data }) {
 }
 
 export default function WeekPlanPage() {
-  const [loading, setLoading] = useState(true)
-  const [plan, setPlan] = useState(null)
-  const [shopping, setShopping] = useState(null)
   const [count, setCount] = useState(7)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
-  const [delivery, setDelivery] = useState(null)
 
-  function loadDelivery() {
-    api.getDeliveryStatus().then(setDelivery).catch(() => setDelivery(null))
-  }
+  const planQ = useCurrentPlan()
+  const plan = planQ.data
+  const shoppingQ = usePlanShoppingList(plan?.id)
+  const deliveryQ = useDeliveryStatus()
+  const createMutation = useCreatePlan()
+  const deleteMutation = useDeletePlan()
+  const swapMutation = useSwapPlanSlot()
+  const importMutation = useImportPlanToList()
 
-  function loadShopping(planId) {
-    api.getShoppingList(planId).then(setShopping).catch(() => setShopping(null))
-  }
-
-  useEffect(() => {
-    loadDelivery()
-    api
-      .getCurrentPlan()
-      .then((p) => {
-        setPlan(p)
-        loadShopping(p.id)
-      })
-      .catch(() => setPlan(null)) // no plan yet → show the create form
-      .finally(() => setLoading(false))
-  }, [])
-
-  async function create() {
-    setBusy(true)
-    setError(null)
-    try {
-      const p = await api.createPlan(Number(count) || 7)
-      setPlan(p)
-      loadShopping(p.id)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function newPlan() {
-    if (!plan) return
-    setBusy(true)
-    setError(null)
-    try {
-      await api.deletePlan(plan.id)
-      setPlan(null)
-      setShopping(null)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setBusy(false)
-    }
-  }
+  const busy = createMutation.isPending || deleteMutation.isPending
+  const error = createMutation.error?.message || deleteMutation.error?.message
 
   // Returned promise lets MealCard show its own "Swapping…" state.
-  async function swap(slot) {
-    const updated = await api.swapPlanSlot(plan.id, slot)
-    setPlan(updated)
-    loadShopping(plan.id)
+  const swap = (slot) => swapMutation.mutateAsync({ planId: plan.id, slot })
+
+  function addAllToList() {
+    importMutation.mutate(plan.id, {
+      onSuccess: (items) =>
+        toast.success(
+          items.length > 0
+            ? `Added ${items.length} item${items.length === 1 ? '' : 's'} to your shopping list`
+            : 'Everything is already on your list',
+        ),
+    })
   }
 
-  if (loading) return <div className="loading">Loading…</div>
+  if (planQ.isPending) return <PageSkeleton />
 
+  const delivery = deliveryQ.data
   const deliveryAvailable = delivery ? !delivery.used : true
   const nextDeliveryDate = fmtDate(delivery?.next_available_at)
 
@@ -145,7 +125,11 @@ export default function WeekPlanPage() {
               onChange={(e) => setCount(e.target.value)}
             />
           </div>
-          <button className="btn primary big" onClick={create} disabled={busy}>
+          <button
+            className="btn primary big"
+            onClick={() => createMutation.mutate(Number(count) || 7)}
+            disabled={busy}
+          >
             <CalendarDays size={18} strokeWidth={2.2} />
             {busy ? 'Planning…' : 'Plan my week'}
           </button>
@@ -178,7 +162,11 @@ export default function WeekPlanPage() {
         title="Your week"
         subtitle={`${plan.entries.length} meal${plan.entries.length === 1 ? '' : 's'} planned`}
       >
-        <button className="btn ghost" onClick={newPlan} disabled={busy}>
+        <button
+          className="btn ghost"
+          onClick={() => deleteMutation.mutate(plan.id)}
+          disabled={busy}
+        >
           <RefreshCw size={16} strokeWidth={2.2} />
           {busy ? 'Working…' : 'Start a new plan'}
         </button>
@@ -198,10 +186,6 @@ export default function WeekPlanPage() {
               <MealCard
                 key={entry.meal.id}
                 meal={entry.meal}
-                onChanged={() => {
-                  loadDelivery()
-                  loadShopping(plan.id)
-                }}
                 onSwap={() => swap(entry.slot_index)}
                 deliveryAvailable={deliveryAvailable}
                 nextDeliveryDate={nextDeliveryDate}
@@ -213,7 +197,11 @@ export default function WeekPlanPage() {
         {/* RIGHT: sticky shopping-list rail */}
         <BentoItem span={4}>
           <div style={{ position: 'sticky', top: 24 }}>
-            <ShoppingList data={shopping} />
+            <ShoppingList
+              data={shoppingQ.data}
+              onAddAll={addAllToList}
+              adding={importMutation.isPending}
+            />
           </div>
         </BentoItem>
       </Bento>

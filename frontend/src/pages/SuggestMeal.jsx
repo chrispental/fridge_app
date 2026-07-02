@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Sparkles, Dices, Truck } from 'lucide-react'
 import MealCard from '../components/MealCard.jsx'
-import { api } from '../api/client.js'
+import { useDeliveryStatus, useMeals, useSuggestMeals } from '../api/queries.js'
 import { PageHeader, HeroPanel, EmptyState, Skeleton } from '../components/ui.jsx'
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
@@ -10,38 +10,19 @@ const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
 export default function SuggestMeal() {
   const location = useLocation()
   const navigate = useNavigate()
-  const [meals, setMeals] = useState(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
-  const [delivery, setDelivery] = useState(null)
   const [idea, setIdea] = useState(location.state?.idea || '')
 
-  function loadDelivery() {
-    api.getDeliveryStatus().then(setDelivery).catch(() => setDelivery(null))
-  }
-  useEffect(() => {
-    loadDelivery()
-    // Show the most recent suggestions by default (unless auto-running from Home).
-    if (!location.state?.run) {
-      api
-        .getMeals('suggested')
-        .then((m) => setMeals((m || []).slice(0, 6)))
-        .catch(() => {})
-    }
-  }, [])
+  const deliveryQ = useDeliveryStatus()
+  const recentQ = useMeals('suggested')
+  const suggestMutation = useSuggestMeals()
 
-  async function suggest(useIdea, ideaText) {
-    setBusy(true)
-    setError(null)
-    setMeals(null)
-    try {
-      const text = ideaText != null ? ideaText : idea.trim()
-      setMeals(await api.suggestMeals({ count: 5, idea: useIdea ? text : null }))
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setBusy(false)
-    }
+  // When arriving from Home with { run: true }, skip showing stale suggestions —
+  // the auto-run below kicks off immediately.
+  const willAutoRun = useRef(Boolean(location.state?.run))
+
+  function suggest(useIdea, ideaText) {
+    const text = ideaText != null ? ideaText : idea.trim()
+    suggestMutation.mutate({ count: 5, idea: useIdea ? text : null })
   }
 
   // Auto-run a suggestion when navigated here with router state (from Home).
@@ -57,6 +38,13 @@ export default function SuggestMeal() {
       suggest(useIdea, useIdea ? stateIdea.trim() : null)
     }
   }, [location.state])
+
+  const busy = suggestMutation.isPending
+  const error = suggestMutation.error?.message
+  const delivery = deliveryQ.data
+  const meals =
+    suggestMutation.data ??
+    (willAutoRun.current ? null : recentQ.data?.slice(0, 6) ?? null)
 
   const deliveryAvailable = delivery ? !delivery.used : true
   const nextDeliveryDate = fmtDate(delivery?.next_available_at)
@@ -103,7 +91,7 @@ export default function SuggestMeal() {
         </div>
       </HeroPanel>
 
-      {error && (
+      {error && !busy && (
         <div className="banner error">
           {error}
           <div style={{ marginTop: '0.5rem' }}>
@@ -127,7 +115,6 @@ export default function SuggestMeal() {
             <MealCard
               key={m.id}
               meal={m}
-              onChanged={loadDelivery}
               deliveryAvailable={deliveryAvailable}
               nextDeliveryDate={nextDeliveryDate}
             />

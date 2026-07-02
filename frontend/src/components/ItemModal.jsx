@@ -1,50 +1,49 @@
 import { useState } from 'react'
 import { Trash2, Check } from 'lucide-react'
-import { api, UNITS, STORAGE } from '../api/client.js'
+import { UNITS, STORAGE } from '../api/client.js'
+import { useAddItem, useDeleteItem, useUpdateItem } from '../api/queries.js'
+import { localDatePlus } from '../utils/dates.js'
 
-// Add (no id) or edit (has id) a single inventory item. Used by InventoryPage.
-export default function ItemModal({ item, onSaved, onDeleted, onClose }) {
+const EXPIRY_CHIPS = [
+  { label: '+3 days', days: 3 },
+  { label: '+1 week', days: 7 },
+  { label: '+2 weeks', days: 14 },
+  { label: '+1 month', days: 30 },
+]
+
+// Add (no id) or edit (has id) a single inventory item. Saves are optimistic:
+// the modal closes immediately and errors roll back with a toast.
+export default function ItemModal({ item, onClose }) {
   const isEdit = Boolean(item?.id)
   const [name, setName] = useState(item?.name || '')
   const [quantity, setQuantity] = useState(item?.quantity ?? '')
   const [unit, setUnit] = useState(item?.unit || 'piece')
   const [storage, setStorage] = useState(item?.storage || 'fridge')
   const [category, setCategory] = useState(item?.category || '')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
+  const [expires, setExpires] = useState(item?.expires_at || '')
 
-  async function save() {
+  const addMutation = useAddItem()
+  const updateMutation = useUpdateItem()
+  const deleteMutation = useDeleteItem()
+
+  function save() {
     if (!name.trim()) return
-    setBusy(true)
-    setError(null)
     const body = {
       name,
       quantity: quantity === '' ? null : Number(quantity),
       unit,
       storage,
       category: category || null,
+      expires_at: expires || null,
     }
-    try {
-      const saved = isEdit
-        ? await api.updateItem(item.id, body)
-        : await api.addItem(body)
-      onSaved(saved)
-    } catch (e) {
-      setError(e.message)
-      setBusy(false)
-    }
+    if (isEdit) updateMutation.mutate({ id: item.id, body })
+    else addMutation.mutate(body)
+    onClose()
   }
 
-  async function remove() {
-    setBusy(true)
-    setError(null)
-    try {
-      await api.deleteItem(item.id)
-      onDeleted(item.id)
-    } catch (e) {
-      setError(e.message)
-      setBusy(false)
-    }
+  function remove() {
+    deleteMutation.mutate(item.id)
+    onClose()
   }
 
   return (
@@ -102,18 +101,42 @@ export default function ItemModal({ item, onSaved, onDeleted, onClose }) {
           </label>
         </div>
 
-        {error && <div className="banner error">{error}</div>}
+        <label className="field">
+          <span>Expires <span className="sub">— optional</span></span>
+          <input
+            type="date"
+            value={expires}
+            onChange={(e) => setExpires(e.target.value)}
+          />
+          <div className="expiry-chips">
+            {EXPIRY_CHIPS.map((c) => (
+              <button
+                key={c.days}
+                type="button"
+                className="chip-toggle"
+                onClick={() => setExpires(localDatePlus(c.days))}
+              >
+                {c.label}
+              </button>
+            ))}
+            {expires && (
+              <button type="button" className="chip-toggle" onClick={() => setExpires('')}>
+                Clear
+              </button>
+            )}
+          </div>
+        </label>
 
         <div className="modal-actions">
           {isEdit && (
-            <button className="ghost danger" onClick={remove} disabled={busy}>
+            <button className="ghost danger" onClick={remove}>
               <Trash2 size={15} strokeWidth={2.2} /> Delete
             </button>
           )}
           <div className="modal-actions-right">
-            <button className="ghost" onClick={onClose} disabled={busy}>Cancel</button>
-            <button className="primary" onClick={save} disabled={busy || !name.trim()}>
-              <Check size={15} strokeWidth={2.4} /> {busy ? 'Saving…' : isEdit ? 'Save' : 'Add'}
+            <button className="ghost" onClick={onClose}>Cancel</button>
+            <button className="primary" onClick={save} disabled={!name.trim()}>
+              <Check size={15} strokeWidth={2.4} /> {isEdit ? 'Save' : 'Add'}
             </button>
           </div>
         </div>

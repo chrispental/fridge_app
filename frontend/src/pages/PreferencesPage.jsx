@@ -1,17 +1,13 @@
-import { useEffect, useState } from 'react'
 import PreferencesForm from '../components/PreferencesForm.jsx'
-import { PageHeader } from '../components/ui.jsx'
-import { api } from '../api/client.js'
+import { PageHeader, PageSkeleton } from '../components/ui.jsx'
+import { usePreferences, useUpdatePreferences } from '../api/queries.js'
+import { toast } from '../components/Toast.jsx'
 
 export default function PreferencesPage() {
-  const [initial, setInitial] = useState(null)
-  const [saved, setSaved] = useState(false)
+  const prefsQ = usePreferences()
+  const updateMutation = useUpdatePreferences()
 
-  useEffect(() => {
-    api.getPreferences().then(setInitial)
-  }, [])
-
-  if (!initial) return <div className="loading">Loading…</div>
+  if (prefsQ.isPending) return <PageSkeleton />
 
   return (
     <div>
@@ -20,16 +16,13 @@ export default function PreferencesPage() {
         title="Preferences"
         subtitle="Tune your household, taste, kitchen, and cooking rules so every suggestion fits you."
       />
-      {saved && <div className="banner success">Preferences saved.</div>}
       <PreferencesForm
-        initial={initial}
+        initial={prefsQ.data}
         grouped
         submitLabel="Save preferences"
         onSubmit={async (body) => {
-          const updated = await api.updatePreferences(body)
-          setInitial(updated)
-          setSaved(true)
-          setTimeout(() => setSaved(false), 3000)
+          await updateMutation.mutateAsync(body)
+          toast.success('Preferences saved')
         }}
       />
     </div>
