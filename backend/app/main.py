@@ -9,7 +9,7 @@ from sqlalchemy import inspect, text
 from . import models
 from .config import settings
 from .database import Base, SessionLocal, engine
-from .routers import health, inventory, meals, plans, preferences
+from .routers import health, inventory, meals, plans, preferences, shopping
 from .services.staples import DEFAULT_STAPLES
 from .services.storage import storage_from_category
 
@@ -33,6 +33,9 @@ def _migrate_inventory_columns(db, db_engine) -> None:
         if "image_url" not in columns:
             conn.execute(text("ALTER TABLE inventory_items ADD COLUMN image_url VARCHAR"))
             logger.info("Added inventory_items.image_url column")
+        if "expires_at" not in columns:
+            conn.execute(text("ALTER TABLE inventory_items ADD COLUMN expires_at DATE"))
+            logger.info("Added inventory_items.expires_at column")
 
     pending = (
         db.query(models.InventoryItem)
@@ -47,10 +50,10 @@ def _migrate_inventory_columns(db, db_engine) -> None:
 
 
 def _migrate_preferences_columns(db, db_engine) -> None:
-    """Add the pantry_staples column to a pre-existing preferences table (no Alembic).
+    """Add columns missing from a pre-existing preferences table (no Alembic).
 
-    `create_all` never adds columns to an existing table, so we ALTER it in and seed
-    the singleton row with the default staples. New databases already have the column
+    `create_all` never adds columns to an existing table, so we ALTER them in and seed
+    the singleton row with the default staples. New databases already have the columns
     (and the row is seeded at creation), so this no-ops.
     """
     columns = {c["name"] for c in inspect(db_engine).get_columns("preferences")}
@@ -58,6 +61,10 @@ def _migrate_preferences_columns(db, db_engine) -> None:
         with db_engine.begin() as conn:
             conn.execute(text("ALTER TABLE preferences ADD COLUMN pantry_staples JSON"))
         logger.info("Added preferences.pantry_staples column")
+    if "name" not in columns:
+        with db_engine.begin() as conn:
+            conn.execute(text("ALTER TABLE preferences ADD COLUMN name VARCHAR DEFAULT ''"))
+        logger.info("Added preferences.name column")
 
     prefs = db.get(models.Preferences, 1)
     if prefs is not None and not prefs.pantry_staples:
@@ -121,3 +128,4 @@ app.include_router(preferences.router)
 app.include_router(inventory.router)
 app.include_router(meals.router)
 app.include_router(plans.router)
+app.include_router(shopping.router)

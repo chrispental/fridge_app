@@ -58,6 +58,68 @@ def build_shopping_list(meals, inventory, staples: list[str]) -> dict:
     return {"to_buy": to_buy, "have": have, "staples_assumed": staples_assumed}
 
 
+def merge_into_list(existing_rows, new_items: list[dict]) -> tuple[list, list[dict]]:
+    """Merge `new_items` into the standalone shopping list, deduping against
+    UNCHECKED rows by (normalized name, unit) — the same key rule as
+    `build_shopping_list`. Checked rows are already in the cart; a re-import
+    should create a fresh row rather than resurrect them.
+
+    Returns (updated_rows, creates): existing ORM rows whose quantity was summed,
+    and plain dicts for rows to create. Pure — the caller persists.
+    """
+    open_rows = {
+        (_norm(r.name), r.unit): r for r in existing_rows if not r.checked
+    }
+    updated, creates = [], []
+    merged_new: dict[tuple[str, str], dict] = {}
+
+    for item in new_items:
+        name = str(item.get("name", "")).strip()
+        if not name:
+            continue
+        unit = item.get("unit") or "unknown"
+        qty = item.get("quantity")
+        key = (_norm(name), unit)
+
+        row = open_rows.get(key)
+        if row is not None:
+            if qty is not None:
+                row.quantity = (row.quantity or 0) + qty
+                if row not in updated:
+                    updated.append(row)
+            continue
+
+        new = merged_new.setdefault(
+            key,
+            {"name": name, "unit": unit, "quantity": None, "source": item.get("source", "manual")},
+        )
+        if qty is not None:
+            new["quantity"] = (new["quantity"] or 0) + qty
+
+    creates.extend(merged_new.values())
+    return updated, creates
+
+
+def missing_for_meal(recipe_json: dict, inventory, staples: list[str]) -> list[dict]:
+    """A meal's shopping needs: out-of-stock ingredients (with amounts) plus any
+    `missing_ingredients` strings not already covered by an ingredient line.
+    Uses `annotate_recipe` so staples and current inventory are respected.
+    """
+    rj = annotate_recipe(recipe_json, inventory, staples)
+    needed = [
+        {"name": ing.get("name", ""), "quantity": ing.get("quantity"), "unit": ing.get("unit") or "unknown"}
+        for ing in rj.get("ingredients", [])
+        if not ing.get("in_stock") and str(ing.get("name", "")).strip()
+    ]
+    covered = {_norm(n["name"]) for n in needed}
+    for extra in rj.get("missing_ingredients", []):
+        nm = _norm(str(extra))
+        if nm and nm not in covered:
+            covered.add(nm)
+            needed.append({"name": str(extra).strip(), "quantity": None, "unit": "unknown"})
+    return needed
+
+
 def annotate_recipe(recipe_json: dict, inventory, staples: list[str]) -> dict:
     """Return a copy of `recipe_json` with per-ingredient `in_stock` recomputed live
     against current inventory + staples, and staples / now-in-stock items removed from

@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, ChefHat, CalendarDays, Refrigerator, History,
-  Settings, Sparkles, MoreHorizontal,
+  Settings, Sparkles, MoreHorizontal, ShoppingCart, BarChart3,
 } from 'lucide-react'
+import { usePreferences } from '../api/queries.js'
 
 // Desktop sidebar menu (Settings lives in the bottom utility group).
 const MAIN = [
@@ -11,7 +12,9 @@ const MAIN = [
   { to: '/cook', label: 'Cook', icon: ChefHat },
   { to: '/plan', label: 'Plan', icon: CalendarDays },
   { to: '/inventory', label: 'Fridge', icon: Refrigerator },
+  { to: '/shopping', label: 'Shopping', icon: ShoppingCart },
   { to: '/history', label: 'History', icon: History },
+  { to: '/insights', label: 'Insights', icon: BarChart3 },
 ]
 
 // Mobile bottom bar: Home · Plan · [FAB=Cook] · Fridge · More(sheet).
@@ -23,12 +26,17 @@ const MOBILE_RIGHT = [
   { to: '/inventory', label: 'Fridge', icon: Refrigerator },
 ]
 const MORE = [
+  { to: '/shopping', label: 'Shopping', icon: ShoppingCart },
   { to: '/history', label: 'History', icon: History },
+  { to: '/insights', label: 'Insights', icon: BarChart3 },
   { to: '/preferences', label: 'Settings', icon: Settings },
 ]
 
 export default function Nav() {
   const [moreOpen, setMoreOpen] = useState(false)
+  const prefsQ = usePreferences()
+  const name = prefsQ.data?.name?.trim() || 'Chef'
+  const initial = name.charAt(0).toUpperCase()
 
   return (
     <>
@@ -64,9 +72,9 @@ export default function Nav() {
             </NavLink>
           </div>
           <div className="nav-profile">
-            <div className="nav-avatar">C</div>
+            <div className="nav-avatar">{initial}</div>
             <div className="nav-profile-text">
-              <span className="nav-profile-name">Chris</span>
+              <span className="nav-profile-name">{name}</span>
               <span className="nav-profile-sub">Personal kitchen</span>
             </div>
           </div>

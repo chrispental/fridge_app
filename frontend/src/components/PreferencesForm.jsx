@@ -30,6 +30,7 @@ export default function PreferencesForm({
   grouped = false,
   hideSubmit = false,
 }) {
+  const [name, setName] = useState(initial?.name ?? '')
   const [householdSize, setHouseholdSize] = useState(initial?.household_size ?? 1)
   const [allergies, setAllergies] = useState(listToText(initial?.allergies))
   const [dietary, setDietary] = useState(listToText(initial?.dietary_restrictions))
@@ -55,6 +56,7 @@ export default function PreferencesForm({
     setError(null)
     try {
       await onSubmit({
+        name: name.trim(),
         household_size: Number(householdSize) || 1,
         allergies: textToList(allergies),
         dietary_restrictions: textToList(dietary),
@@ -74,6 +76,20 @@ export default function PreferencesForm({
   }
 
   // ---- Individual fields (shared between grouped + flat layouts) ----
+  const nameField = (
+    <div className="field">
+      <label>
+        Your name <span className="sub">— for greetings around the app</span>
+      </label>
+      <input
+        type="text"
+        placeholder="e.g. Chris"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+    </div>
+  )
+
   const householdField = (
     <div className="field">
       <label>Household size</label>
@@ -242,6 +258,7 @@ export default function PreferencesForm({
         <div className="field-group">
           <SectionHeader eyebrow="Household & location" />
           <div className="settings-grid">
+            {nameField}
             {householdField}
             {locationField}
           </div>
@@ -277,6 +294,7 @@ export default function PreferencesForm({
 
   return (
     <form onSubmit={handleSubmit}>
+      {nameField}
       {householdField}
       {locationField}
       {allergiesField}

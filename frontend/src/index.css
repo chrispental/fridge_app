@@ -1121,3 +1121,136 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
   .timer-svg { width: 148px; height: 148px; }
   .timer-time { top: 74px; }
 }
+
+/* =====================================================================
+   Additions: toasts, error boundary, page transitions, search toolbar,
+   expiry badges, shopping list, insights bars
+   ===================================================================== */
+
+/* ---- Toasts ---- */
+.toast-stack {
+  position: fixed; bottom: 24px; right: 24px; z-index: 100;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+  pointer-events: none;
+}
+.toast {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 11px 16px; border-radius: var(--radius-md);
+  border: 1px solid var(--border); background: var(--surface-2);
+  color: var(--text); font: inherit; font-size: var(--fs-small);
+  box-shadow: var(--shadow-lg); cursor: pointer; text-align: left;
+  pointer-events: auto; max-width: min(420px, calc(100vw - 48px));
+  animation: rise-in var(--dur-3) var(--ease-out) both;
+}
+.toast.success { background: var(--success-dim); color: var(--success); border-color: var(--success-line); }
+.toast.error { background: var(--danger-dim); color: var(--danger); border-color: var(--danger-line); }
+.toast.info { background: var(--info-dim); color: var(--info); border-color: var(--info-line); }
+
+/* ---- Error boundary ---- */
+.error-boundary {
+  min-height: 100vh; display: grid; place-items: center; padding: 24px;
+}
+
+/* ---- Page transitions & skeleton ---- */
+.page-enter { animation: rise-in var(--dur-3) var(--ease-out) both; }
+.page-skeleton { display: flex; flex-direction: column; gap: 14px; padding-top: 8px; }
+.page-skeleton-body { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 10px; }
+
+/* ---- Search + sort toolbar (inventory, history) ---- */
+.inv-toolbar {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  margin-bottom: var(--sp-5);
+}
+.search-box {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0 14px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border); background: var(--surface-1);
+  color: var(--text-secondary); min-width: 220px; flex: 1 1 220px; max-width: 340px;
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.search-box:focus-within { border-color: var(--accent-line); box-shadow: var(--ring); }
+.search-box input {
+  border: none; background: none; padding: 10px 0; flex: 1;
+  color: var(--text); font: inherit; font-size: var(--fs-small); outline: none;
+}
+
+/* ---- Warn tones (expiry) ---- */
+.chip.warn { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-line); }
+.stat-ico.warn { background: var(--accent-dim); color: var(--accent); }
+
+/* ---- Inventory tile expiry badge ---- */
+.tile-expiry {
+  position: absolute; top: 8px; left: 8px; z-index: 1;
+  padding: 3px 8px; border-radius: var(--radius-pill);
+  font-size: 0.68rem; font-weight: 650; letter-spacing: 0.01em;
+  background: var(--accent-dim-2); color: var(--accent);
+  border: 1px solid var(--accent-line);
+}
+.tile-expiry.expired { background: var(--danger-dim); color: var(--danger); border-color: var(--danger-line); }
+
+/* ---- Expiry quick-pick chips (item modal) ---- */
+.expiry-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* ---- Review row: date input ---- */
+.item-row input[type='date'] { flex: 0 0 150px; color-scheme: dark; }
+
+/* ---- Shopping list ---- */
+.shop-add {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch;
+  margin-bottom: var(--sp-6);
+}
+.shop-add-name { flex: 2 1 220px; }
+.shop-add-qty { flex: 0 0 84px; }
+.shop-add select { flex: 0 0 110px; }
+.shop-group { margin-bottom: var(--sp-6); }
+.shop-group h3 {
+  font-size: var(--fs-small); color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px;
+}
+.shop-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px; border-radius: var(--radius-md);
+  border: 1px solid var(--border); background: var(--surface-1);
+  transition: border-color var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+}
+.shop-row:hover { border-color: var(--accent-line); }
+.shop-row-main {
+  display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
+  cursor: pointer;
+}
+.shop-row-main input[type='checkbox'] { width: 17px; height: 17px; accent-color: var(--accent); flex: none; }
+.shop-row-name { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-row-qty { color: var(--text-secondary); font-size: var(--fs-small); flex: none; }
+.shop-row-src {
+  flex: none; font-size: 0.68rem; padding: 2px 8px; border-radius: var(--radius-pill);
+  background: var(--info-dim); color: var(--info); border: 1px solid var(--info-line);
+}
+.shop-row.checked { opacity: 0.55; }
+.shop-row.checked .shop-row-name { text-decoration: line-through; }
+.shop-row-del { flex: none; padding: 6px 8px; }
+
+/* ---- Insights bars ---- */
+.bar-list { display: flex; flex-direction: column; gap: 9px; }
+.bar-row { display: grid; grid-template-columns: minmax(80px, 130px) 1fr 34px; gap: 10px; align-items: center; }
+.bar-label {
+  font-size: var(--fs-small); color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: capitalize;
+}
+.bar-track { height: 10px; border-radius: var(--radius-pill); background: var(--surface-2); overflow: hidden; }
+.bar-fill {
+  display: block; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-deep), var(--accent));
+  transition: width var(--dur-3) var(--ease-out);
+}
+.bar-count { font-size: var(--fs-small); color: var(--text); font-weight: 600; text-align: right; }
+
+/* ---- Mobile adjustments ---- */
+@media (max-width: 860px) {
+  .toast-stack {
+    right: 50%; transform: translateX(50%); align-items: center;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+  .page-skeleton-body { grid-template-columns: 1fr; }
+  .shop-add select { flex: 1 0 90px; }
+  .bar-row { grid-template-columns: minmax(64px, 96px) 1fr 30px; }
+}

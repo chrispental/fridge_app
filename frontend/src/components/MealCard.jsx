@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import {
   Clock, Star, Users, Check, Truck, RefreshCw, ChevronDown, ChevronUp,
-  ThumbsUp, ThumbsDown, ExternalLink, Play,
+  ThumbsUp, ThumbsDown, ExternalLink, Play, ShoppingCart,
 } from 'lucide-react'
-import { api } from '../api/client.js'
+import {
+  useCookMeal, useSubmitFeedback, useOrderDelivery, useImportMealToList,
+} from '../api/queries.js'
+import { toast } from './Toast.jsx'
 import CookMode from './CookMode.jsx'
 
 const FEEDBACK_TAGS = [
@@ -13,7 +16,6 @@ const FEEDBACK_TAGS = [
 
 export default function MealCard({
   meal,
-  onChanged,
   onSwap = null,
   deliveryAvailable = false,
   nextDeliveryDate = null,
@@ -22,14 +24,26 @@ export default function MealCard({
   const [expanded, setExpanded] = useState(false)
   const [cooking, setCooking] = useState(false)
   const [decrement, setDecrement] = useState(true)
-  const [busy, setBusy] = useState(false)
   const [swapBusy, setSwapBusy] = useState(false)
 
-  // Post-cook feedback state (also editable later from History).
+  const cookMutation = useCookMeal()
+  const feedbackMutation = useSubmitFeedback()
+  const orderMutation = useOrderDelivery()
+  const importMutation = useImportMealToList()
+
+  // Status is derived from the cached meal (kept fresh by optimistic updates) or,
+  // for meals rendered from a static mutation result, from this card's mutations.
+  const cooked = meal.status === 'cooked' || cookMutation.isSuccess
+  const ordered = meal.status === 'ordered' || orderMutation.isSuccess
+  const deliveryOptions =
+    orderMutation.data?.recipe_json?.delivery_options ||
+    recipe.delivery_options ||
+    []
+
+  // Post-cook feedback form state (also editable later from History).
   const [rating, setRating] = useState(meal.rating ?? null)
   const [tags, setTags] = useState(meal.feedback_tags || [])
   const [notes, setNotes] = useState(meal.feedback_notes || '')
-  const [fbBusy, setFbBusy] = useState(false)
   const [fbSaved, setFbSaved] = useState(false)
 
   function setRatingDirty(v) {
@@ -40,17 +54,16 @@ export default function MealCard({
     setTags((cur) => (cur.includes(tag) ? cur.filter((t) => t !== tag) : [...cur, tag]))
     setFbSaved(false)
   }
-  async function saveFeedback() {
-    setFbBusy(true)
-    try {
-      await api.submitFeedback(meal.id, { rating, tags, notes: notes.trim() || null })
-      setFbSaved(true)
-      onChanged?.()
-    } catch (e) {
-      alert(e.message)
-    } finally {
-      setFbBusy(false)
-    }
+  function saveFeedback() {
+    feedbackMutation.mutate(
+      { id: meal.id, rating, tags, notes: notes.trim() || null },
+      {
+        onSuccess: () => {
+          setFbSaved(true)
+          toast.success('Feedback saved')
+        },
+      },
+    )
   }
 
   async function handleSwap() {
@@ -62,44 +75,23 @@ export default function MealCard({
       setSwapBusy(false)
     }
   }
-  const [cooked, setCooked] = useState(meal.status === 'cooked')
-  const [ordered, setOrdered] = useState(meal.status === 'ordered')
-  const [deliveryOptions, setDeliveryOptions] = useState(recipe.delivery_options || [])
-  const [orderBusy, setOrderBusy] = useState(false)
-  const [orderError, setOrderError] = useState(null)
-
-  async function cook() {
-    setBusy(true)
-    try {
-      await api.cookMeal(meal.id, decrement)
-      setCooked(true)
-      onChanged?.()
-    } catch (e) {
-      alert(e.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function orderDelivery() {
-    setOrderBusy(true)
-    setOrderError(null)
-    try {
-      const updated = await api.orderDelivery(meal.id)
-      setOrdered(true)
-      setDeliveryOptions(updated.recipe_json?.delivery_options || [])
-      onChanged?.()
-    } catch (e) {
-      setOrderError(e.message)
-    } finally {
-      setOrderBusy(false)
-    }
-  }
 
   const ingredients = recipe.ingredients || []
   const steps = recipe.steps || []
   const missing = recipe.missing_ingredients || []
+  const outOfStock = ingredients.some((i) => !i.in_stock) || missing.length > 0
   const hasPhoto = Boolean(recipe.image_url)
+
+  function addMissingToList() {
+    importMutation.mutate(meal.id, {
+      onSuccess: (items) =>
+        toast.success(
+          items.length > 0
+            ? `Added ${items.length} item${items.length === 1 ? '' : 's'} to your shopping list`
+            : 'Everything is already on your list',
+        ),
+    })
+  }
 
   const meta = (
     <div className="meal-meta">
@@ -151,6 +143,17 @@ export default function MealCard({
 
         {missing.length > 0 && (
           <p className="missing-note">🛒 You'll need to buy: {missing.join(', ')}</p>
+        )}
+
+        {outOfStock && !ordered && (
+          <button
+            className="link-btn"
+            onClick={addMissingToList}
+            disabled={importMutation.isPending}
+          >
+            <ShoppingCart size={14} strokeWidth={2.2} style={{ verticalAlign: '-2px' }} />{' '}
+            {importMutation.isPending ? 'Adding…' : 'Add missing to shopping list'}
+          </button>
         )}
 
         {recipe.source?.url && (
@@ -249,8 +252,12 @@ export default function MealCard({
               }}
             />
 
-            <button className="btn" onClick={saveFeedback} disabled={fbBusy || fbSaved}>
-              {fbBusy ? 'Saving…' : fbSaved ? 'Saved ✓' : 'Save feedback'}
+            <button
+              className="btn"
+              onClick={saveFeedback}
+              disabled={feedbackMutation.isPending || fbSaved}
+            >
+              {feedbackMutation.isPending ? 'Saving…' : fbSaved ? 'Saved ✓' : 'Save feedback'}
             </button>
           </div>
         ) : (
@@ -266,8 +273,8 @@ export default function MealCard({
             <div className="cook-actions">
               <button
                 className="btn"
-                onClick={orderDelivery}
-                disabled={orderBusy || !deliveryAvailable}
+                onClick={() => orderMutation.mutate(meal.id)}
+                disabled={orderMutation.isPending || !deliveryAvailable}
                 title={
                   deliveryAvailable
                     ? 'Order this meal for delivery'
@@ -276,27 +283,29 @@ export default function MealCard({
                       : 'Set your location in Settings to order delivery'
                 }
               >
-                <Truck size={15} strokeWidth={2.2} /> {orderBusy ? 'Ordering…' : 'Order delivery'}
+                <Truck size={15} strokeWidth={2.2} /> {orderMutation.isPending ? 'Ordering…' : 'Order delivery'}
               </button>
-              <button className="btn" onClick={cook} disabled={busy}>
-                <Check size={15} strokeWidth={2.4} /> {busy ? 'Saving…' : 'I cooked this'}
+              <button
+                className="btn"
+                onClick={() => cookMutation.mutate({ id: meal.id, decrement })}
+                disabled={cookMutation.isPending}
+              >
+                <Check size={15} strokeWidth={2.4} /> {cookMutation.isPending ? 'Saving…' : 'I cooked this'}
               </button>
             </div>
           </div>
         )}
 
-        {orderError && <div className="banner error">{orderError}</div>}
+        {orderMutation.error && (
+          <div className="banner error">{orderMutation.error.message}</div>
+        )}
       </div>
 
       {cooking && (
         <CookMode
           meal={meal}
           onClose={() => setCooking(false)}
-          onCook={async (dec) => {
-            await api.cookMeal(meal.id, dec)
-            setCooked(true)
-            onChanged?.()
-          }}
+          onCook={(dec) => cookMutation.mutateAsync({ id: meal.id, decrement: dec })}
         />
       )}
     </div>

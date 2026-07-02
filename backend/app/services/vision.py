@@ -9,6 +9,7 @@ from PIL import Image
 from ..config import settings
 from ..schemas import ExtractedItem
 from .ai_client import call_structured
+from .expiry import estimate_expiry
 from .prompts import load_prompt
 from .storage import normalize_storage, storage_from_category
 from .units import normalize_unit
@@ -85,6 +86,8 @@ def parse_items(raw: dict) -> list[ExtractedItem]:
                 unit=normalize_unit(it.get("unit")),
                 category=category,
                 storage=storage,
+                # Heuristic prefill only — the user reviews/edits before confirming.
+                expires_at=estimate_expiry(category, storage),
                 confidence=min(max(confidence, 0.0), 1.0),
             )
         )

@@ -37,6 +37,7 @@ def add_item(payload: schemas.InventoryItemCreate, db: Session = Depends(get_db)
         unit=normalize_unit(payload.unit),
         category=payload.category,
         storage=normalize_storage(payload.storage),
+        expires_at=payload.expires_at,
         source="manual",
     )
     db.add(item)
@@ -65,6 +66,8 @@ def update_item(
         item.category = data["category"]
     if data.get("storage"):
         item.storage = normalize_storage(data["storage"])
+    if "expires_at" in data:  # key-presence check so it can be cleared to null
+        item.expires_at = data["expires_at"]
     db.commit()
     db.refresh(item)
     return item
@@ -186,6 +189,7 @@ def confirm_extraction(
             unit=normalize_unit(it.unit),
             category=it.category,
             storage=normalize_storage(it.storage),
+            expires_at=it.expires_at,
             source="photo",
             extraction_batch_id=batch.id,
         )

@@ -16,6 +16,7 @@ from ..models import utcnow
 from ..schemas import MealSuggestion, RecipeIngredient, RecipeSource
 from . import brave_search
 from .ai_client import call_structured
+from .expiry import expiring_soon
 from .prompts import load_prompt
 from .staples import is_staple
 from .units import normalize_unit
@@ -309,7 +310,28 @@ def _shortfall(suggestion: MealSuggestion) -> tuple[int, int]:
     return (out_of_stock, len(suggestion.missing_ingredients))
 
 
-def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None, feedback_lines=None) -> str:
+def _expiring_used(suggestion: MealSuggestion, expiring_names: list[str]) -> int:
+    """How many expiring-soon inventory items this meal uses (substring match,
+    same rule as `_annotate_in_stock`)."""
+    count = 0
+    for exp in expiring_names:
+        exp = (exp or "").lower().strip()
+        if exp and any(
+            exp in ing.name.lower() or ing.name.lower() in exp
+            for ing in suggestion.ingredients
+            if ing.name
+        ):
+            count += 1
+    return count
+
+
+def _sort_key(suggestion: MealSuggestion, expiring_names: list[str]) -> tuple[int, int, int]:
+    """`_shortfall` first; among equals, meals using expiring items rank higher."""
+    out_of_stock, missing = _shortfall(suggestion)
+    return (out_of_stock, missing, -_expiring_used(suggestion, expiring_names))
+
+
+def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None, feedback_lines=None, expiring=None) -> str:
     if inventory:
         inv_lines = []
         for i in inventory:
@@ -347,6 +369,16 @@ def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None,
         else ""
     )
 
+    expiring_block = (
+        "\nUSE THESE FIRST (expiring soon — strongly prefer meals that use them):\n"
+        + "\n".join(
+            f"- {i.name} (expires {i.expires_at.isoformat()})" for i in expiring
+        )
+        + "\n"
+        if expiring
+        else ""
+    )
+
     if weather is not None and not weather["grill_ok"]:
         weather_line = (
             f"\nCURRENT WEATHER: {weather['summary']}. "
@@ -369,19 +401,19 @@ ALWAYS AVAILABLE (assume on hand; mark in_stock and never list as missing): {joi
 {weather_line}
 CURRENT INVENTORY
 {inv_text}
-
+{expiring_block}
 DO NOT SUGGEST THESE RECENT MEALS
 {dnr}
 {feedback_block}{request_block}
 Suggest meals I can make right now."""
 
 
-def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None, feedback_lines=None) -> list[MealSuggestion]:
+def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None, feedback_lines=None, expiring=None) -> list[MealSuggestion]:
     system_prompt = load_prompt("suggestion_system.md").replace("{count}", str(count))
     raw = call_structured(
         model=settings.openrouter_meal_model,
         system_prompt=system_prompt,
-        user_content=_build_user_prompt(prefs, inventory, do_not_repeat, weather, idea, feedback_lines),
+        user_content=_build_user_prompt(prefs, inventory, do_not_repeat, weather, idea, feedback_lines, expiring),
         json_schema=SUGGESTION_SCHEMA,
         schema_name="meal_suggestions",
     )
@@ -408,7 +440,10 @@ def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[
     weather = get_weather(prefs.location) if (prefs and prefs.location) else None
     grill_blocked = weather is not None and not weather["grill_ok"]
 
-    suggestions = _generate(db, prefs, inventory, avoid, count, weather, idea, feedback_lines)
+    # Items about to go bad get a "use these first" block and a sort preference.
+    expiring = expiring_soon(inventory, within_days=3)
+
+    suggestions = _generate(db, prefs, inventory, avoid, count, weather, idea, feedback_lines, expiring)
 
     def keep(s: MealSuggestion) -> bool:
         return (
@@ -422,14 +457,16 @@ def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[
     # If everything was filtered out, retry once with the rejects also excluded.
     if not safe and suggestions:
         rejected = [s.title for s in suggestions]
-        retry = _generate(db, prefs, inventory, avoid + rejected, count, weather, idea, feedback_lines)
+        retry = _generate(db, prefs, inventory, avoid + rejected, count, weather, idea, feedback_lines, expiring)
         safe = [s for s in retry if keep(s)]
 
-    # Recompute in-stock from real inventory, then order makeable-now meals first.
+    # Recompute in-stock from real inventory, then order makeable-now meals first
+    # (ties broken in favor of meals that use up expiring items).
     staples = (prefs.pantry_staples if prefs else None) or []
+    expiring_names = [i.name for i in expiring]
     for s in safe:
         _annotate_in_stock(s, inventory, staples)
-    safe.sort(key=_shortfall)
+    safe.sort(key=lambda s: _sort_key(s, expiring_names))
 
     meals: list[models.Meal] = []
     for s in safe:

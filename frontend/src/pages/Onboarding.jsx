@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react'
 import PreferencesForm from '../components/PreferencesForm.jsx'
-import { api } from '../api/client.js'
+import { usePreferences, useUpdatePreferences } from '../api/queries.js'
+import { PageSkeleton } from '../components/ui.jsx'
 
-export default function Onboarding({ onDone }) {
-  const [initial, setInitial] = useState(null)
+export default function Onboarding() {
+  const prefsQ = usePreferences()
+  const updateMutation = useUpdatePreferences()
 
-  useEffect(() => {
-    api.getPreferences().then(setInitial).catch(() => setInitial({}))
-  }, [])
-
-  if (!initial) return <div className="loading">Loading…</div>
+  if (prefsQ.isPending) {
+    return (
+      <div className="onboarding">
+        <div className="onboarding-card">
+          <PageSkeleton />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="onboarding">
@@ -24,12 +29,9 @@ export default function Onboarding({ onDone }) {
         </p>
         <div style={{ marginTop: '1.75rem' }}>
           <PreferencesForm
-            initial={initial}
+            initial={prefsQ.data || {}}
             submitLabel="Get started"
-            onSubmit={async (body) => {
-              await api.updatePreferences(body)
-              onDone()
-            }}
+            onSubmit={(body) => updateMutation.mutateAsync(body)}
           />
         </div>
       </div>

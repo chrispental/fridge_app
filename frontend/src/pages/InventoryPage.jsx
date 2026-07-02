@@ -1,24 +1,37 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Camera, Image, Plus } from 'lucide-react'
+import { Camera, Image, Plus, Search } from 'lucide-react'
 import ItemTile from '../components/ItemTile.jsx'
 import ItemModal from '../components/ItemModal.jsx'
-import { api, STORAGE } from '../api/client.js'
+import { STORAGE } from '../api/client.js'
+import { useBackfillImages, useInventory } from '../api/queries.js'
+import { toast } from '../components/Toast.jsx'
 import { PageHeader, SegmentedControl, EmptyState, Skeleton } from '../components/ui.jsx'
+
+const SORTS = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'name', label: 'A–Z' },
+  { value: 'low', label: 'Low stock' },
+  { value: 'expiry', label: 'Expiring' },
+]
+
+// "newest" keeps the API's newest-first order.
+const COMPARATORS = {
+  newest: null,
+  name: (a, b) => a.name.localeCompare(b.name),
+  low: (a, b) => (a.quantity ?? Infinity) - (b.quantity ?? Infinity),
+  expiry: (a, b) => (a.expires_at || '9999-12-31').localeCompare(b.expires_at || '9999-12-31'),
+}
 
 export default function InventoryPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const [items, setItems] = useState(null)
-  const [error, setError] = useState(null)
+  const inventoryQ = useInventory()
+  const backfill = useBackfillImages()
   const [modalItem, setModalItem] = useState(null) // null=closed, {}=new, item=edit
-  const [fetching, setFetching] = useState(false)
   const [storageFilter, setStorageFilter] = useState('all')
-
-  function load() {
-    api.getInventory().then(setItems).catch((e) => setError(e.message))
-  }
-  useEffect(load, [])
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState('newest')
 
   // Open the add modal if navigated here with { state: { add: true } }. Run once.
   const addHandled = useRef(false)
@@ -30,21 +43,17 @@ export default function InventoryPage() {
     }
   }, [location.state])
 
-  async function fetchPhotos() {
-    setFetching(true)
-    try {
-      await api.backfillImages()
-      load()
-    } catch (e) {
-      alert(e.message)
-    } finally {
-      setFetching(false)
-    }
+  function fetchPhotos() {
+    backfill.mutate(undefined, {
+      onSuccess: () => toast.success('Photos updated'),
+    })
   }
 
-  if (error) return <div className="banner error">{error}</div>
+  if (inventoryQ.isError) {
+    return <div className="banner error">{inventoryQ.error.message}</div>
+  }
 
-  if (!items) {
+  if (inventoryQ.isPending) {
     return (
       <div className="wide">
         <PageHeader eyebrow="Your fridge" title="Inventory" subtitle="Everything you have on hand, organized by where it lives." />
@@ -57,11 +66,23 @@ export default function InventoryPage() {
     )
   }
 
-  // Group into storage sections, in the order defined by STORAGE; drop empty ones.
-  const sections = STORAGE.map((s) => ({
-    ...s,
-    items: items.filter((it) => (it.storage || 'unsorted') === s.value),
-  })).filter((s) => s.items.length > 0)
+  const items = inventoryQ.data || []
+
+  // Search filters by name or category; sort applies within each storage section.
+  const needle = search.trim().toLowerCase()
+  const matched = needle
+    ? items.filter(
+        (it) =>
+          it.name.toLowerCase().includes(needle) ||
+          (it.category || '').toLowerCase().includes(needle),
+      )
+    : items
+
+  const cmp = COMPARATORS[sort]
+  const sections = STORAGE.map((s) => {
+    const sectionItems = matched.filter((it) => (it.storage || 'unsorted') === s.value)
+    return { ...s, items: cmp ? [...sectionItems].sort(cmp) : sectionItems }
+  }).filter((s) => s.items.length > 0)
 
   const missingPhotos = items.some((it) => it.image_url == null)
 
@@ -84,8 +105,8 @@ export default function InventoryPage() {
           <Camera size={16} strokeWidth={2.2} /> Scan a photo
         </Link>
         {missingPhotos && (
-          <button className="ghost" onClick={fetchPhotos} disabled={fetching}>
-            <Image size={16} strokeWidth={2.2} /> {fetching ? 'Fetching…' : 'Fetch photos'}
+          <button className="ghost" onClick={fetchPhotos} disabled={backfill.isPending}>
+            <Image size={16} strokeWidth={2.2} /> {backfill.isPending ? 'Fetching…' : 'Fetch photos'}
           </button>
         )}
         <button className="ghost" onClick={() => setModalItem({})}>
@@ -106,7 +127,21 @@ export default function InventoryPage() {
         />
       ) : (
         <>
-          {filterOptions.length > 1 && (
+          <div className="inv-toolbar">
+            <div className="search-box">
+              <Search size={15} strokeWidth={2.2} />
+              <input
+                type="search"
+                placeholder="Search your fridge…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search inventory"
+              />
+            </div>
+            <SegmentedControl options={SORTS} value={sort} onChange={setSort} />
+          </div>
+
+          {filterOptions.length > 2 && (
             <div style={{ marginBottom: 'var(--sp-5)' }}>
               <SegmentedControl
                 options={filterOptions}
@@ -117,36 +152,33 @@ export default function InventoryPage() {
             </div>
           )}
 
-          {visibleSections.map((section) => (
-            <div key={section.value} className="storage-section">
-              <h2 className="storage-head">
-                <span className="storage-emoji">{section.emoji}</span>
-                {section.label}
-                <span className="storage-count">{section.items.length}</span>
-              </h2>
-              <div className="tile-grid">
-                {section.items.map((it) => (
-                  <ItemTile key={it.id} item={it} onEdit={setModalItem} />
-                ))}
+          {matched.length === 0 ? (
+            <EmptyState
+              icon={<Search size={22} strokeWidth={2} />}
+              title="No matches"
+              message={`Nothing in your fridge matches “${search.trim()}”.`}
+            />
+          ) : (
+            visibleSections.map((section) => (
+              <div key={section.value} className="storage-section">
+                <h2 className="storage-head">
+                  <span className="storage-emoji">{section.emoji}</span>
+                  {section.label}
+                  <span className="storage-count">{section.items.length}</span>
+                </h2>
+                <div className="tile-grid">
+                  {section.items.map((it) => (
+                    <ItemTile key={it.id} item={it} onEdit={setModalItem} />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </>
       )}
 
       {modalItem && (
-        <ItemModal
-          item={modalItem}
-          onClose={() => setModalItem(null)}
-          onSaved={() => {
-            setModalItem(null)
-            load()
-          }}
-          onDeleted={() => {
-            setModalItem(null)
-            load()
-          }}
-        />
+        <ItemModal item={modalItem} onClose={() => setModalItem(null)} />
       )}
     </div>
   )
