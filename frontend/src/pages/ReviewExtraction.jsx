@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Plus, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { UNITS, STORAGE } from '../api/client.js'
@@ -12,13 +12,14 @@ export default function ReviewExtraction() {
   const extractionQ = useExtraction(batchId)
   const confirmMutation = useConfirmExtraction()
 
-  // The fetched proposal seeds an editable local list; the user owns it from there.
-  const [items, setItems] = useState(null)
-  useEffect(() => {
-    if (extractionQ.data && items === null) {
-      setItems(extractionQ.data.items.map((it, i) => ({ ...it, _key: i })))
-    }
-  }, [extractionQ.data]) // eslint-disable-line react-hooks/exhaustive-deps
+  // The fetched proposal seeds an editable local list; the user owns it from
+  // the first edit (edits === null means "untouched, show the proposal").
+  const [edits, setEdits] = useState(null)
+  const proposed = extractionQ.data
+    ? extractionQ.data.items.map((it, i) => ({ ...it, _key: i }))
+    : null
+  const items = edits ?? proposed
+  const setItems = (fn) => setEdits((prev) => fn(prev ?? proposed))
 
   function update(key, patch) {
     setItems((prev) => prev.map((it) => (it._key === key ? { ...it, ...patch } : it)))
