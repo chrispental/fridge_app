@@ -28,7 +28,7 @@ def _location_headers(location: str | None) -> dict:
     """Map a free-text location (ZIP or 'City, ST') to Brave X-Loc-* request headers.
 
     Brave biases results toward these even without lat/long, so a delivery search
-    for "06825" returns places that actually serve that area.
+    for "10001" returns places that actually serve that area.
     """
     loc = (location or "").strip()
     if not loc:
