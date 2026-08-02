@@ -1,5 +1,8 @@
 # 🧊 Fridge Meal Assistant
 
+[![CI](https://github.com/chrispental/fridge_app/actions/workflows/ci.yml/badge.svg)](https://github.com/chrispental/fridge_app/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 An AI-powered, single-user web app that knows what's in your fridge/pantry and your
 cooking preferences, and tells you what to make — with a full recipe and step-by-step
 instructions. Suggested meals won't repeat within a window you choose.
@@ -106,3 +109,12 @@ docker compose exec backend python -m pytest   # in container
   (`SQLAlchemy create_all`); no migration step is needed for this single-user app.
 - AI quantity estimates are approximate — that's why every photo extraction goes
   through a review/edit screen before anything is saved.
+
+## Contributing & security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup and conventions, and
+[SECURITY.md](SECURITY.md) for the threat model and how to report vulnerabilities.
+
+## License
+
+[MIT](LICENSE)
