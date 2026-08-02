@@ -18,5 +18,9 @@ jobs:
       pull-requests: write
     steps:
       - uses: release-drafter/release-drafter@v6
+        # PR runs only autolabel (a convenience) and fail on forks / before
+        # the config exists on main — don't let that red-X the PR.
+        # Push-to-main runs (the actual release drafting) still fail loudly.
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
