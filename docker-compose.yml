@@ -2,7 +2,11 @@ services:
   backend:
     build: ./backend
     container_name: fridge_backend
-    env_file: .env
+    env_file:
+      # Optional so a fresh clone (or CI) can still `docker compose build`;
+      # the app boots keyless and degrades gracefully without API keys.
+      - path: .env
+        required: false
     ports:
       - "8000:8000"
     volumes:

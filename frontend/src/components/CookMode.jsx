@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   X, ChevronLeft, ChevronRight, Check, ChefHat, PartyPopper, Clock,
 } from 'lucide-react'
@@ -102,12 +102,12 @@ export default function CookMode({ meal, onClose, onCook }) {
   }, [])
 
   // Swipe handling.
-  const swipe = useMemo(() => ({ x: 0 }), [])
+  const swipeX = useRef(0)
   function onPointerDown(e) {
-    swipe.x = e.clientX
+    swipeX.current = e.clientX
   }
   function onPointerUp(e) {
-    const dx = e.clientX - swipe.x
+    const dx = e.clientX - swipeX.current
     if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1)
   }
 

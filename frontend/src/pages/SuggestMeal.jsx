@@ -17,8 +17,8 @@ export default function SuggestMeal() {
   const suggestMutation = useSuggestMeals()
 
   // When arriving from Home with { run: true }, skip showing stale suggestions —
-  // the auto-run below kicks off immediately.
-  const willAutoRun = useRef(Boolean(location.state?.run))
+  // the auto-run below kicks off immediately. Captured once at mount.
+  const [willAutoRun] = useState(() => Boolean(location.state?.run))
 
   function suggest(useIdea, ideaText) {
     const text = ideaText != null ? ideaText : idea.trim()
@@ -44,7 +44,7 @@ export default function SuggestMeal() {
   const delivery = deliveryQ.data
   const meals =
     suggestMutation.data ??
-    (willAutoRun.current ? null : recentQ.data?.slice(0, 6) ?? null)
+    (willAutoRun ? null : recentQ.data?.slice(0, 6) ?? null)
 
   const deliveryAvailable = delivery ? !delivery.used : true
   const nextDeliveryDate = fmtDate(delivery?.next_available_at)

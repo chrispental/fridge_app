@@ -121,7 +121,7 @@ export function useTimers() {
 }
 
 /** Big ring for the active step. Reads its state from the shared store by id. */
-export function TimerRing({ id, seconds, label, timer, onStart, onPause, onReset }) {
+export function TimerRing({ seconds, label, timer, onStart, onPause, onReset }) {
   const remaining = timer ? timer.remaining : seconds
   const running = timer?.running
   const done = timer?.done

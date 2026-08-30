@@ -12,6 +12,13 @@ dist/
 # Env / secrets
 .env
 
+# Claude Code local settings
+.claude/settings.local.json
+
+# Local (non-Docker) dev artifacts
+backend/dev.db
+backend/uploads/
+
 # App data (DB + uploaded images) — runtime, not source
 data/
 

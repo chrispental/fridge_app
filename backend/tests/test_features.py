@@ -124,8 +124,8 @@ def test_suggest_meals_excludes_grill_in_bad_weather(db, monkeypatch):
 
 # --- location-aware delivery headers ----------------------------------------
 def test_location_headers_zip():
-    h = brave_search._location_headers("06825")
-    assert h["X-Loc-Postal-Code"] == "06825"
+    h = brave_search._location_headers("10001")
+    assert h["X-Loc-Postal-Code"] == "10001"
     assert h["X-Loc-Country"]
 
 

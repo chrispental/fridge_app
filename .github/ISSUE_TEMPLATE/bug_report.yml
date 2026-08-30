@@ -1,0 +1,36 @@
+name: Bug report
+description: Something broke or behaved unexpectedly
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: |
+        1. Went to Cook and hit "Surprise me"
+        2. Expected 5 suggestions
+        3. Got an error banner: "..."
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Backend logs
+      description: Output of `docker compose logs backend --tail 50` around the failure, if relevant.
+      render: shell
+  - type: input
+    id: models
+    attributes:
+      label: Models in use
+      description: Your OPENROUTER_VISION_MODEL / OPENROUTER_MEAL_MODEL, if the bug involves AI output.
+      placeholder: openai/gpt-4o-mini / anthropic/claude-sonnet-4.6
+  - type: dropdown
+    id: setup
+    attributes:
+      label: How are you running it?
+      options:
+        - Docker Compose
+        - Local dev (uvicorn + vite)
+    validations:
+      required: true
