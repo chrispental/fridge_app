@@ -168,6 +168,9 @@ button (gated on the weekly quota fetched by the page); the location field lives
 
 ## Conventions
 
+- Runtime versions are pinned deliberately and move together: Python 3.14 (`backend/Dockerfile`
+  + the CI matrix in `.github/workflows/ci.yml`) and Node 22 LTS (`frontend/Dockerfile`).
+  Dependabot proposes framework majors as grouped PRs (react+react-dom, vite+@vitejs/*).
 - Config is centralized in `backend/app/config.py` (pydantic-settings).
   `OPENROUTER_API_KEY` and `BRAVE_API_KEY` are required for full functionality; the
   Supabase settings are optional and switch on cloud mode; everything else has a
