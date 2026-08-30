@@ -32,7 +32,13 @@ It runs in one of two modes:
 
 ## Screenshots
 
-_Coming soon._
+| Home — what's for dinner? | Inventory — scanned from a photo |
+|---|---|
+| ![Home dashboard](docs/screenshots/home.jpg) | ![Inventory grid with photos](docs/screenshots/inventory.jpg) |
+
+| Meal history — every suggestion, with in-stock vs. to-buy | On a phone |
+|---|---|
+| ![Meal history card](docs/screenshots/history.jpg) | <img src="docs/screenshots/mobile-home.jpg" alt="Home on mobile" width="300"> |
 
 ## How it works
 

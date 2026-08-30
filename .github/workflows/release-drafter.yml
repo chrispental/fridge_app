@@ -20,7 +20,12 @@ jobs:
       - uses: release-drafter/release-drafter@v7
         # PR runs only autolabel (a convenience) and fail on forks / before
         # the config exists on main — don't let that red-X the PR.
-        # Push-to-main runs (the actual release drafting) still fail loudly.
+        # Push-to-main runs publish the release for real.
         continue-on-error: ${{ github.event_name == 'pull_request' }}
+        with:
+          # Every merge to main becomes a published release (tag v<x.y.z>),
+          # versioned from the PR labels (feature -> minor, otherwise patch).
+          # Set back to false to accumulate a draft and publish by hand.
+          publish: ${{ github.event_name == 'push' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
