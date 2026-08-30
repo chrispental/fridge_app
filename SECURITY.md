@@ -37,9 +37,15 @@ response within a week. Please include reproduction steps.
 
 ## Secrets
 
-The app uses API keys supplied via `.env`, which is gitignored:
-`OPENROUTER_API_KEY`, `BRAVE_API_KEY`, and in cloud mode `SUPABASE_SECRET_KEY`
-plus the database password inside `DATABASE_URL`. The Supabase **publishable**
-key (`sb_publishable_…`) is intentionally shipped in the frontend bundle and is
-not a secret. If you find a real key committed anywhere in the
+All keys live in `.env`, which is gitignored — **no key of any kind is committed
+to this repository**: `OPENROUTER_API_KEY`, `BRAVE_API_KEY`, and in cloud mode
+`SUPABASE_SECRET_KEY` plus the database password inside `DATABASE_URL`.
+
+One nuance for cloud mode: the Supabase **publishable** key (`sb_publishable_…`)
+is compiled into *your own* frontend build at `docker compose build` time and
+delivered to browsers, because that is how Supabase browser clients authenticate
+with the project. That is by design — Supabase classifies it as publishable, it
+grants no data access on its own (row-level security denies direct table access),
+and it is still never committed. Treat only the secret key and the database
+password as secrets. If you find a real key committed anywhere in the
 repo or its history, report it privately as above.

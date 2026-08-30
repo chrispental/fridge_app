@@ -15,11 +15,24 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+      # Framework/toolchain majors only work as a pair; propose them together so
+      # the PR can actually go green.
+      react:
+        patterns: [react, react-dom, "@types/react", "@types/react-dom"]
+        update-types: [major]
+      vite:
+        patterns: [vite, "@vitejs/*"]
+        update-types: [major]
 
   - package-ecosystem: docker
     directories: [/backend, /frontend]
     schedule:
       interval: weekly
+    ignore:
+      # The Python version is pinned to match CI (setup-python 3.12); it moves
+      # deliberately together with the CI matrix, not via a base-image bump.
+      - dependency-name: python
+        update-types: [version-update:semver-major, version-update:semver-minor]
 
   - package-ecosystem: github-actions
     directory: /
