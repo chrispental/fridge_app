@@ -17,7 +17,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: release-drafter/release-drafter@v6
+      - uses: release-drafter/release-drafter@v7
         # PR runs only autolabel (a convenience) and fail on forks / before
         # the config exists on main — don't let that red-X the PR.
         # Push-to-main runs (the actual release drafting) still fail loudly.
