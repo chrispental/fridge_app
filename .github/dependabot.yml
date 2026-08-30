@@ -7,10 +7,6 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
-    ignore:
-      # SDK majors change the API surface the tests don't exercise; upgrade deliberately.
-      - dependency-name: openai
-        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /frontend
@@ -19,30 +15,24 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
-    ignore:
-      # Framework/toolchain majors must move together (react + react-dom,
-      # vite + @vitejs/plugin-react) and get a deliberate upgrade PR, not a drip.
-      - dependency-name: react
-        update-types: [version-update:semver-major]
-      - dependency-name: react-dom
-        update-types: [version-update:semver-major]
-      - dependency-name: react-router-dom
-        update-types: [version-update:semver-major]
-      - dependency-name: vite
-        update-types: [version-update:semver-major]
-      - dependency-name: "@vitejs/plugin-react"
-        update-types: [version-update:semver-major]
+      # Framework/toolchain majors only work as a pair; propose them together so
+      # the PR can actually go green.
+      react:
+        patterns: [react, react-dom, "@types/react", "@types/react-dom"]
+        update-types: [major]
+      vite:
+        patterns: [vite, "@vitejs/*"]
+        update-types: [major]
 
   - package-ecosystem: docker
     directories: [/backend, /frontend]
     schedule:
       interval: weekly
     ignore:
-      # Base-image majors (Python 3.x, Node LTS) are chosen on purpose, not bumped.
+      # The Python version is pinned to match CI (setup-python 3.12); it moves
+      # deliberately together with the CI matrix, not via a base-image bump.
       - dependency-name: python
         update-types: [version-update:semver-major, version-update:semver-minor]
-      - dependency-name: node
-        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
