@@ -1,10 +1,10 @@
 """Tests for inventory storage locations, the category backfill, and migration."""
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app import models
-from app.main import _migrate_inventory_columns
+from conftest import LOCAL_USER
 from app.services.storage import normalize_storage, storage_from_category
 from app.services.vision import parse_items
 
@@ -56,77 +56,6 @@ def test_parse_items_falls_back_to_category():
     assert out[0].storage == "freezer"
 
 
-# --- migration: ALTER + one-time backfill ------------------------------------
-def test_migration_adds_column_and_backfills():
-    eng = _engine()
-    # A legacy inventory_items table that predates the storage column.
-    with eng.begin() as conn:
-        conn.execute(
-            text(
-                "CREATE TABLE inventory_items ("
-                "id INTEGER PRIMARY KEY, name VARCHAR, quantity FLOAT, unit VARCHAR, "
-                "category VARCHAR, source VARCHAR, extraction_batch_id INTEGER, "
-                "added_at DATETIME, updated_at DATETIME)"
-            )
-        )
-        conn.execute(
-            text(
-                "INSERT INTO inventory_items (name, category) VALUES "
-                "('milk','dairy'), ('peas','frozen'), ('mystery', NULL)"
-            )
-        )
-
-    db = sessionmaker(bind=eng)()
-    _migrate_inventory_columns(db, eng)
-
-    rows = {r.name: r.storage for r in db.query(models.InventoryItem).all()}
-    assert rows == {"milk": "fridge", "peas": "freezer", "mystery": "unsorted"}
-    db.close()
-
-
-def test_migration_is_idempotent():
-    eng = _engine()
-    models.Base.metadata.create_all(eng)  # fresh schema already has the column
-    db = sessionmaker(bind=eng)()
-    db.add(models.InventoryItem(name="bread", category="bakery", storage="counter"))
-    db.commit()
-    # Running the migration must not disturb an already-set value.
-    _migrate_inventory_columns(db, eng)
-    item = db.query(models.InventoryItem).filter_by(name="bread").one()
-    assert item.storage == "counter"
-    db.close()
-
-
-# --- migration: preferences.name ----------------------------------------------
-def test_preferences_name_migration():
-    from app.main import _migrate_preferences_columns
-
-    eng = _engine()
-    # A legacy preferences table predating pantry_staples and name.
-    with eng.begin() as conn:
-        conn.execute(
-            text(
-                "CREATE TABLE preferences ("
-                "id INTEGER PRIMARY KEY, household_size INTEGER, allergies JSON, "
-                "dietary_restrictions JSON, equipment JSON, max_complexity INTEGER, "
-                "disliked_ingredients JSON, disliked_cuisines JSON, no_repeat_days INTEGER, "
-                "location VARCHAR, onboarded BOOLEAN, updated_at DATETIME)"
-            )
-        )
-        conn.execute(text("INSERT INTO preferences (id, household_size) VALUES (1, 2)"))
-
-    db = sessionmaker(bind=eng)()
-    _migrate_preferences_columns(db, eng)
-
-    prefs = db.get(models.Preferences, 1)
-    assert prefs.name == ""  # empty default, row readable
-    assert prefs.pantry_staples  # staples seeded by the same migration
-    prefs.name = "Chris"
-    db.commit()
-    assert db.get(models.Preferences, 1).name == "Chris"
-    db.close()
-
-
 # --- image backfill ----------------------------------------------------------
 def test_backfill_images_only_targets_unfetched(monkeypatch):
     from app.routers import inventory
@@ -135,10 +64,10 @@ def test_backfill_images_only_targets_unfetched(monkeypatch):
     eng = _engine()
     models.Base.metadata.create_all(eng)
     db = sessionmaker(bind=eng)()
-    db.add(models.InventoryItem(name="milk", storage="fridge"))                       # NULL -> found
-    db.add(models.InventoryItem(name="kale", storage="fridge"))                       # NULL -> none
-    db.add(models.InventoryItem(name="eggs", storage="fridge", image_url=""))         # already tried
-    db.add(models.InventoryItem(name="bread", storage="counter", image_url="http://x"))  # already has
+    db.add(models.InventoryItem(user_id=LOCAL_USER.id, name="milk", storage="fridge"))                       # NULL -> found
+    db.add(models.InventoryItem(user_id=LOCAL_USER.id, name="kale", storage="fridge"))                       # NULL -> none
+    db.add(models.InventoryItem(user_id=LOCAL_USER.id, name="eggs", storage="fridge", image_url=""))         # already tried
+    db.add(models.InventoryItem(user_id=LOCAL_USER.id, name="bread", storage="counter", image_url="http://x"))  # already has
     db.commit()
 
     results = {"milk": "http://img/milk.jpg", "kale": None}
@@ -147,7 +76,7 @@ def test_backfill_images_only_targets_unfetched(monkeypatch):
         brave_search, "search_image", lambda q: (seen.append(q), results[q])[1]
     )
 
-    inventory.backfill_images(db=db)
+    inventory.backfill_images(user=LOCAL_USER, db=db)
 
     assert sorted(seen) == ["kale", "milk"]  # only the two NULL items were fetched
     by = {i.name: i.image_url for i in db.query(models.InventoryItem).all()}

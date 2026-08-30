@@ -3,22 +3,11 @@ and the expires_at column migration."""
 from datetime import date
 from types import SimpleNamespace
 
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-
-from app import models
-from app.main import _migrate_inventory_columns
 from app.schemas import MealSuggestion, RecipeIngredient
 from app.services.expiry import estimate_expiry, expiring_soon, is_expiring
 from app.services.meal_engine import _build_user_prompt, _sort_key
 
 TODAY = date(2026, 7, 2)
-
-
-def _engine():
-    return create_engine(
-        "sqlite:///:memory:", connect_args={"check_same_thread": False}
-    )
 
 
 def _item(name, expires=None):
@@ -129,29 +118,3 @@ def test_sort_shortfall_still_dominates():
         key=lambda s: _sort_key(s, ["chicken thighs"]),
     )
     assert ranked[0].title == "Bean Chili"
-
-
-# --- migration -------------------------------------------------------------------
-def test_migration_adds_expires_at_and_rows_stay_readable():
-    eng = _engine()
-    # Legacy table predating storage/image_url/expires_at.
-    with eng.begin() as conn:
-        conn.execute(
-            text(
-                "CREATE TABLE inventory_items ("
-                "id INTEGER PRIMARY KEY, name VARCHAR, quantity FLOAT, unit VARCHAR, "
-                "category VARCHAR, source VARCHAR, extraction_batch_id INTEGER, "
-                "added_at DATETIME, updated_at DATETIME)"
-            )
-        )
-        conn.execute(text("INSERT INTO inventory_items (name, category) VALUES ('milk','dairy')"))
-
-    db = sessionmaker(bind=eng)()
-    _migrate_inventory_columns(db, eng)
-
-    item = db.query(models.InventoryItem).one()
-    assert item.expires_at is None  # NULL default, still readable
-    item.expires_at = date(2026, 7, 10)
-    db.commit()
-    assert db.query(models.InventoryItem).one().expires_at == date(2026, 7, 10)
-    db.close()

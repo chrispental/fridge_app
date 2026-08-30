@@ -2,25 +2,11 @@
 from datetime import timedelta
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from app import models
-from app.database import Base
+from conftest import LOCAL_USER
 from app.models import utcnow
 from app.schemas import MealSuggestion, RecipeIngredient
 from app.services import brave_search, meal_engine, weather
-
-
-@pytest.fixture
-def db():
-    engine = create_engine(
-        "sqlite:///:memory:", connect_args={"check_same_thread": False}
-    )
-    Base.metadata.create_all(engine)
-    session = sessionmaker(bind=engine)()
-    yield session
-    session.close()
 
 
 # --- grill detection ---------------------------------------------------------
@@ -67,7 +53,7 @@ def test_is_winter():
 
 # --- delivery quota ----------------------------------------------------------
 def _meal(title, status="suggested", delivered_days_ago=None):
-    return models.Meal(
+    return models.Meal(user_id=LOCAL_USER.id,
         title=title,
         title_normalized=title.lower(),
         recipe_json={},
@@ -84,24 +70,24 @@ def _meal(title, status="suggested", delivered_days_ago=None):
 def test_no_delivery_yet(db):
     db.add(_meal("Pizza"))
     db.commit()
-    assert meal_engine.most_recent_delivery(db) is None
+    assert meal_engine.most_recent_delivery(db, LOCAL_USER.id) is None
 
 
 def test_recent_delivery_blocks(db):
     db.add(_meal("Sushi", status="ordered", delivered_days_ago=2))
     db.commit()
-    assert meal_engine.most_recent_delivery(db) is not None
+    assert meal_engine.most_recent_delivery(db, LOCAL_USER.id) is not None
 
 
 def test_old_delivery_does_not_block(db):
     db.add(_meal("Sushi", status="ordered", delivered_days_ago=10))
     db.commit()
-    assert meal_engine.most_recent_delivery(db) is None
+    assert meal_engine.most_recent_delivery(db, LOCAL_USER.id) is None
 
 
 # --- end-to-end grill exclusion through suggest_meals ------------------------
 def test_suggest_meals_excludes_grill_in_bad_weather(db, monkeypatch):
-    db.add(models.Preferences(id=1, location="Anywhere"))
+    db.add(models.Preferences(user_id=LOCAL_USER.id, location="Anywhere"))
     db.commit()
 
     generated = [
@@ -116,7 +102,7 @@ def test_suggest_meals_excludes_grill_in_bad_weather(db, monkeypatch):
     )
     monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s, avoid_url=None: None)
 
-    meals = meal_engine.suggest_meals(db, count=2)
+    meals = meal_engine.suggest_meals(db, LOCAL_USER.id, count=2)
     titles = [m.title for m in meals]
     assert "Tomato Soup" in titles
     assert "Grilled Steak" not in titles
@@ -171,8 +157,8 @@ def test_shortfall_orders_makeable_first():
 
 
 def test_suggest_meals_puts_in_stock_meals_on_top(db, monkeypatch):
-    db.add(models.Preferences(id=1))
-    db.add(models.InventoryItem(name="eggs", storage="fridge"))
+    db.add(models.Preferences(user_id=LOCAL_USER.id))
+    db.add(models.InventoryItem(user_id=LOCAL_USER.id, name="eggs", storage="fridge"))
     db.commit()
 
     generated = [
@@ -191,12 +177,12 @@ def test_suggest_meals_puts_in_stock_meals_on_top(db, monkeypatch):
     monkeypatch.setattr(meal_engine, "_generate", lambda *a, **k: list(generated))
     monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s, avoid_url=None: None)
 
-    meals = meal_engine.suggest_meals(db, count=5)
+    meals = meal_engine.suggest_meals(db, LOCAL_USER.id, count=5)
     assert [m.title for m in meals] == ["All In Stock", "Needs Shopping"]
 
 
 def test_suggest_meals_allows_grill_in_good_weather(db, monkeypatch):
-    db.add(models.Preferences(id=1, location="Anywhere"))
+    db.add(models.Preferences(user_id=LOCAL_USER.id, location="Anywhere"))
     db.commit()
 
     monkeypatch.setattr(
@@ -210,24 +196,24 @@ def test_suggest_meals_allows_grill_in_good_weather(db, monkeypatch):
     )
     monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s, avoid_url=None: None)
 
-    meals = meal_engine.suggest_meals(db, count=1)
+    meals = meal_engine.suggest_meals(db, LOCAL_USER.id, count=1)
     assert [m.title for m in meals] == ["Grilled Steak"]
 
 
 # --- post-cook feedback ------------------------------------------------------
 def test_recent_feedback_lines_and_disliked(db):
-    db.add(models.Meal(
+    db.add(models.Meal(user_id=LOCAL_USER.id,
         title="Salty Stew", title_normalized="salty stew", recipe_json={},
         rating=-1, feedback_tags=["too salty"], feedback_notes="needs less salt",
         feedback_at=utcnow(),
     ))
-    db.add(models.Meal(
+    db.add(models.Meal(user_id=LOCAL_USER.id,
         title="Great Tacos", title_normalized="great tacos", recipe_json={},
         rating=1, feedback_tags=["loved it"], feedback_at=utcnow(),
     ))
     db.commit()
 
-    lines, disliked = meal_engine._recent_feedback(db)
+    lines, disliked = meal_engine._recent_feedback(db, LOCAL_USER.id)
     joined = "\n".join(lines)
     assert "Salty Stew" in joined and "too salty" in joined and "needs less salt" in joined
     assert "disliked" in joined and "liked" in joined
@@ -235,13 +221,13 @@ def test_recent_feedback_lines_and_disliked(db):
 
 
 def test_prior_source_url(db):
-    db.add(models.Meal(
+    db.add(models.Meal(user_id=LOCAL_USER.id,
         title="Pasta", title_normalized="pasta", suggested_at=utcnow(),
         recipe_json={"source": {"title": "X", "url": "https://a.com/r"}},
     ))
     db.commit()
-    assert meal_engine._prior_source_url(db, "pasta") == "https://a.com/r"
-    assert meal_engine._prior_source_url(db, "nope") is None
+    assert meal_engine._prior_source_url(db, LOCAL_USER.id, "pasta") == "https://a.com/r"
+    assert meal_engine._prior_source_url(db, LOCAL_USER.id, "nope") is None
 
 
 def test_pick_recipe_avoids_prior_source():
@@ -255,11 +241,11 @@ def test_pick_recipe_avoids_prior_source():
 
 
 def test_disliked_dish_is_excluded_from_suggestions(db, monkeypatch):
-    db.add(models.Meal(
+    db.add(models.Meal(user_id=LOCAL_USER.id,
         title="Mushy Risotto", title_normalized="mushy risotto", recipe_json={},
         rating=-1, feedback_notes="gluey", feedback_at=utcnow(),
     ))
-    db.add(models.Preferences(id=1))
+    db.add(models.Preferences(user_id=LOCAL_USER.id))
     db.commit()
 
     monkeypatch.setattr(
@@ -271,7 +257,7 @@ def test_disliked_dish_is_excluded_from_suggestions(db, monkeypatch):
     )
     monkeypatch.setattr(meal_engine, "_enrich_with_brave", lambda s, avoid_url=None: None)
 
-    meals = meal_engine.suggest_meals(db, count=2)
+    meals = meal_engine.suggest_meals(db, LOCAL_USER.id, count=2)
     titles = [m.title for m in meals]
     assert "Mushy Risotto" not in titles  # disliked dish filtered out
     assert "Fresh Salad" in titles

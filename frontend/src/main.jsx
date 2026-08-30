@@ -6,6 +6,7 @@ import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { ToastProvider } from './components/Toast.jsx'
 import { createQueryClient } from './api/queries.js'
+import { AuthProvider } from './auth/AuthProvider.jsx'
 import './index.css'
 
 const queryClient = createQueryClient()
@@ -14,11 +15,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </ToastProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </ToastProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   </React.StrictMode>,

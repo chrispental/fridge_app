@@ -1,6 +1,9 @@
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 sqlalchemy==2.0.36
+alembic==1.19.1
+psycopg[binary]==3.3.4
+pyjwt[crypto]==2.13.0
 pydantic==2.10.4
 pydantic-settings==2.7.1
 python-multipart==0.0.20

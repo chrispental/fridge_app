@@ -4,108 +4,29 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import inspect, text
 
-from . import models
 from .config import settings
-from .database import Base, SessionLocal, engine
+from .database import engine
+from .migrations import run_migrations
 from .routers import health, inventory, meals, plans, preferences, shopping
-from .services.staples import DEFAULT_STAPLES
-from .services.storage import storage_from_category
+from .services.blob_storage import get_blob_storage
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def _migrate_inventory_columns(db, db_engine) -> None:
-    """Add columns missing from a pre-existing inventory_items table (no Alembic).
-
-    `create_all` only creates missing tables, never new columns. So on an existing
-    table we ALTER in the new columns. `storage` is then backfilled once from each
-    item's category; `image_url` is left NULL (filled on demand via the backfill
-    endpoint). New databases already have the columns, so this no-ops.
-    """
-    columns = {c["name"] for c in inspect(db_engine).get_columns("inventory_items")}
-    with db_engine.begin() as conn:
-        if "storage" not in columns:
-            conn.execute(text("ALTER TABLE inventory_items ADD COLUMN storage VARCHAR"))
-            logger.info("Added inventory_items.storage column")
-        if "image_url" not in columns:
-            conn.execute(text("ALTER TABLE inventory_items ADD COLUMN image_url VARCHAR"))
-            logger.info("Added inventory_items.image_url column")
-        if "expires_at" not in columns:
-            conn.execute(text("ALTER TABLE inventory_items ADD COLUMN expires_at DATE"))
-            logger.info("Added inventory_items.expires_at column")
-
-    pending = (
-        db.query(models.InventoryItem)
-        .filter(models.InventoryItem.storage.is_(None))
-        .all()
-    )
-    for item in pending:
-        item.storage = storage_from_category(item.category)
-    if pending:
-        db.commit()
-        logger.info("Backfilled storage for %d existing item(s)", len(pending))
-
-
-def _migrate_preferences_columns(db, db_engine) -> None:
-    """Add columns missing from a pre-existing preferences table (no Alembic).
-
-    `create_all` never adds columns to an existing table, so we ALTER them in and seed
-    the singleton row with the default staples. New databases already have the columns
-    (and the row is seeded at creation), so this no-ops.
-    """
-    columns = {c["name"] for c in inspect(db_engine).get_columns("preferences")}
-    if "pantry_staples" not in columns:
-        with db_engine.begin() as conn:
-            conn.execute(text("ALTER TABLE preferences ADD COLUMN pantry_staples JSON"))
-        logger.info("Added preferences.pantry_staples column")
-    if "name" not in columns:
-        with db_engine.begin() as conn:
-            conn.execute(text("ALTER TABLE preferences ADD COLUMN name VARCHAR DEFAULT ''"))
-        logger.info("Added preferences.name column")
-
-    prefs = db.get(models.Preferences, 1)
-    if prefs is not None and not prefs.pantry_staples:
-        prefs.pantry_staples = list(DEFAULT_STAPLES)
-        db.commit()
-        logger.info("Seeded default pantry staples")
-
-
-def _migrate_meal_columns(db_engine) -> None:
-    """Add post-cook feedback columns to a pre-existing meals table (no Alembic)."""
-    columns = {c["name"] for c in inspect(db_engine).get_columns("meals")}
-    additions = {
-        "rating": "INTEGER",
-        "feedback_tags": "JSON",
-        "feedback_notes": "VARCHAR",
-        "feedback_at": "DATETIME",
-    }
-    with db_engine.begin() as conn:
-        for name, sql_type in additions.items():
-            if name not in columns:
-                conn.execute(text(f"ALTER TABLE meals ADD COLUMN {name} {sql_type}"))
-                logger.info("Added meals.%s column", name)
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables and ensure the singleton preferences row exists.
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
-    try:
-        # Run column migrations BEFORE any ORM query against these tables: the mapped
-        # models reference columns that create_all won't add to a pre-existing table,
-        # so querying first would fail with "no such column".
-        _migrate_inventory_columns(db, engine)
-        _migrate_preferences_columns(db, engine)
-        _migrate_meal_columns(engine)
-        if db.get(models.Preferences, 1) is None:
-            db.add(models.Preferences(id=1, pantry_staples=list(DEFAULT_STAPLES)))
-            db.commit()
-    finally:
-        db.close()
+    # Bring the schema to the latest Alembic revision (creates it from scratch on a
+    # fresh database). Per-user rows are created lazily on first request.
+    run_migrations(engine)
+    logger.info("Auth mode: %s", "supabase" if settings.auth_enabled else "local (single user)")
+    if settings.auth_enabled and settings.database_url.startswith("sqlite"):
+        logger.warning(
+            "SUPABASE_URL is set but DATABASE_URL is SQLite — multi-user data is being "
+            "written to a local file. Point DATABASE_URL at the Supabase Postgres pooler."
+        )
+    get_blob_storage().check()
     yield
 
 

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
+from ..services.blob_storage import _backend_name
 
 router = APIRouter(prefix="/api", tags=["health"])
 
@@ -20,6 +21,8 @@ def health(db: Session = Depends(get_db)):
     return {
         "status": "ok" if db_ok else "degraded",
         "database": db_ok,
+        "auth_mode": "supabase" if settings.auth_enabled else "local",
+        "storage_backend": _backend_name(),
         "ai_configured": bool(settings.openrouter_api_key),
         "vision_model": settings.openrouter_vision_model,
         "meal_model": settings.openrouter_meal_model,
