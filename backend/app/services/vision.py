@@ -1,8 +1,6 @@
 """Photo -> structured inventory items, via an OpenRouter vision model."""
 import base64
 import io
-import os
-import uuid
 
 from PIL import Image
 
@@ -40,10 +38,11 @@ EXTRACTION_SCHEMA = {
 }
 
 
-def preprocess_and_save(raw_bytes: bytes) -> tuple[str, str]:
-    """Downscale + re-encode an uploaded image, persist it, return (path, data_url).
+def preprocess(raw_bytes: bytes) -> tuple[bytes, str]:
+    """Downscale + re-encode an uploaded image; return (jpeg_bytes, data_url).
 
-    Downscaling before base64-encoding keeps the request small and cheap.
+    Downscaling before base64-encoding keeps the vision request small and cheap.
+    Persisting the bytes is the caller's job (see `services/blob_storage.py`).
     """
     img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
     max_dim = settings.max_image_dim
@@ -54,13 +53,8 @@ def preprocess_and_save(raw_bytes: bytes) -> tuple[str, str]:
     img.save(buf, format="JPEG", quality=80)
     jpeg = buf.getvalue()
 
-    os.makedirs(settings.upload_dir, exist_ok=True)
-    path = os.path.join(settings.upload_dir, f"{uuid.uuid4().hex}.jpg")
-    with open(path, "wb") as fh:
-        fh.write(jpeg)
-
     data_url = "data:image/jpeg;base64," + base64.b64encode(jpeg).decode("ascii")
-    return path, data_url
+    return jpeg, data_url
 
 
 def parse_items(raw: dict) -> list[ExtractedItem]:

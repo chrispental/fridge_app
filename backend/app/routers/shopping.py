@@ -4,18 +4,25 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
+from ..auth import CurrentUser
 from ..database import get_db
 from ..models import utcnow
+from ..services.scope import get_owned, inventory_for, staples_for
 from ..services.shopping_list import build_shopping_list, merge_into_list, missing_for_meal
 from ..services.units import normalize_unit
 
 router = APIRouter(prefix="/api/shopping-list", tags=["shopping"])
 
 
-def _list_items(db: Session) -> list[models.ShoppingListItem]:
+def _owned_row(db: Session, item_id: int, user_id: str) -> models.ShoppingListItem:
+    return get_owned(db, models.ShoppingListItem, item_id, user_id, label="Item")
+
+
+def _list_items(db: Session, user_id: str) -> list[models.ShoppingListItem]:
     """Unchecked first, newest first within each group."""
     return (
         db.query(models.ShoppingListItem)
+        .filter(models.ShoppingListItem.user_id == user_id)
         .order_by(
             models.ShoppingListItem.checked,
             models.ShoppingListItem.created_at.desc(),
@@ -24,17 +31,19 @@ def _list_items(db: Session) -> list[models.ShoppingListItem]:
     )
 
 
-def _staples(db: Session) -> list[str]:
-    prefs = db.get(models.Preferences, 1)
-    return (prefs.pantry_staples if prefs else None) or []
-
-
-def _merge_and_save(db: Session, new_items: list[dict], source: str) -> list[models.ShoppingListItem]:
+def _merge_and_save(
+    db: Session, user_id: str, new_items: list[dict], source: str
+) -> list[models.ShoppingListItem]:
     """Merge imported items into the open list; returns rows added or updated."""
-    existing = db.query(models.ShoppingListItem).all()
+    existing = (
+        db.query(models.ShoppingListItem)
+        .filter(models.ShoppingListItem.user_id == user_id)
+        .all()
+    )
     updated, creates = merge_into_list(existing, new_items)
     created = [
         models.ShoppingListItem(
+            user_id=user_id,
             name=str(c["name"]).strip().lower(),
             quantity=c["quantity"],
             unit=normalize_unit(c["unit"]),
@@ -53,15 +62,18 @@ def _merge_and_save(db: Session, new_items: list[dict], source: str) -> list[mod
 # ---- Static routes first (convention; /{item_id} uses other methods anyway) ----
 
 @router.get("", response_model=list[schemas.ShoppingItemOut])
-def list_shopping(db: Session = Depends(get_db)):
-    return _list_items(db)
+def list_shopping(user: CurrentUser, db: Session = Depends(get_db)):
+    return _list_items(db, user.id)
 
 
 @router.post("", response_model=schemas.ShoppingItemOut, status_code=201)
-def add_shopping_item(payload: schemas.ShoppingItemCreate, db: Session = Depends(get_db)):
+def add_shopping_item(
+    payload: schemas.ShoppingItemCreate, user: CurrentUser, db: Session = Depends(get_db)
+):
     if not payload.name.strip():
         raise HTTPException(422, "Item name is required.")
     item = models.ShoppingListItem(
+        user_id=user.id,
         name=payload.name.strip().lower(),
         quantity=payload.quantity,
         unit=normalize_unit(payload.unit),
@@ -74,28 +86,33 @@ def add_shopping_item(payload: schemas.ShoppingItemCreate, db: Session = Depends
 
 
 @router.post("/clear-checked", response_model=list[schemas.ShoppingItemOut])
-def clear_checked(db: Session = Depends(get_db)):
+def clear_checked(user: CurrentUser, db: Session = Depends(get_db)):
     """Delete all checked items; returns the remaining list."""
     db.query(models.ShoppingListItem).filter(
-        models.ShoppingListItem.checked.is_(True)
+        models.ShoppingListItem.user_id == user.id,
+        models.ShoppingListItem.checked.is_(True),
     ).delete(synchronize_session=False)
     db.commit()
-    return _list_items(db)
+    return _list_items(db, user.id)
 
 
 @router.post("/checked-to-inventory", response_model=list[schemas.InventoryItemOut])
-def checked_to_inventory(db: Session = Depends(get_db)):
+def checked_to_inventory(user: CurrentUser, db: Session = Depends(get_db)):
     """Convert every checked item into an inventory item (storage 'unsorted'),
     then remove them from the list. The one-tap 'I got everything' flow."""
     checked = (
         db.query(models.ShoppingListItem)
-        .filter(models.ShoppingListItem.checked.is_(True))
+        .filter(
+            models.ShoppingListItem.user_id == user.id,
+            models.ShoppingListItem.checked.is_(True),
+        )
         .all()
     )
     created: list[models.InventoryItem] = []
     for row in checked:
         created.append(
             models.InventoryItem(
+                user_id=user.id,
                 name=row.name.strip().lower(),
                 quantity=row.quantity,
                 unit=normalize_unit(row.unit),
@@ -112,26 +129,24 @@ def checked_to_inventory(db: Session = Depends(get_db)):
 
 
 @router.post("/import/plan/{plan_id}", response_model=list[schemas.ShoppingItemOut])
-def import_plan(plan_id: int, db: Session = Depends(get_db)):
+def import_plan(plan_id: int, user: CurrentUser, db: Session = Depends(get_db)):
     """Merge a plan's to-buy list into the shopping list."""
-    plan = db.get(models.MealPlan, plan_id)
-    if plan is None:
-        raise HTTPException(404, "Plan not found")
-    inventory = db.query(models.InventoryItem).all()
+    plan = get_owned(db, models.MealPlan, plan_id, user.id, label="Plan")
     meals = [e.meal for e in plan.entries]
-    to_buy = build_shopping_list(meals, inventory, _staples(db))["to_buy"]
-    return _merge_and_save(db, to_buy, source="plan")
+    to_buy = build_shopping_list(
+        meals, inventory_for(db, user.id), staples_for(db, user.id)
+    )["to_buy"]
+    return _merge_and_save(db, user.id, to_buy, source="plan")
 
 
 @router.post("/import/meal/{meal_id}", response_model=list[schemas.ShoppingItemOut])
-def import_meal(meal_id: int, db: Session = Depends(get_db)):
+def import_meal(meal_id: int, user: CurrentUser, db: Session = Depends(get_db)):
     """Merge one meal's missing ingredients into the shopping list."""
-    meal = db.get(models.Meal, meal_id)
-    if meal is None:
-        raise HTTPException(404, "Meal not found")
-    inventory = db.query(models.InventoryItem).all()
-    needed = missing_for_meal(meal.recipe_json or {}, inventory, _staples(db))
-    return _merge_and_save(db, needed, source="meal")
+    meal = get_owned(db, models.Meal, meal_id, user.id, label="Meal")
+    needed = missing_for_meal(
+        meal.recipe_json or {}, inventory_for(db, user.id), staples_for(db, user.id)
+    )
+    return _merge_and_save(db, user.id, needed, source="meal")
 
 
 # ---- Dynamic routes ----
@@ -140,11 +155,10 @@ def import_meal(meal_id: int, db: Session = Depends(get_db)):
 def update_shopping_item(
     item_id: int,
     payload: schemas.ShoppingItemUpdate,
+    user: CurrentUser,
     db: Session = Depends(get_db),
 ):
-    item = db.get(models.ShoppingListItem, item_id)
-    if item is None:
-        raise HTTPException(404, "Item not found")
+    item = _owned_row(db, item_id, user.id)
     data = payload.model_dump(exclude_unset=True)
     if data.get("name"):
         item.name = data["name"].strip().lower()
@@ -161,9 +175,7 @@ def update_shopping_item(
 
 
 @router.delete("/{item_id}", status_code=204)
-def delete_shopping_item(item_id: int, db: Session = Depends(get_db)):
-    item = db.get(models.ShoppingListItem, item_id)
-    if item is None:
-        raise HTTPException(404, "Item not found")
+def delete_shopping_item(item_id: int, user: CurrentUser, db: Session = Depends(get_db)):
+    item = _owned_row(db, item_id, user.id)
     db.delete(item)
     db.commit()

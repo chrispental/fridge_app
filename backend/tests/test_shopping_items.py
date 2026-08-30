@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app import models
+from conftest import LOCAL_USER
 from app.routers import shopping
 from app.services.shopping_list import merge_into_list, missing_for_meal
 
@@ -108,12 +109,12 @@ def test_missing_for_meal_tolerates_empty_recipe():
 # --- router: checked-to-inventory ---------------------------------------------------
 def test_checked_to_inventory_converts_and_removes():
     db = _db()
-    db.add(models.ShoppingListItem(name="Lemons", quantity=4, unit="piece", checked=True))
-    db.add(models.ShoppingListItem(name="flour", quantity=1, unit="POUND", checked=True))
-    db.add(models.ShoppingListItem(name="butter", quantity=1, unit="lb", checked=False))
+    db.add(models.ShoppingListItem(user_id=LOCAL_USER.id, name="Lemons", quantity=4, unit="piece", checked=True))
+    db.add(models.ShoppingListItem(user_id=LOCAL_USER.id, name="flour", quantity=1, unit="POUND", checked=True))
+    db.add(models.ShoppingListItem(user_id=LOCAL_USER.id, name="butter", quantity=1, unit="lb", checked=False))
     db.commit()
 
-    created = shopping.checked_to_inventory(db=db)
+    created = shopping.checked_to_inventory(user=LOCAL_USER, db=db)
 
     by_name = {c.name: c for c in created}
     assert set(by_name) == {"lemons", "flour"}
@@ -129,7 +130,7 @@ def test_checked_to_inventory_converts_and_removes():
 
 # --- router: import idempotence -----------------------------------------------------
 def _make_meal(db, title, ingredients):
-    meal = models.Meal(
+    meal = models.Meal(user_id=LOCAL_USER.id,
         title=title,
         title_normalized=title.lower(),
         recipe_json={"ingredients": ingredients, "missing_ingredients": []},
@@ -142,7 +143,7 @@ def _make_meal(db, title, ingredients):
 
 def test_import_meal_twice_sums_quantities_no_duplicates():
     db = _db()
-    db.add(models.Preferences(id=1, pantry_staples=["salt"]))
+    db.add(models.Preferences(user_id=LOCAL_USER.id, pantry_staples=["salt"]))
     meal = _make_meal(
         db,
         "Chicken Rice",
@@ -152,8 +153,8 @@ def test_import_meal_twice_sums_quantities_no_duplicates():
         ],
     )
 
-    shopping.import_meal(meal.id, db=db)
-    shopping.import_meal(meal.id, db=db)
+    shopping.import_meal(meal.id, user=LOCAL_USER, db=db)
+    shopping.import_meal(meal.id, user=LOCAL_USER, db=db)
 
     rows = db.query(models.ShoppingListItem).all()
     assert len(rows) == 1  # staple excluded, chicken deduped
@@ -165,16 +166,16 @@ def test_import_meal_twice_sums_quantities_no_duplicates():
 
 def test_import_checked_then_reimport_creates_fresh_row():
     db = _db()
-    db.add(models.Preferences(id=1, pantry_staples=[]))
+    db.add(models.Preferences(user_id=LOCAL_USER.id, pantry_staples=[]))
     meal = _make_meal(
         db, "Soup", [{"name": "leek", "quantity": 2, "unit": "piece", "in_stock": False}]
     )
-    shopping.import_meal(meal.id, db=db)
+    shopping.import_meal(meal.id, user=LOCAL_USER, db=db)
     row = db.query(models.ShoppingListItem).one()
     row.checked = True
     db.commit()
 
-    shopping.import_meal(meal.id, db=db)
+    shopping.import_meal(meal.id, user=LOCAL_USER, db=db)
     rows = db.query(models.ShoppingListItem).order_by(models.ShoppingListItem.id).all()
     assert len(rows) == 2  # checked rows are already in the cart; new open row created
     assert rows[0].checked and not rows[1].checked

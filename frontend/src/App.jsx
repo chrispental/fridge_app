@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Nav from './components/Nav.jsx'
 import { useOnboardStatus } from './api/queries.js'
+import { useAuth } from './auth/useAuth.js'
 import { PageSkeleton } from './components/ui.jsx'
+import Login from './pages/Login.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import Home from './pages/Home.jsx'
 import SuggestMeal from './pages/SuggestMeal.jsx'
@@ -14,19 +16,36 @@ import PreferencesPage from './pages/PreferencesPage.jsx'
 import ShoppingListPage from './pages/ShoppingListPage.jsx'
 import InsightsPage from './pages/InsightsPage.jsx'
 
+const Skeleton = () => (
+  <div className="app">
+    <main className="content">
+      <PageSkeleton />
+    </main>
+  </div>
+)
+
 export default function App() {
   const location = useLocation()
-  const status = useOnboardStatus()
+  const { authEnabled, session, loading: authLoading } = useAuth()
+  const signedIn = !authEnabled || Boolean(session)
+  // Gate order: session (cloud mode only) → onboarding → app. The status query is
+  // held back until there's a session, so an unauthenticated 401 never gets read as
+  // "not onboarded".
+  const status = useOnboardStatus({ enabled: signedIn })
 
-  if (status.isPending) {
+  if (authEnabled && authLoading) return <Skeleton />
+
+  if (!signedIn) {
     return (
       <div className="app">
-        <main className="content">
-          <PageSkeleton />
-        </main>
+        <Routes>
+          <Route path="*" element={<Login />} />
+        </Routes>
       </div>
     )
   }
+
+  if (status.isPending) return <Skeleton />
 
   // An unreachable backend reads as "not onboarded" — same as before React Query.
   const onboarded = status.data?.onboarded ?? false

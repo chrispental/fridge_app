@@ -1,13 +1,28 @@
 // Thin fetch wrapper around the backend API. All calls are same-origin (/api).
 const BASE = '/api'
 
+// Auth hooks, installed by AuthProvider in cloud mode. In local mode they stay as
+// these no-ops and requests go out without an Authorization header.
+let getToken = async () => null
+let handleUnauthorized = () => {}
+export function configureAuth(hooks) {
+  getToken = hooks.getToken || getToken
+  handleUnauthorized = hooks.handleUnauthorized || handleUnauthorized
+}
+
 async function request(path, options = {}) {
+  // Copy headers so a FormData body keeps its own multipart boundary.
+  const headers = new Headers(options.headers || {})
+  const token = await getToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
   let res
   try {
-    res = await fetch(BASE + path, options)
+    res = await fetch(BASE + path, { ...options, headers })
   } catch {
     throw new Error('Could not reach the server. Is the backend running?')
   }
+  if (res.status === 401 && token) handleUnauthorized() // session is dead; fall through
   if (res.status === 204) return null
 
   const text = await res.text()

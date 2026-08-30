@@ -25,7 +25,13 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # Cloud mode only; substituted from .env. Empty defaults keep
+        # `docker compose build` working with no .env at all.
+        VITE_SUPABASE_URL: "${VITE_SUPABASE_URL:-}"
+        VITE_SUPABASE_PUBLISHABLE_KEY: "${VITE_SUPABASE_PUBLISHABLE_KEY:-}"
     container_name: fridge_frontend
     ports:
       # Open the app at http://localhost:8080

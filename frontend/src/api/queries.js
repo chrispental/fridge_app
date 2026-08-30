@@ -30,8 +30,13 @@ export function createQueryClient() {
 
 // ---------------------------------------------------------------- queries
 
-export const useOnboardStatus = () =>
-  useQuery({ queryKey: ['preferences', 'status'], queryFn: api.getOnboardStatus, retry: 1 })
+export const useOnboardStatus = ({ enabled = true } = {}) =>
+  useQuery({
+    queryKey: ['preferences', 'status'],
+    queryFn: api.getOnboardStatus,
+    retry: 1,
+    enabled,
+  })
 
 export const usePreferences = () =>
   useQuery({ queryKey: ['preferences'], queryFn: api.getPreferences })

@@ -1,7 +1,8 @@
 """SQLAlchemy ORM models.
 
-Single-user app: there is exactly one `Preferences` row (id=1). Tables are created
-on startup via `Base.metadata.create_all` — see `app/main.py`.
+Every user-owned table carries a `user_id` (a Supabase Auth `sub` UUID string, or the
+fixed local user in single-user mode — see `app/auth.py`). The schema is managed by
+Alembic (`backend/alembic/`); on startup the app upgrades to head — see `app/main.py`.
 """
 from datetime import datetime, timezone
 
@@ -26,10 +27,31 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+# Ownership column shared by every user-scoped table. String(36) (not a native UUID
+# type) so SQLite and Postgres store exactly the same thing and Supabase's `sub`
+# claim can be used verbatim.
+def user_id_column(**kwargs) -> Column:
+    return Column(String(36), ForeignKey("users.id"), nullable=False, index=True, **kwargs)
+
+
+class User(Base):
+    """One row per person. `id` is the Supabase Auth user id (`sub`) in cloud mode,
+    or `settings.local_user_id` in single-user local mode. Rows are created lazily
+    on a user's first authenticated request."""
+
+    __tablename__ = "users"
+
+    id = Column(String(36), primary_key=True)
+    email = Column(String, nullable=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    last_seen_at = Column(DateTime, default=utcnow, nullable=True)
+
+
 class Preferences(Base):
     __tablename__ = "preferences"
 
-    id = Column(Integer, primary_key=True)  # always 1 (singleton)
+    id = Column(Integer, primary_key=True)
+    user_id = user_id_column(unique=True)  # exactly one preferences row per user
     name = Column(String, default="", nullable=False)  # display name for greetings
     household_size = Column(Integer, default=1, nullable=False)
     allergies = Column(JSON, default=list, nullable=False)
@@ -52,7 +74,8 @@ class ExtractionBatch(Base):
     __tablename__ = "extraction_batches"
 
     id = Column(Integer, primary_key=True)
-    image_path = Column(String, nullable=False)
+    user_id = user_id_column()
+    image_key = Column(String, nullable=False)  # opaque key for services/blob_storage
     raw_ai_response = Column(JSON, nullable=True)
     status = Column(String, default="pending_review", nullable=False)
     created_at = Column(DateTime, default=utcnow, nullable=False)
@@ -64,6 +87,7 @@ class InventoryItem(Base):
     __tablename__ = "inventory_items"
 
     id = Column(Integer, primary_key=True)
+    user_id = user_id_column()
     name = Column(String, nullable=False)
     quantity = Column(Float, nullable=True)
     unit = Column(String, default="unknown", nullable=False)
@@ -85,6 +109,7 @@ class Meal(Base):
     __tablename__ = "meals"
 
     id = Column(Integer, primary_key=True)
+    user_id = user_id_column()
     title = Column(String, nullable=False)
     title_normalized = Column(String, index=True, nullable=False)
     cuisine = Column(String, nullable=True)
@@ -108,6 +133,7 @@ class ShoppingListItem(Base):
     __tablename__ = "shopping_list_items"
 
     id = Column(Integer, primary_key=True)
+    user_id = user_id_column()
     name = Column(String, nullable=False)  # stored lowercased, like inventory
     quantity = Column(Float, nullable=True)
     unit = Column(String, default="unknown", nullable=False)
@@ -123,6 +149,7 @@ class MealPlan(Base):
     __tablename__ = "meal_plans"
 
     id = Column(Integer, primary_key=True)
+    user_id = user_id_column()
     created_at = Column(DateTime, default=utcnow, nullable=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
@@ -135,7 +162,8 @@ class MealPlan(Base):
 
 
 class MealPlanEntry(Base):
-    """One slot in a plan, pointing at a Meal. Swapping a day repoints `meal_id`."""
+    """One slot in a plan, pointing at a Meal. Swapping a day repoints `meal_id`.
+    Ownership is checked on the parent plan, so there is no `user_id` here."""
 
     __tablename__ = "meal_plan_entries"
 

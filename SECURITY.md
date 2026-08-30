@@ -2,17 +2,32 @@
 
 ## Scope and threat model
 
-This app is **single-user with no authentication, intended to run on
-localhost only**. That is a design decision, not an oversight:
+The app runs in one of two modes, and the threat model differs:
+
+**Local mode (default)** is **single-user with no authentication, intended to run
+on localhost only**. That is a design decision, not an oversight:
 
 - Reports along the lines of "anyone who can reach the port can read/change
-  data" are **out of scope** — the README tells users never to expose the app
-  to the internet or an untrusted network.
-- Real vulnerabilities are very much in scope. Examples of things we'd want to
-  hear about: path traversal or unsafe file handling in the photo upload flow,
-  SSRF via the Brave Search / weather integrations, SQL injection, or anything
-  exploitable by a *remote* party even when the app is correctly deployed on
-  localhost (e.g. via a malicious web page in the user's browser).
+  data" are **out of scope** in local mode — the README tells users never to
+  expose it to the internet or an untrusted network.
+
+**Cloud mode** (Supabase Auth + Postgres + Storage) is meant to be reachable over
+the network, so in that mode access control *is* in scope:
+
+- Every API request must carry a valid Supabase access token (ES256, verified
+  against the project JWKS); every row is scoped to the authenticated user, and
+  cross-user access must fail with 404. Bypasses of either are in scope.
+- Row-level security is enabled (with no policies) so Supabase's auto-generated
+  REST API denies direct table access with the publishable key. A way to read or
+  write another user's rows through Supabase directly would be in scope.
+- Uploaded photos live in a private bucket keyed by user id and are served through
+  short-lived signed URLs; access to another user's photo is in scope.
+
+In **either** mode, real vulnerabilities are very much wanted. Examples: path
+traversal or unsafe file handling in the photo upload flow, SSRF via the Brave
+Search / weather integrations, SQL injection, JWT verification weaknesses, or
+anything exploitable by a *remote* party even when the app is correctly deployed
+(e.g. via a malicious web page in the user's browser).
 
 ## Reporting a vulnerability
 
@@ -22,6 +37,9 @@ response within a week. Please include reproduction steps.
 
 ## Secrets
 
-The app uses two API keys (`OPENROUTER_API_KEY`, `BRAVE_API_KEY`) supplied via
-`.env`, which is gitignored. If you find a real key committed anywhere in the
+The app uses API keys supplied via `.env`, which is gitignored:
+`OPENROUTER_API_KEY`, `BRAVE_API_KEY`, and in cloud mode `SUPABASE_SECRET_KEY`
+plus the database password inside `DATABASE_URL`. The Supabase **publishable**
+key (`sb_publishable_…`) is intentionally shipped in the frontend bundle and is
+not a secret. If you find a real key committed anywhere in the
 repo or its history, report it privately as above.

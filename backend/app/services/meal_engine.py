@@ -18,6 +18,7 @@ from . import brave_search
 from .ai_client import call_structured
 from .expiry import expiring_soon
 from .prompts import load_prompt
+from .scope import get_prefs, inventory_for
 from .staples import is_staple
 from .units import normalize_unit
 from .weather import get_weather
@@ -167,11 +168,11 @@ def _enrich_with_brave(suggestion: MealSuggestion, avoid_url: str | None = None)
         logger.warning("Brave enrichment failed for %r: %s", suggestion.title, exc)
 
 
-def _prior_source_url(db: Session, title_normalized: str) -> str | None:
+def _prior_source_url(db: Session, user_id: str, title_normalized: str) -> str | None:
     """The recipe-source URL used by the most recent earlier meal with this title."""
     row = (
         db.query(models.Meal)
-        .filter(models.Meal.title_normalized == title_normalized)
+        .filter(models.Meal.user_id == user_id, models.Meal.title_normalized == title_normalized)
         .order_by(models.Meal.suggested_at.desc())
         .first()
     )
@@ -180,7 +181,7 @@ def _prior_source_url(db: Session, title_normalized: str) -> str | None:
     return None
 
 
-def _recent_feedback(db: Session, limit: int = 12) -> tuple[list[str], list[str]]:
+def _recent_feedback(db: Session, user_id: str, limit: int = 12) -> tuple[list[str], list[str]]:
     """Recent post-cook feedback as prompt lines, plus titles of disliked dishes.
 
     Returns (feedback_lines, disliked_titles). `disliked_titles` are added to the
@@ -188,7 +189,7 @@ def _recent_feedback(db: Session, limit: int = 12) -> tuple[list[str], list[str]
     """
     rows = (
         db.query(models.Meal)
-        .filter(models.Meal.feedback_at.isnot(None))
+        .filter(models.Meal.user_id == user_id, models.Meal.feedback_at.isnot(None))
         .order_by(models.Meal.feedback_at.desc())
         .limit(limit)
         .all()
@@ -213,20 +214,20 @@ def _recent_feedback(db: Session, limit: int = 12) -> tuple[list[str], list[str]
     return lines, disliked
 
 
-def most_recent_delivery(db: Session) -> "models.Meal | None":
+def most_recent_delivery(db: Session, user_id: str) -> "models.Meal | None":
     """The most recent meal ordered for delivery within the last 7 days, if any."""
     from datetime import timedelta
 
     cutoff = utcnow() - timedelta(days=7)
     return (
         db.query(models.Meal)
-        .filter(models.Meal.delivery_ordered_at >= cutoff)
+        .filter(models.Meal.user_id == user_id, models.Meal.delivery_ordered_at >= cutoff)
         .order_by(models.Meal.delivery_ordered_at.desc())
         .first()
     )
 
 
-def _recent_titles(db: Session, no_repeat_days: int) -> list[str]:
+def _recent_titles(db: Session, user_id: str, no_repeat_days: int) -> list[str]:
     """Titles of meals suggested or cooked within the no-repeat window."""
     if no_repeat_days <= 0:
         return []
@@ -236,6 +237,7 @@ def _recent_titles(db: Session, no_repeat_days: int) -> list[str]:
     rows = (
         db.query(models.Meal)
         .filter(
+            models.Meal.user_id == user_id,
             (models.Meal.suggested_at >= cutoff)
             | (models.Meal.cooked_at >= cutoff)
         )
@@ -420,24 +422,26 @@ def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=
     return _parse_suggestions(raw)
 
 
-def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[models.Meal]:
+def suggest_meals(
+    db: Session, user_id: str, count: int = 3, idea: str | None = None
+) -> list[models.Meal]:
     """Generate meal suggestions, enforce rules, persist them, return Meal rows.
 
     `idea` is optional free text (ingredients, a craving, a cuisine, a mood) that
     biases the suggestion; None/empty means "surprise me" from inventory + prefs.
     """
-    prefs = db.get(models.Preferences, 1)
-    inventory = db.query(models.InventoryItem).all()
-    recent = _recent_titles(db, prefs.no_repeat_days if prefs else 14)
+    prefs = get_prefs(db, user_id)
+    inventory = inventory_for(db, user_id)
+    recent = _recent_titles(db, user_id, prefs.no_repeat_days)
 
     # Past feedback steers the prompt; disliked dishes are added to the avoid list
     # so they're filtered out server-side just like recent meals.
-    feedback_lines, disliked = _recent_feedback(db)
+    feedback_lines, disliked = _recent_feedback(db, user_id)
     avoid = recent + disliked
     avoid_norm = [normalize_title(t) for t in avoid]
 
     # Grilling is gated on live weather (winter/rain). Skipped when no location is set.
-    weather = get_weather(prefs.location) if (prefs and prefs.location) else None
+    weather = get_weather(prefs.location) if prefs.location else None
     grill_blocked = weather is not None and not weather["grill_ok"]
 
     # Items about to go bad get a "use these first" block and a sort preference.
@@ -462,7 +466,7 @@ def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[
 
     # Recompute in-stock from real inventory, then order makeable-now meals first
     # (ties broken in favor of meals that use up expiring items).
-    staples = (prefs.pantry_staples if prefs else None) or []
+    staples = prefs.pantry_staples or []
     expiring_names = [i.name for i in expiring]
     for s in safe:
         _annotate_in_stock(s, inventory, staples)
@@ -471,8 +475,9 @@ def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[
     meals: list[models.Meal] = []
     for s in safe:
         # Re-suggested dish? Skip the source it used last time for a fresh recipe.
-        _enrich_with_brave(s, _prior_source_url(db, normalize_title(s.title)))
+        _enrich_with_brave(s, _prior_source_url(db, user_id, normalize_title(s.title)))
         meal = models.Meal(
+            user_id=user_id,
             title=s.title,
             title_normalized=normalize_title(s.title),
             cuisine=s.cuisine,
@@ -489,20 +494,20 @@ def suggest_meals(db: Session, count: int = 3, idea: str | None = None) -> list[
     return meals
 
 
-def create_plan(db: Session, count: int) -> models.MealPlan:
+def create_plan(db: Session, user_id: str, count: int) -> models.MealPlan:
     """Generate a `count`-meal plan, one slot at a time, reusing suggest_meals.
 
     Single-meal calls keep each recipe well under the output-token cap and re-read the
     no-repeat window between calls, so the week's meals come out distinct. Slots where
     generation yields nothing are skipped (no gaps in slot_index).
     """
-    plan = models.MealPlan()
+    plan = models.MealPlan(user_id=user_id)
     db.add(plan)
     db.flush()  # assign plan.id
 
     slot = 0
     for _ in range(count):
-        meals = suggest_meals(db, count=1)
+        meals = suggest_meals(db, user_id, count=1)
         if not meals:
             continue
         db.add(
@@ -515,9 +520,9 @@ def create_plan(db: Session, count: int) -> models.MealPlan:
     return plan
 
 
-def swap_slot(db: Session, entry: models.MealPlanEntry) -> models.Meal | None:
+def swap_slot(db: Session, user_id: str, entry: models.MealPlanEntry) -> models.Meal | None:
     """Re-roll one plan slot with a fresh suggestion; returns the new Meal (or None)."""
-    meals = suggest_meals(db, count=1)
+    meals = suggest_meals(db, user_id, count=1)
     if not meals:
         return None
     entry.meal_id = meals[0].id

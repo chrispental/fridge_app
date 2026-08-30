@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, ChefHat, CalendarDays, Refrigerator, History,
-  Settings, Sparkles, MoreHorizontal, ShoppingCart, BarChart3,
+  Settings, Sparkles, MoreHorizontal, ShoppingCart, BarChart3, LogOut,
 } from 'lucide-react'
 import { usePreferences } from '../api/queries.js'
+import { useAuth } from '../auth/useAuth.js'
 
 // Desktop sidebar menu (Settings lives in the bottom utility group).
 const MAIN = [
@@ -35,8 +36,11 @@ const MORE = [
 export default function Nav() {
   const [moreOpen, setMoreOpen] = useState(false)
   const prefsQ = usePreferences()
+  const { authEnabled, session, signOut } = useAuth()
   const name = prefsQ.data?.name?.trim() || 'Chef'
   const initial = name.charAt(0).toUpperCase()
+  // Cloud mode shows who is signed in; local mode keeps the single-kitchen label.
+  const sub = authEnabled ? session?.user?.email || 'Signed in' : 'Personal kitchen'
 
   return (
     <>
@@ -75,8 +79,19 @@ export default function Nav() {
             <div className="nav-avatar">{initial}</div>
             <div className="nav-profile-text">
               <span className="nav-profile-name">{name}</span>
-              <span className="nav-profile-sub">Personal kitchen</span>
+              <span className="nav-profile-sub" title={sub}>{sub}</span>
             </div>
+            {authEnabled && (
+              <button
+                type="button"
+                className="nav-signout"
+                onClick={signOut}
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut size={17} strokeWidth={2} />
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -97,6 +112,19 @@ export default function Nav() {
                 {label}
               </NavLink>
             ))}
+            {authEnabled && (
+              <button
+                type="button"
+                className="mobile-sheet-signout"
+                onClick={() => {
+                  setMoreOpen(false)
+                  signOut()
+                }}
+              >
+                <LogOut size={18} strokeWidth={2} />
+                Sign out
+              </button>
+            )}
           </div>
         </>
       )}

@@ -1,16 +1,17 @@
 """Inventory CRUD + photo-based extraction (extract -> review -> confirm)."""
-import os
-
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
+from ..auth import CurrentUser
 from ..database import get_db
 from ..services import brave_search
+from ..services.blob_storage import get_blob_storage
+from ..services.scope import get_owned
 from ..services.storage import normalize_storage
 from ..services.units import normalize_unit
-from ..services.vision import extract_items, parse_items, preprocess_and_save
+from ..services.vision import extract_items, parse_items, preprocess
 
 router = APIRouter(prefix="/api/inventory", tags=["inventory"])
 
@@ -18,20 +19,33 @@ MAX_UPLOAD_BYTES = 12 * 1024 * 1024  # 12 MB
 MAX_IMAGE_BACKFILL = 100  # cap Brave calls per backfill request
 
 
+def _owned_item(db: Session, item_id: int, user_id: str) -> models.InventoryItem:
+    return get_owned(db, models.InventoryItem, item_id, user_id, label="Item")
+
+
+def _owned_batch(db: Session, batch_id: int, user_id: str) -> models.ExtractionBatch:
+    return get_owned(db, models.ExtractionBatch, batch_id, user_id, label="Extraction batch")
+
+
 # --------------------------------------------------------------------------- #
 # CRUD
 # --------------------------------------------------------------------------- #
 @router.get("", response_model=list[schemas.InventoryItemOut])
-def list_inventory(category: str | None = None, db: Session = Depends(get_db)):
-    query = db.query(models.InventoryItem)
+def list_inventory(
+    user: CurrentUser, category: str | None = None, db: Session = Depends(get_db)
+):
+    query = db.query(models.InventoryItem).filter(models.InventoryItem.user_id == user.id)
     if category:
         query = query.filter(models.InventoryItem.category == category)
     return query.order_by(models.InventoryItem.added_at.desc()).all()
 
 
 @router.post("", response_model=schemas.InventoryItemOut, status_code=201)
-def add_item(payload: schemas.InventoryItemCreate, db: Session = Depends(get_db)):
+def add_item(
+    payload: schemas.InventoryItemCreate, user: CurrentUser, db: Session = Depends(get_db)
+):
     item = models.InventoryItem(
+        user_id=user.id,
         name=payload.name.strip().lower(),
         quantity=payload.quantity,
         unit=normalize_unit(payload.unit),
@@ -50,11 +64,10 @@ def add_item(payload: schemas.InventoryItemCreate, db: Session = Depends(get_db)
 def update_item(
     item_id: int,
     payload: schemas.InventoryItemUpdate,
+    user: CurrentUser,
     db: Session = Depends(get_db),
 ):
-    item = db.get(models.InventoryItem, item_id)
-    if item is None:
-        raise HTTPException(404, "Item not found")
+    item = _owned_item(db, item_id, user.id)
     data = payload.model_dump(exclude_unset=True)
     if data.get("name"):
         item.name = data["name"].strip().lower()
@@ -74,16 +87,14 @@ def update_item(
 
 
 @router.delete("/{item_id}", status_code=204)
-def delete_item(item_id: int, db: Session = Depends(get_db)):
-    item = db.get(models.InventoryItem, item_id)
-    if item is None:
-        raise HTTPException(404, "Item not found")
+def delete_item(item_id: int, user: CurrentUser, db: Session = Depends(get_db)):
+    item = _owned_item(db, item_id, user.id)
     db.delete(item)
     db.commit()
 
 
 @router.post("/backfill-images", response_model=list[schemas.InventoryItemOut])
-def backfill_images(db: Session = Depends(get_db)):
+def backfill_images(user: CurrentUser, db: Session = Depends(get_db)):
     """Fetch a Brave thumbnail for items that don't have one yet (image_url IS NULL).
 
     Each item is attempted once: stores the URL when found, or "" to record the
@@ -91,7 +102,10 @@ def backfill_images(db: Session = Depends(get_db)):
     """
     pending = (
         db.query(models.InventoryItem)
-        .filter(models.InventoryItem.image_url.is_(None))
+        .filter(
+            models.InventoryItem.user_id == user.id,
+            models.InventoryItem.image_url.is_(None),
+        )
         .limit(MAX_IMAGE_BACKFILL)
         .all()
     )
@@ -107,7 +121,9 @@ def backfill_images(db: Session = Depends(get_db)):
 # Photo extraction
 # --------------------------------------------------------------------------- #
 @router.post("/extract", response_model=schemas.ExtractionResult)
-async def extract(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def extract(
+    user: CurrentUser, file: UploadFile = File(...), db: Session = Depends(get_db)
+):
     """Upload a fridge/pantry photo; returns proposed items (NOT yet saved)."""
     raw = await file.read()
     if not raw:
@@ -116,11 +132,18 @@ async def extract(file: UploadFile = File(...), db: Session = Depends(get_db)):
         raise HTTPException(413, "Image too large (max 12 MB).")
 
     try:
-        image_path, data_url = preprocess_and_save(raw)
+        jpeg, data_url = preprocess(raw)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(400, f"Could not read that image: {exc}")
 
-    batch = models.ExtractionBatch(image_path=image_path, status="pending_review")
+    try:
+        image_key = get_blob_storage().save_image(jpeg, user_id=user.id)
+    except Exception as exc:  # noqa: BLE001 — storage is not fail-soft (see blob_storage)
+        raise HTTPException(502, f"Could not store the photo: {exc}")
+
+    batch = models.ExtractionBatch(
+        user_id=user.id, image_key=image_key, status="pending_review"
+    )
     db.add(batch)
     db.commit()
     db.refresh(batch)
@@ -144,11 +167,9 @@ async def extract(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
 
 @router.get("/extract/{batch_id}", response_model=schemas.ExtractionResult)
-def get_extraction(batch_id: int, db: Session = Depends(get_db)):
+def get_extraction(batch_id: int, user: CurrentUser, db: Session = Depends(get_db)):
     """Re-fetch a pending extraction (so a review can be resumed)."""
-    batch = db.get(models.ExtractionBatch, batch_id)
-    if batch is None:
-        raise HTTPException(404, "Extraction batch not found")
+    batch = _owned_batch(db, batch_id, user.id)
     return schemas.ExtractionResult(
         batch_id=batch.id,
         image_url=f"/api/inventory/extract/{batch.id}/image",
@@ -158,11 +179,18 @@ def get_extraction(batch_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/extract/{batch_id}/image")
-def get_extraction_image(batch_id: int, db: Session = Depends(get_db)):
-    batch = db.get(models.ExtractionBatch, batch_id)
-    if batch is None or not os.path.exists(batch.image_path):
+def get_extraction_image(batch_id: int, user: CurrentUser, db: Session = Depends(get_db)):
+    """The photo behind a batch: a redirect to a short-lived signed URL when the
+    storage backend can mint one (Supabase), otherwise streamed from the backend."""
+    batch = _owned_batch(db, batch_id, user.id)
+    blob = get_blob_storage()
+    url = blob.signed_url(batch.image_key)
+    if url:
+        return RedirectResponse(url, status_code=302)
+    data = blob.load_image(batch.image_key)
+    if data is None:
         raise HTTPException(404, "Image not found")
-    return FileResponse(batch.image_path, media_type="image/jpeg")
+    return Response(content=data, media_type="image/jpeg")
 
 
 @router.post(
@@ -172,18 +200,18 @@ def get_extraction_image(batch_id: int, db: Session = Depends(get_db)):
 def confirm_extraction(
     batch_id: int,
     payload: schemas.ConfirmExtractionRequest,
+    user: CurrentUser,
     db: Session = Depends(get_db),
 ):
     """Persist the user-reviewed item list into inventory."""
-    batch = db.get(models.ExtractionBatch, batch_id)
-    if batch is None:
-        raise HTTPException(404, "Extraction batch not found")
+    batch = _owned_batch(db, batch_id, user.id)
 
     created: list[models.InventoryItem] = []
     for it in payload.items:
         if not it.name.strip():
             continue
         item = models.InventoryItem(
+            user_id=user.id,
             name=it.name.strip().lower(),
             quantity=it.quantity,
             unit=normalize_unit(it.unit),
