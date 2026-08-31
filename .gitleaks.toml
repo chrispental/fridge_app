@@ -1,0 +1,16 @@
+# Gitleaks config — extends the default ruleset with repo-specific allowlists.
+# Picked up automatically by gitleaks (and the gitleaks-action CI job).
+
+[extend]
+useDefault = true
+
+# design.pen is a machine-generated Pencil design file whose trailing
+# "fileToken" is the document's own UUID, not a credential. The generic-api-key
+# rule trips on the "token" keyword + UUID entropy. Both conditions must match,
+# so real secrets in design.pen (or fileTokens elsewhere) still get flagged.
+[[allowlists]]
+description = "Pencil design file document id"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^design\.pen$''']
+regexes = ['''"fileToken": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"''']
