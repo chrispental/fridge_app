@@ -160,6 +160,24 @@ def test_legacy_sqlite_upgrades_in_place(tmp_path):
     assert _schema_diff(eng) == []
 
 
+@pytest.mark.skipif(not TEST_DATABASE_URL, reason="Postgres-only check")
+def test_every_public_table_has_rls(tmp_path):
+    """On Postgres every table in `public` — alembic_version included — must have RLS
+    enabled, or it is writable through Supabase's auto-generated REST API with the
+    publishable key. A new table failing here needs `ENABLE ROW LEVEL SECURITY` in
+    its migration (see revisions 0002 and 0004)."""
+    eng = _engine(tmp_path)
+    run_migrations(eng)
+    with eng.connect() as conn:
+        unprotected = conn.execute(
+            text(
+                "SELECT tablename FROM pg_tables "
+                "WHERE schemaname = 'public' AND NOT rowsecurity"
+            )
+        ).scalars().all()
+    assert unprotected == []
+
+
 @pytest.mark.skipif(bool(TEST_DATABASE_URL), reason="SQLite-only check")
 def test_fresh_sqlite_has_version_table(tmp_path):
     eng = _sqlite_engine(tmp_path)
