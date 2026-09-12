@@ -6,7 +6,7 @@ import { runInNewContext } from 'node:vm'
 const source = readFileSync(new URL('../src/theme.js', import.meta.url), 'utf8')
   .replace("import { useSyncExternalStore } from 'react'", '')
   .replaceAll('export function', 'function')
-const bootstrap = readFileSync(new URL('../index.html', import.meta.url), 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1]
+const bootstrap = readFileSync(new URL('../index.html', import.meta.url), 'utf8').match(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/i)[1]
 function setup(saved, dark = false, blocked = false) {
   const storage = new Map(saved ? [['fridge-chef-theme', saved]] : [])
   const document = { documentElement: { dataset: {} }, querySelector: () => ({ setAttribute() {} }) }
