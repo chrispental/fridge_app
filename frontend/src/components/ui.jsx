@@ -1,4 +1,4 @@
-// Shared presentational primitives for the "elevated dark + amber" redesign.
+// Shared presentational primitives for the fresh kitchen design system.
 // Styling lives in index.css; these components only provide structure + props.
 // Icons are passed in as elements (e.g. icon={<Camera size={20} />}) to keep
 // this module decoupled from lucide-react.

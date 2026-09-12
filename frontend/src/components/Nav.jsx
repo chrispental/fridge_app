@@ -1,3 +1,4 @@
+import ThemePicker from './ThemePicker.jsx'
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
@@ -69,6 +70,7 @@ export default function Nav() {
         </div>
 
         <div className="nav-group nav-foot">
+          <ThemePicker />
           <div className="nav-links">
             <NavLink to="/preferences" className={({ isActive }) => (isActive ? 'active' : '')}>
               <Settings size={19} strokeWidth={2} />
@@ -101,6 +103,7 @@ export default function Nav() {
         <>
           <div className="mobile-sheet-scrim" onClick={() => setMoreOpen(false)} />
           <div className="mobile-sheet">
+            <ThemePicker />
             {MORE.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
