@@ -1,3 +1,4 @@
+import ThemePicker from '../components/ThemePicker.jsx'
 import PreferencesForm from '../components/PreferencesForm.jsx'
 import { PageHeader, PageSkeleton } from '../components/ui.jsx'
 import { usePreferences, useUpdatePreferences } from '../api/queries.js'
@@ -16,6 +17,11 @@ export default function PreferencesPage() {
         title="Preferences"
         subtitle="Tune your household, taste, kitchen, and cooking rules so every suggestion fits you."
       />
+      <section className="field-group appearance-settings">
+        <h2>Appearance</h2>
+        <p>Choose a theme, or follow your device. Saved automatically on this browser.</p>
+        <ThemePicker />
+      </section>
       <PreferencesForm
         initial={prefsQ.data}
         grouped

@@ -70,34 +70,35 @@ export default function Home() {
   const name = prefs?.name?.trim()
 
   return (
-    <div className="wide">
+    <div className="wide home-page">
       <Bento>
         {/* A. Hero */}
-        <BentoItem span={8} className="tall">
+        <BentoItem span={12}>
           <HeroPanel bgImage={heroImg}>
             <div className="home-hero-greeting">
               <span className="eyebrow rule">{greeting()}{name ? `, ${name}` : ''}</span>
               <h1 className="display">What's for dinner?</h1>
             </div>
-            <p>Tell me what you're craving, or let me surprise you with something from your fridge.</p>
+            <p>Start with a craving. We'll take it from fridge to table.</p>
             <div className="hero-field">
               <textarea
                 rows={2}
                 className="idea-input"
-                placeholder="e.g. “something with chicken & spinach”, “a cozy soup”, “quick Thai noodles”…"
+                aria-label="What would you like to cook?"
+                placeholder="Chicken & spinach, a cozy soup, quick noodles…"
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
               />
               <div className="hero-actions">
                 <button
-                  className="btn primary big"
+                  className={`btn big${hasIdea ? ' primary' : ''}`}
                   onClick={() => go(true, true)}
                   disabled={!hasIdea}
                   title={hasIdea ? '' : 'Type an idea first, or hit Surprise me'}
                 >
                   <Sparkles size={18} strokeWidth={2.2} /> Use my idea
                 </button>
-                <button className="btn big" onClick={() => go(true, false)}>
+                <button className={`btn big${!hasIdea ? ' primary' : ''}`} onClick={() => go(true, false)}>
                   <Dices size={18} strokeWidth={2.2} /> Surprise me
                 </button>
               </div>
@@ -105,41 +106,90 @@ export default function Home() {
           </HeroPanel>
         </BentoItem>
 
-        {/* B. Delivery status */}
-        <BentoItem span={4}>
-          <StatCard
-            icon={<Truck size={20} strokeWidth={2} />}
-            iconTone={deliveryAvailable ? 'success' : ''}
-            title="Weekly delivery"
-            to={hasLocation ? '/history' : '/preferences'}
-          >
+        {/* D. Tonight's picks */}
+        <BentoItem span={12}>
+          <div className="home-picks">
+            <SectionHeader
+              eyebrow="Tonight's picks"
+              title="Something delicious awaits"
+              action={<Link to="/cook" className="see-all">See all <ArrowRight size={13} strokeWidth={2.4} style={{ verticalAlign: '-2px' }} /></Link>}
+            />
             {loading ? (
-              <Skeleton height={42} />
-            ) : !hasLocation ? (
-              <p>Set a location to enable once-a-week delivery.</p>
-            ) : deliveryAvailable ? (
-              <>
-                <div className="stat-row">
-                  <span className="status-dot on" />
-                  <span className="stat-big" style={{ fontSize: '1.35rem' }}>Available</span>
-                </div>
-                <p>Order one meal this week instead of cooking.</p>
-              </>
+              <div className="home-meals">
+                <Skeleton height={88} radius={14} />
+                <Skeleton height={88} radius={14} />
+              </div>
+            ) : suggested && suggested.length > 0 ? (
+              <div className="home-meals">
+                {suggested.slice(0, 3).map((m) => (
+                  <MealPreviewCard key={m.id} meal={m} />
+                ))}
+              </div>
             ) : (
-              <>
-                <div className="stat-row">
-                  <span className="status-dot warn" />
-                  <span className="stat-big" style={{ fontSize: '1.35rem' }}>Used</span>
-                </div>
-                <p>Next available {fmtDate(delivery?.next_available_at) || 'soon'}.</p>
-              </>
+              <EmptyState
+                icon={<Sparkles size={22} strokeWidth={2} />}
+                title="No ideas yet"
+                message="Hit “Surprise me” above to get tonight's suggestions."
+              />
             )}
-          </StatCard>
+          </div>
+        </BentoItem>
+
+        {/* C2. Expiring soon — only when something needs attention */}
+        {!loading && expiringItems.length > 0 && (
+          <BentoItem span={12}>
+            <StatCard
+              icon={<Timer size={20} strokeWidth={2} />}
+              iconTone="warn"
+              title="Use these first"
+              to="/inventory"
+            >
+              <div className="ingredients" style={{ margin: 0 }}>
+                {expiringItems.slice(0, 6).map((it) => (
+                  <span
+                    key={it.id}
+                    className={`chip ${it._expiry.expired ? 'missing' : 'warn'}`}
+                  >
+                    {it.name} · {it._expiry.label}
+                  </span>
+                ))}
+                {expiringItems.length > 6 && (
+                  <span className="chip">+{expiringItems.length - 6} more</span>
+                )}
+              </div>
+              <p style={{ marginTop: 8 }}>
+                Meal suggestions will prioritize these ingredients.
+              </p>
+            </StatCard>
+          </BentoItem>
+        )}
+
+        {/* E. This week's plan */}
+        <BentoItem span={8}>
+          <div className="card">
+            <SectionHeader
+              eyebrow="This week"
+              title="Your plan"
+              action={<Link to="/plan" className="see-all">Open <ArrowRight size={13} strokeWidth={2.4} style={{ verticalAlign: '-2px' }} /></Link>}
+            />
+            {loading ? (
+              <Skeleton height={124} radius={14} />
+            ) : plan?.entries?.length > 0 ? (
+              <PlanStrip entries={plan.entries} toBuyCount={toBuy} />
+            ) : (
+              <EmptyState
+                icon={<CalendarDays size={22} strokeWidth={2} />}
+                title="No plan yet"
+                message="Plan a few days of meals and get one shopping list."
+                action={<Link to="/plan" className="btn primary">Plan your week</Link>}
+              />
+            )}
+          </div>
         </BentoItem>
 
         {/* C. Fridge at a glance */}
         <BentoItem span={4}>
-          <StatCard icon={<Snowflake size={20} strokeWidth={2} />} title="Your fridge" to="/inventory">
+          <StatCard icon={<Snowflake size={20} strokeWidth={2} />} title="Your fridge">
             {loading ? (
               <Skeleton height={92} />
             ) : items.length === 0 ? (
@@ -176,87 +226,6 @@ export default function Home() {
           </StatCard>
         </BentoItem>
 
-        {/* C2. Expiring soon — only when something needs attention */}
-        {!loading && expiringItems.length > 0 && (
-          <BentoItem span={12}>
-            <StatCard
-              icon={<Timer size={20} strokeWidth={2} />}
-              iconTone="warn"
-              title="Use these first"
-              to="/inventory"
-            >
-              <div className="ingredients" style={{ margin: 0 }}>
-                {expiringItems.slice(0, 6).map((it) => (
-                  <span
-                    key={it.id}
-                    className={`chip ${it._expiry.expired ? 'missing' : 'warn'}`}
-                  >
-                    {it.name} · {it._expiry.label}
-                  </span>
-                ))}
-                {expiringItems.length > 6 && (
-                  <span className="chip">+{expiringItems.length - 6} more</span>
-                )}
-              </div>
-              <p style={{ marginTop: 8 }}>
-                Meal suggestions will prioritize these ingredients.
-              </p>
-            </StatCard>
-          </BentoItem>
-        )}
-
-        {/* D. Tonight's picks */}
-        <BentoItem span={7}>
-          <div className="card" style={{ padding: 20 }}>
-            <SectionHeader
-              eyebrow="Tonight's picks"
-              title="Fresh ideas"
-              action={<Link to="/cook" className="see-all">See all <ArrowRight size={13} strokeWidth={2.4} style={{ verticalAlign: '-2px' }} /></Link>}
-            />
-            {loading ? (
-              <div className="stack" style={{ gap: 10 }}>
-                <Skeleton height={88} radius={14} />
-                <Skeleton height={88} radius={14} />
-              </div>
-            ) : suggested && suggested.length > 0 ? (
-              <div className="stack" style={{ gap: 10 }}>
-                {suggested.slice(0, 3).map((m) => (
-                  <MealPreviewCard key={m.id} meal={m} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={<Sparkles size={22} strokeWidth={2} />}
-                title="No ideas yet"
-                message="Hit “Surprise me” above to get tonight's suggestions."
-              />
-            )}
-          </div>
-        </BentoItem>
-
-        {/* E. This week's plan */}
-        <BentoItem span={5}>
-          <div className="card" style={{ padding: 20 }}>
-            <SectionHeader
-              eyebrow="This week"
-              title="Your plan"
-              action={<Link to="/plan" className="see-all">Open <ArrowRight size={13} strokeWidth={2.4} style={{ verticalAlign: '-2px' }} /></Link>}
-            />
-            {loading ? (
-              <Skeleton height={124} radius={14} />
-            ) : plan?.entries?.length > 0 ? (
-              <PlanStrip entries={plan.entries} toBuyCount={toBuy} />
-            ) : (
-              <EmptyState
-                icon={<CalendarDays size={22} strokeWidth={2} />}
-                title="No plan yet"
-                message="Plan a few days of meals and get one shopping list."
-                action={<Link to="/plan" className="btn primary">Plan your week</Link>}
-              />
-            )}
-          </div>
-        </BentoItem>
-
         {/* F. Quick actions */}
         <BentoItem span={12}>
           <div className="quick-actions">
@@ -267,6 +236,18 @@ export default function Home() {
           </div>
         </BentoItem>
       </Bento>
+      {!loading && (
+        <Link className="home-delivery" to={hasLocation ? '/history' : '/preferences'}>
+          <Truck size={20} />
+          <span>
+            <strong>A night off from cooking</strong>
+            {!hasLocation ? 'Set your location to explore weekly delivery.' : deliveryAvailable
+              ? 'Your weekly delivery is available whenever you need it.'
+              : `Next available ${fmtDate(delivery?.next_available_at) || 'soon'}.`}
+          </span>
+          <ArrowRight size={18} />
+        </Link>
+      )}
     </div>
   )
 }
