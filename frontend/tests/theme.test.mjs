@@ -6,7 +6,15 @@ import { runInNewContext } from 'node:vm'
 const source = readFileSync(new URL('../src/theme.js', import.meta.url), 'utf8')
   .replace("import { useSyncExternalStore } from 'react'", '')
   .replaceAll('export function', 'function')
-const bootstrap = readFileSync(new URL('../index.html', import.meta.url), 'utf8').match(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/i)[1]
+// Read only the explicitly marked JS fixture; this is not an HTML parser.
+const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
+const startMarker = '// theme-bootstrap:start'
+const endMarker = '// theme-bootstrap:end'
+const start = html.indexOf(startMarker)
+const end = html.indexOf(endMarker, start + startMarker.length)
+assert.ok(start >= 0 && end > start, 'Theme bootstrap markers must exist in index.html')
+const bootstrap = html.slice(start + startMarker.length, end)
+
 function setup(saved, dark = false, blocked = false) {
   const storage = new Map(saved ? [['fridge-chef-theme', saved]] : [])
   const document = { documentElement: { dataset: {} }, querySelector: () => ({ setAttribute() {} }) }
