@@ -12,7 +12,9 @@ from ..services import brave_search
 from ..services.meal_engine import most_recent_delivery, normalize_title, suggest_meals
 from ..services.meal_stats import compute_stats
 from ..services.scope import get_owned, get_prefs, inventory_for
-from ..services.units import try_subtract
+from ..services.ingredients import StockPool
+from ..services.shopping_list import annotate_recipe
+from ..services.actions import claim_action
 
 router = APIRouter(prefix="/api/meals", tags=["meals"])
 
@@ -70,12 +72,17 @@ def list_meals(
         query = query.filter(
             models.Meal.title_normalized.contains(normalize_title(q))
         )
-    return (
+    rows = (
         query.order_by(models.Meal.suggested_at.desc())
         .offset(offset)
         .limit(limit)
         .all()
     )
+    inventory = inventory_for(db, user.id)
+    staples = get_prefs(db, user.id).pantry_staples or []
+    return [schemas.MealOut.model_validate(m).model_copy(update={
+        "recipe_json": annotate_recipe(m.recipe_json, inventory, staples)
+    }) for m in rows]
 
 
 # Declared before the dynamic /{meal_id} route so "delivery" isn't read as an id.
@@ -94,7 +101,10 @@ def meal_stats(user: CurrentUser, db: Session = Depends(get_db)):
 
 @router.get("/{meal_id}", response_model=schemas.MealOut)
 def get_meal(meal_id: int, user: CurrentUser, db: Session = Depends(get_db)):
-    return _owned_meal(db, meal_id, user.id)
+    meal = _owned_meal(db, meal_id, user.id)
+    return schemas.MealOut.model_validate(meal).model_copy(update={
+        "recipe_json": annotate_recipe(meal.recipe_json, inventory_for(db, user.id), get_prefs(db, user.id).pantry_staples or [])
+    })
 
 
 @router.post("/{meal_id}/order-delivery", response_model=schemas.MealOut)
@@ -136,6 +146,13 @@ def cook_meal(
     db: Session = Depends(get_db),
 ):
     meal = _owned_meal(db, meal_id, user.id)
+    if payload.request_id:
+        _, claimed = claim_action(db, user.id, f"cook:{meal_id}:{payload.request_id}")
+        if not claimed:
+            return meal
+    elif meal.status == "cooked":
+        # Older clients can safely retry; a deliberate new cook sends a new id.
+        return meal
     meal.status = "cooked"
     meal.cooked_at = utcnow()
     if payload.decrement_inventory:
@@ -167,6 +184,8 @@ def submit_feedback(
 @router.delete("/{meal_id}", status_code=204)
 def delete_meal(meal_id: int, user: CurrentUser, db: Session = Depends(get_db)):
     meal = _owned_meal(db, meal_id, user.id)
+    if db.query(models.MealPlanEntry).filter_by(meal_id=meal.id).first():
+        raise HTTPException(409, "Remove this meal's plan before deleting the recipe.")
     db.delete(meal)
     db.commit()
 
@@ -174,24 +193,15 @@ def delete_meal(meal_id: int, user: CurrentUser, db: Session = Depends(get_db)):
 def _decrement_inventory(db: Session, meal: models.Meal) -> None:
     """Best-effort: subtract a cooked meal's in-stock ingredients from inventory."""
     ingredients = (meal.recipe_json or {}).get("ingredients", [])
-    inventory = inventory_for(db, meal.user_id)
+    inventory = inventory_for(db, meal.user_id, lock=True)
+    pool = StockPool(inventory)
     for ing in ingredients:
-        if not ing.get("in_stock"):
-            continue
         name = (ing.get("name") or "").lower().strip()
         if not name:
             continue
-        match = next(
-            (i for i in inventory if name in i.name or i.name in name), None
-        )
-        if match is None or match.quantity is None or ing.get("quantity") is None:
-            continue
-        new_qty = try_subtract(
-            match.quantity, match.unit, ing["quantity"], ing.get("unit", "unknown")
-        )
-        if new_qty is None:
-            continue
-        if new_qty <= 0:
-            db.delete(match)
-        else:
-            match.quantity = new_qty
+        stock = pool.allocate(name, ing.get("quantity"), ing.get("unit"))
+        for match, amount in stock["allocations"]:
+            match.quantity = max(0, match.quantity - amount)
+    for item in inventory:
+        if item.quantity == 0:
+            db.delete(item)

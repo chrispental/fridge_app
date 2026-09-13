@@ -1,7 +1,12 @@
 """Pydantic request/response models and AI-output models."""
 from datetime import date, datetime
+from typing import Annotated
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+
+FoodName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+Quantity = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 
 
 # --------------------------------------------------------------------------- #
@@ -40,8 +45,8 @@ class OnboardStatus(BaseModel):
 # Inventory
 # --------------------------------------------------------------------------- #
 class InventoryItemBase(BaseModel):
-    name: str
-    quantity: float | None = None
+    name: FoodName
+    quantity: Quantity | None = None
     unit: str = "unknown"
     category: str | None = None
     storage: str = "unsorted"
@@ -53,8 +58,8 @@ class InventoryItemCreate(InventoryItemBase):
 
 
 class InventoryItemUpdate(BaseModel):
-    name: str | None = None
-    quantity: float | None = None
+    name: FoodName | None = None
+    quantity: Quantity | None = None
     unit: str | None = None
     category: str | None = None
     storage: str | None = None
@@ -75,8 +80,8 @@ class InventoryItemOut(InventoryItemBase):
 # Photo extraction
 # --------------------------------------------------------------------------- #
 class ExtractedItem(BaseModel):
-    name: str
-    quantity: float | None = None
+    name: FoodName
+    quantity: Quantity | None = None
     unit: str = "unknown"
     category: str | None = None
     storage: str = "unsorted"
@@ -99,10 +104,13 @@ class ConfirmExtractionRequest(BaseModel):
 # Meals
 # --------------------------------------------------------------------------- #
 class RecipeIngredient(BaseModel):
-    name: str
-    quantity: float | None = None
+    name: FoodName
+    quantity: Quantity | None = None
     unit: str = "unknown"
     in_stock: bool = False
+    stock_status: str = "missing"
+    available_quantity: float | None = None
+    missing_quantity: float | None = None
 
 
 class RecipeSource(BaseModel):
@@ -148,11 +156,12 @@ class FeedbackRequest(BaseModel):
 
 class SuggestRequest(BaseModel):
     count: int = Field(default=5, ge=1, le=5)
-    idea: str | None = None  # free text: ingredients, a craving, a cuisine; None = surprise me
+    idea: str | None = Field(default=None, max_length=2000)
 
 
 class CookRequest(BaseModel):
     decrement_inventory: bool = False
+    request_id: UUID | None = None
 
 
 class DeliveryStatusOut(BaseModel):
@@ -166,6 +175,7 @@ class DeliveryStatusOut(BaseModel):
 # --------------------------------------------------------------------------- #
 class CreatePlanRequest(BaseModel):
     count: int = Field(default=7, ge=1, le=14)
+    request_id: UUID | None = None
 
 
 class MealPlanEntryOut(BaseModel):
@@ -178,6 +188,9 @@ class MealPlanOut(BaseModel):
     id: int
     created_at: datetime
     entries: list[MealPlanEntryOut]
+    status: str = "ready"
+    requested_count: int | None = None
+    error: str | None = None
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -191,22 +204,29 @@ class ShoppingListOut(BaseModel):
     to_buy: list[ShoppingListItem]
     have: list[ShoppingListItem]
     staples_assumed: list[str]
+    check: list[ShoppingListItem] = []
 
 
 # --------------------------------------------------------------------------- #
 # Standalone shopping list (the shopping_list_items table)
 # --------------------------------------------------------------------------- #
 class ShoppingItemCreate(BaseModel):
-    name: str
-    quantity: float | None = None
+    name: FoodName
+    quantity: Quantity | None = None
     unit: str = "unknown"
 
 
 class ShoppingItemUpdate(BaseModel):
-    name: str | None = None
-    quantity: float | None = None
+    name: FoodName | None = None
+    quantity: Quantity | None = None
     unit: str | None = None
     checked: bool | None = None
+
+
+class ImportRequest(BaseModel):
+    # Omit for an idempotent import of this source. A new UUID explicitly adds
+    # another copy; replaying that UUID remains safe after a network failure.
+    copy_id: UUID | None = None
 
 
 class ShoppingItemOut(BaseModel):

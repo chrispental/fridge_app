@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   Clock, Star, Users, Check, Truck, RefreshCw, ChevronDown, ChevronUp,
   ThumbsUp, ThumbsDown, ExternalLink, Play, ShoppingCart,
@@ -6,7 +6,7 @@ import {
 import {
   useCookMeal, useSubmitFeedback, useOrderDelivery, useImportMealToList,
 } from '../api/queries.js'
-import { toast } from './Toast.jsx'
+import { toast } from './toast.js'
 import CookMode from './CookMode.jsx'
 
 const FEEDBACK_TAGS = [
@@ -27,6 +27,7 @@ export default function MealCard({
   const [swapBusy, setSwapBusy] = useState(false)
 
   const cookMutation = useCookMeal()
+  const cookRequestId = useRef(crypto.randomUUID())
   const feedbackMutation = useSubmitFeedback()
   const orderMutation = useOrderDelivery()
   const importMutation = useImportMealToList()
@@ -79,16 +80,17 @@ export default function MealCard({
   const ingredients = recipe.ingredients || []
   const steps = recipe.steps || []
   const missing = recipe.missing_ingredients || []
-  const outOfStock = ingredients.some((i) => !i.in_stock) || missing.length > 0
+  const outOfStock = ingredients.some((i) => ['missing', 'partial'].includes(i.stock_status) || (!i.stock_status && !i.in_stock)) || missing.length > 0
+  const checkAmounts = ingredients.some((i) => i.stock_status === 'check')
   const hasPhoto = Boolean(recipe.image_url)
 
-  function addMissingToList() {
-    importMutation.mutate(meal.id, {
+  function addMissingToList(again = false) {
+    importMutation.mutate({ mealId: meal.id, copyId: again ? crypto.randomUUID() : undefined }, {
       onSuccess: (items) =>
         toast.success(
           items.length > 0
             ? `Added ${items.length} item${items.length === 1 ? '' : 's'} to your shopping list`
-            : 'Everything is already on your list',
+            : 'Already imported. Use Add again for another cook.',
         ),
     })
   }
@@ -133,9 +135,10 @@ export default function MealCard({
         {ingredients.length > 0 && (
           <div className="ingredients">
             {ingredients.map((ing, i) => (
-              <span key={i} className={`chip ${ing.in_stock ? 'have' : 'missing'}`}>
-                {ing.in_stock ? '✓' : '+'} {ing.name}
+              <span key={i} className={`chip ${ing.stock_status === 'check' ? 'warn' : ing.in_stock ? 'have' : 'missing'}`}>
+                {ing.stock_status === 'check' ? '?' : ing.in_stock ? '✓' : '+'} {ing.name}
                 {ing.quantity != null ? ` (${ing.quantity} ${ing.unit})` : ''}
+                {ing.stock_status === 'check' ? ' · check amount' : ing.stock_status === 'partial' ? ` · need ${Number(ing.missing_quantity.toFixed(3))} more` : ''}
               </span>
             ))}
           </div>
@@ -148,18 +151,20 @@ export default function MealCard({
         {outOfStock && !ordered && (
           <button
             className="link-btn"
-            onClick={addMissingToList}
+            onClick={() => addMissingToList()}
             disabled={importMutation.isPending}
           >
             <ShoppingCart size={14} strokeWidth={2.2} style={{ verticalAlign: '-2px' }} />{' '}
-            {importMutation.isPending ? 'Adding…' : 'Add missing to shopping list'}
+            {importMutation.isPending ? 'Adding…' : importMutation.isSuccess ? 'Already added' : 'Add missing to shopping list'}
           </button>
         )}
 
+        {importMutation.isSuccess && outOfStock && <button className="link-btn" onClick={() => addMissingToList(true)} disabled={importMutation.isPending}>Add again for another cook</button>}
+        {checkAmounts && <p className="hint">Check ingredient amounts in your inventory before cooking. Unknown amounts are not automatically added to shopping.</p>}
         {recipe.source?.url && (
           <p className="recipe-source">
             <a href={recipe.source.url} target="_blank" rel="noreferrer">
-              View full recipe <ExternalLink size={13} strokeWidth={2.2} style={{ verticalAlign: '-2px' }} />
+              Related recipe <ExternalLink size={13} strokeWidth={2.2} style={{ verticalAlign: '-2px' }} />
             </a>
           </p>
         )}
@@ -287,7 +292,7 @@ export default function MealCard({
               </button>
               <button
                 className="btn"
-                onClick={() => cookMutation.mutate({ id: meal.id, decrement })}
+                onClick={() => cookMutation.mutate({ id: meal.id, decrement, requestId: cookRequestId.current })}
                 disabled={cookMutation.isPending}
               >
                 <Check size={15} strokeWidth={2.4} /> {cookMutation.isPending ? 'Saving…' : 'I cooked this'}
@@ -305,7 +310,7 @@ export default function MealCard({
         <CookMode
           meal={meal}
           onClose={() => setCooking(false)}
-          onCook={(dec) => cookMutation.mutateAsync({ id: meal.id, decrement: dec })}
+          onCook={(dec, requestId) => cookMutation.mutateAsync({ id: meal.id, decrement: dec, requestId })}
         />
       )}
     </div>

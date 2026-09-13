@@ -10,6 +10,7 @@ from .database import engine
 from .migrations import run_migrations
 from .routers import health, inventory, meals, plans, preferences, shopping
 from .services.blob_storage import get_blob_storage
+from .services.plan_jobs import start_worker
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,7 +28,12 @@ async def lifespan(app: FastAPI):
             "written to a local file. Point DATABASE_URL at the Supabase Postgres pooler."
         )
     get_blob_storage().check()
-    yield
+    stop, worker = start_worker()
+    try:
+        yield
+    finally:
+        stop.set()
+        worker.join(timeout=2)
 
 
 app = FastAPI(

@@ -34,7 +34,7 @@ export default function Home() {
   const suggestedQ = useMeals('suggested')
   const deliveryQ = useDeliveryStatus()
   const prefsQ = usePreferences()
-  const shoppingQ = usePlanShoppingList(planQ.data?.id)
+  const shoppingQ = usePlanShoppingList(planQ.data)
 
   const loading =
     inventoryQ.isPending || planQ.isPending || suggestedQ.isPending ||

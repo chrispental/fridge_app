@@ -5,7 +5,7 @@ import ItemTile from '../components/ItemTile.jsx'
 import ItemModal from '../components/ItemModal.jsx'
 import { STORAGE } from '../api/client.js'
 import { useBackfillImages, useInventory } from '../api/queries.js'
-import { toast } from '../components/Toast.jsx'
+import { toast } from '../components/toast.js'
 import { PageHeader, SegmentedControl, EmptyState, Skeleton } from '../components/ui.jsx'
 
 const SORTS = [
@@ -41,7 +41,7 @@ export default function InventoryPage() {
       setModalItem({})
       navigate(location.pathname, { replace: true, state: null })
     }
-  }, [location.state])
+  }, [location.state, location.pathname, navigate])
 
   function fetchPhotos() {
     backfill.mutate(undefined, {

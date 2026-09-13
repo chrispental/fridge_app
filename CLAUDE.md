@@ -43,7 +43,8 @@ cd frontend && npm install && npm run dev        # :5173, proxies /api to :8000
 cd frontend && npm run lint
 ```
 
-The frontend has ESLint (flat config) but no test suite. There is no Python linter.
+The frontend has ESLint (flat config), Vitest/Testing Library regression tests, and
+Node theme tests (`npm test`). There is no Python linter.
 
 ## Architecture
 
@@ -123,7 +124,7 @@ Brave photo + source link via `_enrich_with_brave()` before persistence.
 keyed by `BRAVE_API_KEY`. `search_web()` and `search_image()` are **fail-soft by
 contract** — any error (network, non-200, response shape) is logged and returned as
 `[]`/`None`, so suggestion and delivery never hard-fail when Brave is unavailable. Used
-for recipe photos, "view full recipe" links, the weather snippet, and delivery order links.
+for recipe photos, related recipe links, the weather snippet, and delivery order links.
 
 **Weather grill gate — `backend/app/services/weather.py`.** Brave has no weather endpoint,
 so `get_weather(location)` web-searches the forecast and keyword-scans the snippet for
@@ -180,3 +181,10 @@ button (gated on the weekly quota fetched by the page); the location field lives
   **Keep it in sync with the frontend:** whenever you change UI in `frontend/src`, make
   the matching update in `design.pen` (components and the affected screens) in the same
   change.
+
+**Reliability:** ingredient identity/quantity allocation is shared in `services/ingredients.py`;
+allergen aliases live in `services/allergens.py`. `ActionReceipt` deduplicates imports,
+cooking requests, and plan submissions. `/api/plans` creates a durable queued job;
+`services/plan_jobs.py` processes it in the single shipped Uvicorn process. Preserve
+slot-level atomic commits and explicit resume after interruptions. Use the isolated
+`docker-compose.test.yml` stack for PostgreSQL tests; migration tests wipe their DB.

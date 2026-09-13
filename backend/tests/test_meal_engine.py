@@ -123,7 +123,8 @@ def test_annotate_in_stock():
     _annotate_in_stock(
         suggestion, [_FakeItem("cheddar cheese"), _FakeItem("bread")], staples=[]
     )
-    assert suggestion.ingredients[0].in_stock is True
+    assert suggestion.ingredients[0].stock_status == "check"
+    assert suggestion.ingredients[0].in_stock is False
     assert suggestion.ingredients[1].in_stock is False
 
 
@@ -133,5 +134,5 @@ def test_annotate_in_stock_counts_staples():
         ingredients=[RecipeIngredient(name="eggs"), RecipeIngredient(name="salt")],
     )
     _annotate_in_stock(suggestion, [_FakeItem("eggs")], staples=["salt", "pepper"])
-    assert suggestion.ingredients[0].in_stock is True  # in inventory
+    assert suggestion.ingredients[0].stock_status == "check"  # amount unknown
     assert suggestion.ingredients[1].in_stock is True  # staple, assumed on hand

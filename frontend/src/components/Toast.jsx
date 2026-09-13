@@ -5,18 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react'
 
-const listeners = new Set()
-let nextId = 1
-
-function emit(tone, message, opts = {}) {
-  listeners.forEach((fn) => fn({ id: nextId++, tone, message, ...opts }))
-}
-
-export const toast = {
-  success: (message, opts) => emit('success', message, opts),
-  error: (message, opts) => emit('error', message, opts),
-  info: (message, opts) => emit('info', message, opts),
-}
+import { listeners } from './toast.js'
 
 const ICONS = {
   success: <CheckCircle2 size={16} strokeWidth={2.2} />,

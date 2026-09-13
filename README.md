@@ -57,21 +57,27 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
 
 ## How it works
 
-1. **Onboarding** — set allergies, kitchen equipment, dietary restrictions, dislikes,
-   pantry staples, meal complexity, and a "don't repeat meals for N days" window.
+1. **Onboarding** — set household size, allergies, dietary needs, and equipment.
+   Dislikes, pantry staples, complexity, and repeat preferences are optional or can
+   be tuned later in Settings.
 2. **Inventory** — take a picture of a grocery receipt, an order confirmation, the
    bags on the counter, or a fridge/pantry shelf; AI vision extracts the items,
-   quantities, and rough expiry dates. Review/correct the list, then confirm it.
+   quantities, and rough expiry dates. Compare the original photo with the editable list, then confirm it once.
+   Unfinished scans are available on the capture page; edits survive reloads in
+   this browser.
    You can also add items by hand.
 3. **Cook** — type a craving ("something with chicken & spinach") or hit *Surprise
-   me* and get recipes you can make right now, with in-stock vs. missing ingredients
-   flagged, a photo, and a link to the source recipe. Meals that use up expiring items
+   me* and get recipes you can make right now, with quantities checked against your inventory, a photo, and a related recipe
+   link. Unknown amounts or incompatible units are marked **Check amount**. Meals that use up expiring items
    float to the top; grilled dishes are skipped when the weather says no.
-   **Cook Mode** walks you through the steps with timers.
+   **Cook Mode** saves your step, ingredient checklist, and timer deadlines in this
+   browser, so closing or reloading it does not reset your progress.
 4. **Plan** — generate a week of distinct meals, swap any day, and turn it into one
-   consolidated shopping list.
+   consolidated shopping list. Planning runs in the background with visible progress;
+   interrupted jobs keep completed meals and can resume.
 5. **Shopping** — a standalone list you can add to by hand, from a plan, or from a
-   single meal; check things off and move them straight into inventory.
+   single meal; check things off and move them straight into inventory. Repeating
+   an import is safe; use **Add again** for an intentional second copy.
 6. **History & Insights** — every suggestion is logged so meals don't repeat; mark
    meals cooked (optionally decrementing inventory), rate them, and feedback shapes
    future suggestions. One meal a week can be marked "order delivery instead".
@@ -92,7 +98,7 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
 - Docker + Docker Compose
 - An OpenRouter API key — create one at https://openrouter.ai/keys (pay-as-you-go)
 - Optionally, a Brave Search API key — https://brave.com/search/api/ — for recipe
-  photos, "view full recipe" links, weather-aware grilling, and delivery search.
+  photos, related recipe links, weather-aware grilling, and delivery search.
   Without it those extras are silently skipped; suggestions still work.
 
 ## Quick start
@@ -106,6 +112,9 @@ docker compose up --build
 Then open **http://localhost:8080**. The API is on http://localhost:8000
 (docs at http://localhost:8000/docs). This is local mode — no login; for accounts,
 see [Cloud mode with Supabase](#cloud-mode-with-supabase).
+
+Ports bind to `127.0.0.1` by default. `FRIDGE_BIND_HOST` overrides that address for
+an authenticated deployment behind HTTPS.
 
 To stop: `docker compose down`. Your data lives in `./data/` and survives restarts.
 
@@ -132,6 +141,7 @@ To stop: `docker compose down`. Your data lives in `./data/` and survives restar
 | `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` | Same project + publishable key (`sb_publishable_…`), baked into the frontend build | — |
 | `BLOB_BACKEND` | `auto` (Supabase in cloud mode, disk otherwise), `local`, or `supabase` | `auto` |
 | `LOCAL_USER_ID` | Fixed user id in local mode — don't change after first run | `00000000-…-000000000001` |
+| `FRIDGE_BIND_HOST` | Docker host interface for published ports | `127.0.0.1` |
 | `CORS_ORIGINS` | Comma-separated allowed origins | `http://localhost:5173,http://localhost:8080` |
 
 Swap models freely — that's the point of OpenRouter. Browse slugs at
@@ -155,26 +165,54 @@ npm run dev   # http://localhost:5173, proxies /api to :8000
 
 ## Tests
 
-Theme behavior checks (default, persistence, System mode, tab synchronization, and first paint):
 ```bash
-node --test frontend/tests/theme.test.mjs
+cd frontend && npm test && npm run lint && npm run build
+cd backend && python -m pytest
 ```
 
+Frontend tests cover request recovery, dialog focus/error handling, scan draft
+restoration, cooking progress/timers, and theme behavior. Backend tests cover
+allergen/quantity matching, replay protection, resumable plans, ownership, and
+migration compatibility.
+
+For a disposable PostgreSQL preview and integration tests:
 
 ```bash
-cd backend && python -m pytest          # local (SQLite)
-docker compose exec backend python -m pytest   # in container
-
-# Migration + HTTP smoke tests against a real Postgres (CI does this too):
-TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/fridge \
-  python -m pytest tests/test_migrations.py tests/test_app_smoke.py
+docker compose -f docker-compose.test.yml -p fridge-reliability up --build -d
+# Once per fresh test stack:
+docker compose -f docker-compose.test.yml -p fridge-reliability exec db \
+  psql -U postgres -c 'CREATE DATABASE fridge_test'
+docker compose -f docker-compose.test.yml -p fridge-reliability exec \
+  -e TEST_DATABASE_URL=postgresql+psycopg://postgres:fridge-test-only@db:5432/fridge_test \
+  backend python -m pytest tests/test_migrations.py tests/test_app_smoke.py
 ```
+
+The preview is at `http://localhost:18080`, API at `http://localhost:18000`.
+The test Compose file overrides cloud/database settings and uses synthetic local
+accounts. It reads optional AI keys from `.env` for live generation. Its database
+and photos are disposable. Stop it with the same Compose command ending in `down`.
+**Migration tests wipe `TEST_DATABASE_URL`; never point them at an existing app database.**
+
+Optional live checks load the root `.env` without printing credentials:
+
+```bash
+cd backend
+python scripts/check_integrations.py                 # read-only service probes
+python scripts/check_integrations.py --cloud-only    # temporary accounts + private photo + HTTP isolation
+python scripts/check_integrations.py --exercise      # also billable AI vision/meal requests
+python scripts/check_integrations.py --scratch-migration  # transactional scratch schema, rolled back
+```
+
+Live exercises delete their temporary accounts/photos in a `finally` block and
+return a failure if cleanup fails. Scratch migrations never alter the public app
+schema. Use the default read-only probe to see the deployed migration revision.
 
 ## Database migrations
 
 The schema is managed by Alembic (`backend/alembic/`). The app upgrades to the latest
 revision on startup, so `docker compose up` and `uvicorn --reload` both migrate
-automatically — including a pre-Alembic `data/fridge.db`. After editing
+automatically — including a pre-Alembic `data/fridge.db`. Back up your database
+before upgrading a deployed app. After editing
 `backend/app/models.py`:
 
 ```bash
@@ -220,6 +258,12 @@ with an empty database and each account gets its own inventory, preferences, mea
 history, plans, and shopping list.
 
 ## Notes
+
+- The durable plan worker runs in the shipped single Uvicorn process. Keep one
+  backend process/replica; multiple workers require a separate job service.
+  Restarted in-progress plans are marked interrupted for explicit resume.
+- Allergy filtering covers common ingredient aliases and categories; it cannot
+  establish that a dish is allergen-free. Check ingredient labels and preparation.
 
 - **Local mode is single-user with no login** — one preferences profile, one inventory.
   Cloud mode (above) adds accounts.

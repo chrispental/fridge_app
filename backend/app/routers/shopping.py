@@ -10,6 +10,7 @@ from ..models import utcnow
 from ..services.scope import get_owned, inventory_for, staples_for
 from ..services.shopping_list import build_shopping_list, merge_into_list, missing_for_meal
 from ..services.units import normalize_unit
+from ..services.actions import claim_action
 
 router = APIRouter(prefix="/api/shopping-list", tags=["shopping"])
 
@@ -32,9 +33,15 @@ def _list_items(db: Session, user_id: str) -> list[models.ShoppingListItem]:
 
 
 def _merge_and_save(
-    db: Session, user_id: str, new_items: list[dict], source: str
+    db: Session, user_id: str, new_items: list[dict], source: str, action_key: str | None = None
 ) -> list[models.ShoppingListItem]:
     """Merge imported items into the open list; returns rows added or updated."""
+    if not new_items:
+        return []
+    if action_key:
+        _, claimed = claim_action(db, user_id, action_key)
+        if not claimed:
+            return []
     existing = (
         db.query(models.ShoppingListItem)
         .filter(models.ShoppingListItem.user_id == user_id)
@@ -129,24 +136,30 @@ def checked_to_inventory(user: CurrentUser, db: Session = Depends(get_db)):
 
 
 @router.post("/import/plan/{plan_id}", response_model=list[schemas.ShoppingItemOut])
-def import_plan(plan_id: int, user: CurrentUser, db: Session = Depends(get_db)):
+def import_plan(plan_id: int, user: CurrentUser, db: Session = Depends(get_db),
+                payload: schemas.ImportRequest | None = None):
     """Merge a plan's to-buy list into the shopping list."""
     plan = get_owned(db, models.MealPlan, plan_id, user.id, label="Plan")
+    if plan.status in ("queued", "generating"):
+        raise HTTPException(409, "Wait for planning to finish before importing its shopping list.")
     meals = [e.meal for e in plan.entries]
     to_buy = build_shopping_list(
         meals, inventory_for(db, user.id), staples_for(db, user.id)
     )["to_buy"]
-    return _merge_and_save(db, user.id, to_buy, source="plan")
+    copy_id = payload.copy_id if payload else None
+    return _merge_and_save(db, user.id, to_buy, source="plan", action_key=f"shopping:plan:{plan_id}:{copy_id or 'original'}")
 
 
 @router.post("/import/meal/{meal_id}", response_model=list[schemas.ShoppingItemOut])
-def import_meal(meal_id: int, user: CurrentUser, db: Session = Depends(get_db)):
+def import_meal(meal_id: int, user: CurrentUser, db: Session = Depends(get_db),
+                payload: schemas.ImportRequest | None = None):
     """Merge one meal's missing ingredients into the shopping list."""
     meal = get_owned(db, models.Meal, meal_id, user.id, label="Meal")
     needed = missing_for_meal(
         meal.recipe_json or {}, inventory_for(db, user.id), staples_for(db, user.id)
     )
-    return _merge_and_save(db, user.id, needed, source="meal")
+    copy_id = payload.copy_id if payload else None
+    return _merge_and_save(db, user.id, needed, source="meal", action_key=f"shopping:meal:{meal_id}:{copy_id or 'original'}")
 
 
 # ---- Dynamic routes ----

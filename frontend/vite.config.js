@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react()],
   envDir: '..',
   server: {
-    host: true,
+    host: '127.0.0.1',
     proxy: {
       '/api': 'http://localhost:8000',
     },

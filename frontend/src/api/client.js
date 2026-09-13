@@ -10,7 +10,7 @@ export function configureAuth(hooks) {
   handleUnauthorized = hooks.handleUnauthorized || handleUnauthorized
 }
 
-async function request(path, options = {}) {
+async function request(path, { binary = false, ...options } = {}) {
   // Copy headers so a FormData body keeps its own multipart boundary.
   const headers = new Headers(options.headers || {})
   const token = await getToken()
@@ -24,6 +24,7 @@ async function request(path, options = {}) {
   }
   if (res.status === 401 && token) handleUnauthorized() // session is dead; fall through
   if (res.status === 204) return null
+  if (res.ok && binary) return res.blob()
 
   const text = await res.text()
   let data = null
@@ -89,6 +90,8 @@ export const api = {
   extractPhoto: (formData) =>
     request('/inventory/extract', { method: 'POST', body: formData }),
   getExtraction: (batchId) => request(`/inventory/extract/${batchId}`),
+  getPendingExtractions: () => request('/inventory/extract/pending'),
+  getExtractionImage: (batchId, signal) => request(`/inventory/extract/${batchId}/image`, { binary: true, signal }),
   confirmExtraction: (batchId, items) =>
     request(`/inventory/extract/${batchId}/confirm`, json('POST', { items })),
 
@@ -104,8 +107,8 @@ export const api = {
     const qs = params.toString()
     return request(`/meals${qs ? `?${qs}` : ''}`)
   },
-  cookMeal: (id, decrementInventory) =>
-    request(`/meals/${id}/cook`, json('POST', { decrement_inventory: decrementInventory })),
+  cookMeal: (id, decrementInventory, requestId) =>
+    request(`/meals/${id}/cook`, json('POST', { decrement_inventory: decrementInventory, request_id: requestId })),
   submitFeedback: (id, { rating = null, tags = [], notes = null } = {}) =>
     request(`/meals/${id}/feedback`, json('POST', { rating, tags, notes })),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
@@ -116,7 +119,8 @@ export const api = {
   orderDelivery: (id) => request(`/meals/${id}/order-delivery`, { method: 'POST' }),
 
   // Weekly meal plan
-  createPlan: (count) => request('/plans', json('POST', { count })),
+  createPlan: ({ count, requestId }) => request('/plans', json('POST', { count, request_id: requestId })),
+  resumePlan: (planId) => request(`/plans/${planId}/resume`, { method: 'POST' }),
   getCurrentPlan: () => request('/plans/current'),
   getShoppingList: (planId) => request(`/plans/${planId}/shopping-list`),
   swapPlanSlot: (planId, slot) =>
@@ -130,6 +134,6 @@ export const api = {
   deleteShoppingItem: (id) => request(`/shopping-list/${id}`, { method: 'DELETE' }),
   clearChecked: () => request('/shopping-list/clear-checked', { method: 'POST' }),
   checkedToInventory: () => request('/shopping-list/checked-to-inventory', { method: 'POST' }),
-  importPlanToList: (planId) => request(`/shopping-list/import/plan/${planId}`, { method: 'POST' }),
-  importMealToList: (mealId) => request(`/shopping-list/import/meal/${mealId}`, { method: 'POST' }),
+  importPlanToList: ({ planId, copyId }) => request(`/shopping-list/import/plan/${planId}`, json('POST', { copy_id: copyId })),
+  importMealToList: ({ mealId, copyId }) => request(`/shopping-list/import/meal/${mealId}`, json('POST', { copy_id: copyId })),
 }

@@ -1,10 +1,12 @@
 import PreferencesForm from '../components/PreferencesForm.jsx'
 import { usePreferences, useUpdatePreferences } from '../api/queries.js'
 import { PageSkeleton } from '../components/ui.jsx'
+import QueryError from '../components/QueryError.jsx'
 
 export default function Onboarding() {
   const prefsQ = usePreferences()
   const updateMutation = useUpdatePreferences()
+  if (prefsQ.isError) return <QueryError query={prefsQ} />
 
   if (prefsQ.isPending) {
     return (
@@ -24,12 +26,13 @@ export default function Onboarding() {
         </div>
         <h1>Welcome to Fridge Chef</h1>
         <p>
-          A few quick questions so every meal we suggest fits you, your
-          kitchen, and your taste. You can change all of this later.
+          Start with your household, food needs, and kitchen. You can tune
+          everything else later in Settings.
         </p>
         <div style={{ marginTop: '1.75rem' }}>
           <PreferencesForm
             initial={prefsQ.data || {}}
+            compact
             submitLabel="Get started"
             onSubmit={(body) => updateMutation.mutateAsync(body)}
           />

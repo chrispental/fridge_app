@@ -15,7 +15,10 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    Index,
     String,
+    UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import relationship
 
@@ -147,11 +150,19 @@ class MealPlan(Base):
     """A planned week: a thin grouping of N Meal rows via MealPlanEntry slots."""
 
     __tablename__ = "meal_plans"
+    __table_args__ = (Index(
+        "uq_meal_plan_active_user", "user_id", unique=True,
+        sqlite_where=text("status IN ('queued', 'generating')"),
+        postgresql_where=text("status IN ('queued', 'generating')"),
+    ),)
 
     id = Column(Integer, primary_key=True)
     user_id = user_id_column()
     created_at = Column(DateTime, default=utcnow, nullable=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
+    status = Column(String, default="ready", nullable=False)
+    requested_count = Column(Integer, nullable=True)
+    error = Column(String, nullable=True)
 
     entries = relationship(
         "MealPlanEntry",
@@ -175,3 +186,16 @@ class MealPlanEntry(Base):
 
     plan = relationship("MealPlan", back_populates="entries")
     meal = relationship("Meal")
+
+
+class ActionReceipt(Base):
+    """Atomic deduplication of user actions, including explicit additional cooks."""
+
+    __tablename__ = "action_receipts"
+    __table_args__ = (UniqueConstraint("user_id", "action_key", name="uq_action_receipt_user_key"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = user_id_column()
+    action_key = Column(String(200), nullable=False)
+    result_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)

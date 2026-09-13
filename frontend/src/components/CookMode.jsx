@@ -2,7 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   X, ChevronLeft, ChevronRight, Check, ChefHat, PartyPopper, Clock,
 } from 'lucide-react'
-import { useTimers, TimerRing, TimerChip } from './CountdownTimer.jsx'
+import { TimerRing, TimerChip } from './CountdownTimer.jsx'
+import { useTimers } from './useTimers.js'
+import { useDialog } from './useDialog.js'
+import { useAuth } from '../auth/useAuth.js'
+import { kitchenKey, readStored, writeStored } from '../utils/storage.js'
 import { parseStepDurations, MAX_TIMER_SECONDS } from '../utils/parseStepDuration.js'
 
 const CONFETTI_COLORS = ['#f5a524', '#ffbc52', '#4ade80', '#60a5fa', '#f472b6', '#faf7f3']
@@ -26,6 +30,12 @@ const prefersReducedMotion =
 const tid = (stepIdx, di) => `s${stepIdx}-${di}`
 
 export default function CookMode({ meal, onClose, onCook }) {
+  const dialogRef = useDialog(onClose)
+  const { session } = useAuth()
+  const storageKey = kitchenKey(session?.user?.id, 'cook', meal.id)
+  const [saved] = useState(() => readStored(storageKey, null))
+  const fresh = !saved || saved.complete
+  const requestId = useRef(!fresh && saved.requestId ? saved.requestId : crypto.randomUUID())
   const recipe = meal.recipe_json || {}
   const steps = recipe.steps || []
   const ingredients = recipe.ingredients || []
@@ -33,16 +43,19 @@ export default function CookMode({ meal, onClose, onCook }) {
   // Slides: [mise en place] + [...steps] + [finish]
   const total = steps.length + 2
   const finishIndex = total - 1
-  const [index, setIndex] = useState(0)
+  const [index, setIndex] = useState(() => !fresh && Number.isInteger(saved.index) ? Math.min(finishIndex, Math.max(0, saved.index)) : 0)
   const [direction, setDirection] = useState(1)
 
   const [decrement, setDecrement] = useState(true)
   const [cooked, setCooked] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
-  const [checked, setChecked] = useState(() => new Set())
+  const [checked, setChecked] = useState(() => new Set(!fresh && Array.isArray(saved.checked) ? saved.checked : []))
 
-  const { timers, start, pause, reset, dismiss } = useTimers()
+  const { timers, start, pause, reset, dismiss, clear } = useTimers(`${storageKey}:timers`)
+  useEffect(() => {
+    writeStored(storageKey, { index, checked: [...checked], requestId: requestId.current, complete: cooked })
+  }, [storageKey, index, checked, cooked])
 
   const isMise = index === 0
   const isFinish = index === finishIndex
@@ -59,23 +72,14 @@ export default function CookMode({ meal, onClose, onCook }) {
   // Keyboard navigation + Escape to close.
   useEffect(() => {
     function onKey(e) {
+      if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(e.target.tagName)) return
       if (e.key === 'ArrowRight') go(1)
       else if (e.key === 'ArrowLeft') go(-1)
-      else if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finishIndex])
-
-  // Lock body scroll while the overlay is open.
-  useEffect(() => {
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [])
 
   // Keep the screen awake while cooking. Wake locks drop when the tab is hidden, so
   // re-acquire on visibility change.
@@ -84,7 +88,9 @@ export default function CookMode({ meal, onClose, onCook }) {
     let cancelled = false
     const acquire = async () => {
       try {
-        lock = (await navigator.wakeLock?.request('screen')) || null
+        const acquired = (await navigator.wakeLock?.request('screen')) || null
+        if (cancelled) acquired?.release?.().catch(() => {})
+        else lock = acquired
       } catch {
         /* unsupported or denied — harmless */
       }
@@ -115,8 +121,9 @@ export default function CookMode({ meal, onClose, onCook }) {
     setBusy(true)
     setError(null)
     try {
-      await onCook(decrement)
+      await onCook(decrement, requestId.current)
       setCooked(true)
+      clear()
     } catch (e) {
       setError(e.message)
     } finally {
@@ -146,7 +153,7 @@ export default function CookMode({ meal, onClose, onCook }) {
   const slideAnim = direction >= 0 ? 'slide-in-right' : 'slide-in-left'
 
   return (
-    <div className="cook-overlay" role="dialog" aria-modal="true">
+    <dialog ref={dialogRef} className="cook-overlay" aria-label={`Cooking ${meal.title}`}>
       <div className="cook-header">
         <div className="cook-head-info">
           <span className="cook-title">{meal.title}</span>
@@ -193,7 +200,7 @@ export default function CookMode({ meal, onClose, onCook }) {
             <div className="cook-mise">
               <div className="cook-icon-badge"><ChefHat size={30} strokeWidth={2} /></div>
               <h2>Mise en place</h2>
-              <p className="cook-sub">Gather everything before you start — tap each as you go.</p>
+              <p className="cook-sub">Gather everything before you start — tap each as you go. Your checklist and progress are saved here.</p>
               {ingredients.length > 0 ? (
                 <div className="cook-ingredients">
                   {ingredients.map((ing, i) => {
@@ -201,10 +208,11 @@ export default function CookMode({ meal, onClose, onCook }) {
                     return (
                       <button
                         key={i}
+                        aria-pressed={on}
                         className={`chip ${ing.in_stock ? 'have' : 'missing'}${on ? ' checked' : ''}`}
                         onClick={() => toggleChecked(i)}
                       >
-                        {on ? '✓' : ing.in_stock ? '✓' : '+'} {ing.name}
+                        {on ? '✓' : ing.stock_status === 'check' ? '?' : ing.in_stock ? '✓' : '+'} {ing.name}
                         {ing.quantity != null ? ` (${ing.quantity} ${ing.unit})` : ''}
                       </button>
                     )
@@ -308,6 +316,6 @@ export default function CookMode({ meal, onClose, onCook }) {
           </button>
         )}
       </div>
-    </div>
+    </dialog>
   )
 }

@@ -1,19 +1,20 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CalendarDays, RefreshCw, AlertCircle, ShoppingCart } from 'lucide-react'
 import MealCard from '../components/MealCard.jsx'
 import {
   useCreatePlan, useCurrentPlan, useDeletePlan, useDeliveryStatus,
-  useImportPlanToList, usePlanShoppingList, useSwapPlanSlot,
+  useImportPlanToList, usePlanShoppingList, useSwapPlanSlot, useResumePlan,
 } from '../api/queries.js'
-import { toast } from '../components/Toast.jsx'
+import QueryError from '../components/QueryError.jsx'
+import { toast } from '../components/toast.js'
 import { PageHeader, HeroPanel, Bento, BentoItem, PageSkeleton } from '../components/ui.jsx'
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
 
-function ShoppingList({ data, onAddAll, adding }) {
+function ShoppingList({ data, onAddAll, adding, added, planning }) {
   if (!data) return null
-  const { to_buy = [], have = [], staples_assumed = [] } = data
+  const { to_buy = [], have = [], check = [], staples_assumed = [] } = data
   const line = (it) =>
     it.quantity != null ? `${it.name} (${it.quantity} ${it.unit})` : it.name
 
@@ -30,8 +31,8 @@ function ShoppingList({ data, onAddAll, adding }) {
 
       <div className="shopping-group">
         <h3>Need to buy ({to_buy.length})</h3>
-        {to_buy.length === 0 ? (
-          <p className="hint">You already have everything for this plan. 🎉</p>
+        {to_buy.length === 0 && check.length === 0 ? (
+          <p className="hint">{planning ? "Your shopping list updates as meals finish." : "You already have everything for this plan. 🎉"}</p>
         ) : (
           <>
             <div className="ingredients">
@@ -42,16 +43,25 @@ function ShoppingList({ data, onAddAll, adding }) {
             <button
               className="btn"
               style={{ marginTop: 12 }}
-              onClick={onAddAll}
-              disabled={adding}
+              onClick={() => onAddAll(false)}
+              disabled={adding || planning || to_buy.length === 0}
             >
               <ShoppingCart size={15} strokeWidth={2.2} />
-              {adding ? 'Adding…' : 'Add all to shopping list'}
+              {adding ? 'Adding…' : added ? 'Already added' : 'Add all to shopping list'}
             </button>
+            {added && <button className="link-btn" onClick={() => onAddAll(true)} disabled={adding || planning}>Add again for another plan</button>}
           </>
         )}
       </div>
 
+      {check.length > 0 && (
+        <div className="shopping-group">
+          <h3>Check amounts ({check.length})</h3>
+          <p className="hint">These are in your inventory, but their amounts or units need checking. Update inventory before importing your list.</p>
+          {check.map((it, i) => <p key={i}>{line(it)}</p>)}
+          <Link to="/inventory">Update inventory</Link>
+        </div>
+      )}
       {have.length > 0 && (
         <div className="shopping-group">
           <h3>Already in your fridge ({have.length})</h3>
@@ -68,34 +78,41 @@ function ShoppingList({ data, onAddAll, adding }) {
 
 export default function WeekPlanPage() {
   const [count, setCount] = useState(7)
+  const [importedPlanId, setImportedPlanId] = useState(null)
+  const requestId = useRef(crypto.randomUUID())
 
   const planQ = useCurrentPlan()
   const plan = planQ.data
-  const shoppingQ = usePlanShoppingList(plan?.id)
+  const shoppingQ = usePlanShoppingList(plan)
   const deliveryQ = useDeliveryStatus()
   const createMutation = useCreatePlan()
   const deleteMutation = useDeletePlan()
+  const resumeMutation = useResumePlan()
   const swapMutation = useSwapPlanSlot()
   const importMutation = useImportPlanToList()
 
-  const busy = createMutation.isPending || deleteMutation.isPending
+  const planning = ['queued', 'generating'].includes(plan?.status)
+  const busy = createMutation.isPending || deleteMutation.isPending || planning
   const error = createMutation.error?.message || deleteMutation.error?.message
 
   // Returned promise lets MealCard show its own "Swapping…" state.
   const swap = (slot) => swapMutation.mutateAsync({ planId: plan.id, slot })
 
-  function addAllToList() {
-    importMutation.mutate(plan.id, {
-      onSuccess: (items) =>
+  function addAllToList(again) {
+    importMutation.mutate({ planId: plan.id, copyId: again ? crypto.randomUUID() : undefined }, {
+      onSuccess: (items) => {
+        setImportedPlanId(plan.id)
         toast.success(
           items.length > 0
             ? `Added ${items.length} item${items.length === 1 ? '' : 's'} to your shopping list`
-            : 'Everything is already on your list',
-        ),
+            : 'Already imported. Use Add again if you are planning another copy.',
+        )
+      },
     })
   }
 
   if (planQ.isPending) return <PageSkeleton />
+  if (planQ.isError) return <QueryError query={planQ} title="Couldn’t load your plan" />
 
   const delivery = deliveryQ.data
   const deliveryAvailable = delivery ? !delivery.used : true
@@ -116,8 +133,9 @@ export default function WeekPlanPage() {
 
         <div className="plan-toolbar">
           <div className="field">
-            <label>How many meals?</label>
+            <label htmlFor="plan-count">How many meals?</label>
             <input
+              id="plan-count"
               type="number"
               min="1"
               max="14"
@@ -127,7 +145,7 @@ export default function WeekPlanPage() {
           </div>
           <button
             className="btn primary big"
-            onClick={() => createMutation.mutate(Number(count) || 7)}
+            onClick={() => createMutation.mutate({ count: Number(count) || 7, requestId: requestId.current })}
             disabled={busy}
           >
             <CalendarDays size={18} strokeWidth={2.2} />
@@ -164,7 +182,7 @@ export default function WeekPlanPage() {
       >
         <button
           className="btn ghost"
-          onClick={() => deleteMutation.mutate(plan.id)}
+          onClick={() => deleteMutation.mutate(plan.id, { onSuccess: () => { requestId.current = crypto.randomUUID(); setImportedPlanId(null) } })}
           disabled={busy}
         >
           <RefreshCw size={16} strokeWidth={2.2} />
@@ -178,6 +196,8 @@ export default function WeekPlanPage() {
         </div>
       )}
 
+      {planning && <div className="banner info" role="status"><strong>Planning {plan.entries.length} of {plan.requested_count} meals…</strong><p>You can leave this page. Your plan will keep building.</p></div>}
+      {plan.status === 'failed' && <div className="banner error" role="alert"><p>{plan.error}</p><button className="btn" disabled={resumeMutation.isPending} onClick={() => resumeMutation.mutate(plan.id)}>Resume remaining meals</button></div>}
       <Bento>
         {/* LEFT: the week's meals, with per-day swap */}
         <BentoItem span={8}>
@@ -186,7 +206,7 @@ export default function WeekPlanPage() {
               <MealCard
                 key={entry.meal.id}
                 meal={entry.meal}
-                onSwap={() => swap(entry.slot_index)}
+                onSwap={planning ? null : () => swap(entry.slot_index)}
                 deliveryAvailable={deliveryAvailable}
                 nextDeliveryDate={nextDeliveryDate}
               />
@@ -201,6 +221,8 @@ export default function WeekPlanPage() {
               data={shoppingQ.data}
               onAddAll={addAllToList}
               adding={importMutation.isPending}
+              planning={planning}
+              added={importedPlanId === plan.id}
             />
           </div>
         </BentoItem>

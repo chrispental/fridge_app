@@ -1,6 +1,8 @@
 """Tests for the standalone shopping list: merge/dedupe, meal-needs extraction,
 checked-to-inventory conversion, and import idempotence (quantities sum)."""
 from types import SimpleNamespace
+from uuid import uuid4
+from app.schemas import ImportRequest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -141,7 +143,7 @@ def _make_meal(db, title, ingredients):
     return meal
 
 
-def test_import_meal_twice_sums_quantities_no_duplicates():
+def test_import_meal_twice_is_idempotent():
     db = _db()
     db.add(models.Preferences(user_id=LOCAL_USER.id, pantry_staples=["salt"]))
     meal = _make_meal(
@@ -159,7 +161,7 @@ def test_import_meal_twice_sums_quantities_no_duplicates():
     rows = db.query(models.ShoppingListItem).all()
     assert len(rows) == 1  # staple excluded, chicken deduped
     assert rows[0].name == "chicken"
-    assert rows[0].quantity == 2  # summed by design
+    assert rows[0].quantity == 1  # a replay must not add another meal
     assert rows[0].source == "meal"
     db.close()
 
@@ -175,7 +177,9 @@ def test_import_checked_then_reimport_creates_fresh_row():
     row.checked = True
     db.commit()
 
-    shopping.import_meal(meal.id, user=LOCAL_USER, db=db)
+    copy = ImportRequest(copy_id=uuid4())
+    shopping.import_meal(meal.id, user=LOCAL_USER, db=db, payload=copy)
+    shopping.import_meal(meal.id, user=LOCAL_USER, db=db, payload=copy)
     rows = db.query(models.ShoppingListItem).order_by(models.ShoppingListItem.id).all()
     assert len(rows) == 2  # checked rows are already in the cart; new open row created
     assert rows[0].checked and not rows[1].checked

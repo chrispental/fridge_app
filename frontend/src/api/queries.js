@@ -10,7 +10,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { api } from './client.js'
-import { toast } from '../components/Toast.jsx'
+import { toast } from '../components/toast.js'
 
 export function createQueryClient() {
   return new QueryClient({
@@ -80,21 +80,25 @@ export const useCurrentPlan = () =>
         throw e
       }),
     retry: false,
+    refetchInterval: (query) => ['queued', 'generating'].includes(query.state.data?.status) ? 1500 : false,
   })
 
-export const usePlanShoppingList = (planId) =>
+export const usePlanShoppingList = (plan) =>
   useQuery({
-    queryKey: ['plans', planId, 'shopping-list'],
-    queryFn: () => api.getShoppingList(planId),
-    enabled: planId != null,
+    queryKey: ['plans', plan?.id, 'shopping-list', plan?.entries?.map((entry) => entry.meal.id)],
+    queryFn: () => api.getShoppingList(plan.id),
+    enabled: plan?.id != null,
   })
 
 export const useExtraction = (batchId) =>
   useQuery({
     queryKey: ['extractions', batchId],
     queryFn: () => api.getExtraction(batchId),
-    staleTime: Infinity, // review data is a fixed snapshot; the user edits it locally
+    staleTime: 0, // status can change after confirmation in another tab
   })
+
+export const usePendingExtractions = () =>
+  useQuery({ queryKey: ['extractions', 'pending'], queryFn: api.getPendingExtractions })
 
 // ------------------------------------------------------ meal cache helpers
 
@@ -140,6 +144,12 @@ function restoreSnapshots(queryClient, snapshots = []) {
 // A naive-UTC timestamp matching the backend's format (no trailing Z).
 const utcNow = () => new Date().toISOString().replace('Z', '')
 
+function invalidateStock(queryClient) {
+  for (const key of ['inventory', 'meals', 'plans']) {
+    queryClient.invalidateQueries({ queryKey: [key] })
+  }
+}
+
 // ------------------------------------------------------------- mutations
 
 export function useAddItem() {
@@ -157,7 +167,7 @@ export function useAddItem() {
       queryClient.setQueryData(['inventory'], ctx.prev)
       toast.error(e.message)
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory'] }),
+    onSettled: () => invalidateStock(queryClient),
     meta: { silent: true },
   })
 }
@@ -178,7 +188,7 @@ export function useUpdateItem() {
       queryClient.setQueryData(['inventory'], ctx.prev)
       toast.error(e.message)
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory'] }),
+    onSettled: () => invalidateStock(queryClient),
     meta: { silent: true },
   })
 }
@@ -197,7 +207,7 @@ export function useDeleteItem() {
       queryClient.setQueryData(['inventory'], ctx.prev)
       toast.error(e.message)
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['inventory'] }),
+    onSettled: () => invalidateStock(queryClient),
     meta: { silent: true },
   })
 }
@@ -213,7 +223,7 @@ export function useBackfillImages() {
 export function useCookMeal() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, decrement }) => api.cookMeal(id, decrement),
+    mutationFn: ({ id, decrement, requestId }) => api.cookMeal(id, decrement, requestId),
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: ['meals'] })
       await queryClient.cancelQueries({ queryKey: ['plans'] })
@@ -228,8 +238,7 @@ export function useCookMeal() {
       toast.error(e.message)
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['meals'] })
-      queryClient.invalidateQueries({ queryKey: ['inventory'] }) // cook may decrement
+      invalidateStock(queryClient)
     },
     meta: { silent: true },
   })
@@ -295,6 +304,14 @@ export function useCreatePlan() {
   })
 }
 
+export function useResumePlan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: api.resumePlan,
+    onSuccess: (plan) => queryClient.setQueryData(['plans', 'current'], plan),
+  })
+}
+
 export function useDeletePlan() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -325,6 +342,7 @@ export function useUpdatePreferences() {
     onSuccess: (updated) => {
       queryClient.setQueryData(['preferences'], updated)
       queryClient.setQueryData(['preferences', 'status'], { onboarded: true })
+      invalidateStock(queryClient)
     },
   })
 }
@@ -408,7 +426,7 @@ export function useCheckedToInventory() {
     mutationFn: api.checkedToInventory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shopping-list'] })
-      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      invalidateStock(queryClient)
     },
   })
 }
@@ -435,7 +453,10 @@ export function useConfirmExtraction() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ batchId, items }) => api.confirmExtraction(batchId, items),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory'] }),
+    onSuccess: () => {
+      invalidateStock(queryClient)
+      queryClient.invalidateQueries({ queryKey: ['extractions'] })
+    },
     meta: { silent: true }, // ReviewExtraction shows the error inline
   })
 }

@@ -1,0 +1,41 @@
+# Isolated test stack. Its databases are disposable; production .env DATABASE_URL
+# and Supabase settings are overridden. Optional AI keys allow live smoke tests.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: fridge-test-only
+      POSTGRES_DB: fridge_preview
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fridge_preview"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  backend:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:fridge-test-only@db:5432/fridge_preview
+      SUPABASE_URL: ""
+      SUPABASE_SECRET_KEY: ""
+      BLOB_BACKEND: local
+      UPLOAD_DIR: /app/data/uploads
+    ports:
+      - "127.0.0.1:18000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_SUPABASE_URL: ""
+        VITE_SUPABASE_PUBLISHABLE_KEY: ""
+    ports:
+      - "127.0.0.1:18080:80"
+    depends_on:
+      - backend

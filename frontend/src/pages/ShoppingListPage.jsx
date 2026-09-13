@@ -6,7 +6,7 @@ import {
   useAddShoppingItem, useCheckedToInventory, useClearChecked,
   useDeleteShoppingItem, useShoppingList, useUpdateShoppingItem,
 } from '../api/queries.js'
-import { toast } from '../components/Toast.jsx'
+import { toast } from '../components/toast.js'
 import {
   PageHeader, EmptyState, Skeleton, StickyActionBar,
 } from '../components/ui.jsx'

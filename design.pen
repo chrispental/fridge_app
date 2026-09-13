@@ -898,7 +898,7 @@
               "id": "kHjqo",
               "name": "sourceLink",
               "fill": "$accent",
-              "content": "View full recipe ↗",
+              "content": "Related recipe ↗",
               "fontFamily": "Inter",
               "fontSize": 12,
               "fontWeight": "600"
@@ -3327,6 +3327,47 @@
                       "content": "Analyze photo"
                     }
                   }
+                },
+                {
+                  "type": "frame",
+                  "id": "bxZOg",
+                  "name": "Unfinished scans",
+                  "width": "fill_container",
+                  "fill": "$surface-1",
+                  "cornerRadius": 16,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "fjWQY",
+                      "name": "Pending scans title",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Finish reviewing a scan",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "EyMZ0",
+                      "name": "Pending scan link",
+                      "fill": "$accent",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Review scan from September 13 →",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
                 }
               ]
             }
@@ -3408,6 +3449,76 @@
                   "content": "These are the AI's best guesses — fix anything wrong, then add them. ⚠️ marks low-confidence items.",
                   "fontFamily": "Inter",
                   "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "m09NWU",
+              "name": "Original photo",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 16,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "D056a",
+                  "name": "Photo label",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Original photo",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "n9bTVd",
+                  "name": "Uploaded photo preview",
+                  "width": "fill_container",
+                  "height": 170,
+                  "fill": "$surface-2",
+                  "cornerRadius": 12,
+                  "layout": "vertical",
+                  "padding": 16,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "G14172",
+                      "name": "Photo fallback",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Photo unavailable. You can still review the items.",
+                      "lineHeight": 1.5,
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "I58kha",
+                  "name": "Draft persistence",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Edits are saved in this browser until you confirm.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
                   "fontWeight": "normal"
                 }
               ]
@@ -5318,7 +5429,7 @@
                   "fill": "$text-secondary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "A few quick questions so every meal fits you, your kitchen, and your taste.",
+                  "content": "Start with your household, food needs, and kitchen. You can tune everything else later in Settings.",
                   "lineHeight": 1.5,
                   "fontFamily": "Inter",
                   "fontSize": 14,
@@ -5373,53 +5484,6 @@
                 },
                 {
                   "type": "frame",
-                  "id": "X71LeL",
-                  "name": "field-Location",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 8,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "k4EfcF",
-                      "name": "label",
-                      "fill": "$text-primary",
-                      "content": "Location",
-                      "fontFamily": "Inter",
-                      "fontSize": 13,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "ear7T",
-                      "name": "input",
-                      "width": "fill_container",
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "ZEBIv",
-                          "name": "value",
-                          "fill": "$text-primary",
-                          "content": "Austin, TX",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
                   "id": "L3aWP",
                   "name": "field-Allergies",
                   "width": "fill_container",
@@ -5462,8 +5526,390 @@
                           "fontWeight": "normal"
                         }
                       ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "jtsri",
+                      "name": "Allergy guidance",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "We filter known matches; always check ingredient labels.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
+                },
+                {
+                  "type": "frame",
+                  "id": "X71LeL",
+                  "name": "field-Location",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "k4EfcF",
+                      "name": "label",
+                      "fill": "$text-primary",
+                      "content": "Dietary restrictions",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ear7T",
+                      "name": "input",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": "$radius-sm",
+                      "stroke": "$border-strong",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        11,
+                        13
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ZEBIv",
+                          "name": "value",
+                          "fill": "#000000",
+                          "content": "e.g. vegetarian, halal",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "QNThr",
+                  "name": "Kitchen equipment",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "q5HIP",
+                      "name": "Equipment label",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Kitchen equipment",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ftzR7",
+                      "name": "Equipment options",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "VpJwu",
+                          "name": "Stovetop",
+                          "fill": "$accent-dim",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "eXMRX",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Stovetop",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "sFLVw",
+                          "name": "Oven",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wWTXd",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Oven",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "YpcqF",
+                          "name": "Microwave",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "b6Ex6",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Microwave",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hUU6x",
+                      "name": "Equipment options",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "YnzzU",
+                          "name": "Air fryer",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "z1cLK8",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Air fryer",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gVyD6",
+                          "name": "Blender",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "LO8Jp",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Blender",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mqnV3",
+                          "name": "Grill",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "MlYUL",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Grill",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FWOxm",
+                      "name": "Equipment options",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Da0lD",
+                          "name": "Slow cooker",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nQBSE",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Slow cooker",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "nu9Uq",
+                          "name": "Toaster",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "b5refr",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Toaster",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "S8Em4",
+                      "name": "Equipment options",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "usTid",
+                          "name": "Kettle",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "y6slOx",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Kettle",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gnqsr",
+                          "name": "Food processor",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "IQk8n",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Food processor",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "ejiIE",
+                  "name": "More preferences disclosure",
+                  "fill": "$accent",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "▸ More preferences (optional)",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "600"
                 },
                 {
                   "id": "i0rtuw",
@@ -8011,6 +8457,47 @@
                       "content": "Analyze photo"
                     }
                   }
+                },
+                {
+                  "type": "frame",
+                  "id": "QoK9N",
+                  "name": "Unfinished scans",
+                  "width": "fill_container",
+                  "fill": "$surface-1",
+                  "cornerRadius": 16,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "AuDQU",
+                      "name": "Pending scans title",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Finish reviewing a scan",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "qtmin",
+                      "name": "Pending scan link",
+                      "fill": "$accent",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Review scan from September 13 →",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
                 }
               ]
             }
@@ -8108,405 +8595,60 @@
             },
             {
               "type": "frame",
-              "id": "X7lNq",
-              "name": "Item List",
+              "id": "lP3Mx",
+              "name": "Photo and editable items",
               "width": "fill_container",
-              "layout": "vertical",
-              "gap": 10,
+              "gap": 24,
               "children": [
                 {
                   "type": "frame",
-                  "id": "fS8kc",
-                  "name": "row1",
-                  "width": "fill_container",
+                  "id": "plXRr",
+                  "name": "Original photo",
+                  "width": 260,
                   "fill": "$surface-1",
-                  "cornerRadius": "$radius-md",
+                  "cornerRadius": 16,
                   "stroke": "$border",
                   "strokeWidth": 1,
-                  "strokeAlignment": "inner",
-                  "gap": 10,
-                  "padding": [
-                    12,
-                    14
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "EyPr5",
-                      "name": "Name box",
-                      "width": "fill_container",
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "t4LfO",
-                          "name": "Name value",
-                          "fill": "$text-primary",
-                          "content": "Eggs",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "J01MGJ",
-                      "name": "Qty box",
-                      "width": 64,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "lmmld",
-                          "name": "Qty value",
-                          "fill": "$text-primary",
-                          "content": "12",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "g9U10",
-                      "name": "Unit box",
-                      "width": 92,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "fQ1C7",
-                          "name": "Unit value",
-                          "fill": "$text-primary",
-                          "content": "piece",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "Fe2zb",
-                      "name": "Storage box",
-                      "width": 100,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "D1w2K",
-                          "name": "Storage value",
-                          "fill": "$text-primary",
-                          "content": "Fridge",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "MiniJ",
-                      "name": "Category box",
-                      "width": 104,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "M8IVF",
-                          "name": "Category value",
-                          "fill": "$text-primary",
-                          "content": "dairy",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "ye8ch",
-                      "name": "Expiry box",
-                      "width": 110,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "gap": 6,
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "uT2I5",
-                          "name": "icon",
-                          "width": 13,
-                          "height": 13,
-                          "icon": "calendar",
-                          "library": "lucide",
-                          "fill": "$text-tertiary"
-                        },
-                        {
-                          "type": "text",
-                          "id": "t94lya",
-                          "name": "Expiry value",
-                          "fill": "$text-primary",
-                          "content": "Jul 12",
-                          "fontFamily": "Inter",
-                          "fontSize": 13,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "NwqL9",
-                      "name": "Remove",
-                      "fill": "#00000000",
-                      "cornerRadius": "$radius-sm",
-                      "padding": [
-                        8,
-                        6
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "SPhdq",
-                          "name": "Remove label",
-                          "fill": "$danger",
-                          "content": "Remove",
-                          "fontFamily": "Inter",
-                          "fontSize": 13,
-                          "fontWeight": "600"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "OQnSs",
-                  "name": "row2",
-                  "width": "fill_container",
-                  "fill": "$accent-dim",
-                  "cornerRadius": "$radius-md",
-                  "stroke": "$accent-line",
-                  "strokeWidth": 1,
-                  "strokeAlignment": "inner",
-                  "gap": 10,
-                  "padding": [
-                    12,
-                    14
-                  ],
-                  "alignItems": "center",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 16,
                   "children": [
                     {
                       "type": "text",
-                      "id": "TxQJf",
-                      "name": "warn",
-                      "fill": "$accent",
-                      "content": "⚠️",
-                      "fontFamily": "Inter",
-                      "fontSize": 15,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "dMWWK",
-                      "name": "Name box",
+                      "id": "kJqdP",
+                      "name": "Photo label",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "qHaxe",
-                          "name": "Name value",
-                          "fill": "$text-primary",
-                          "content": "Spinach",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
+                      "content": "Original photo",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
                     },
                     {
                       "type": "frame",
-                      "id": "xaCTa",
-                      "name": "Qty box",
-                      "width": 64,
+                      "id": "k77MI",
+                      "name": "Uploaded photo preview",
+                      "width": "fill_container",
+                      "height": 240,
                       "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "padding": 16,
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
-                          "id": "n2rXC",
-                          "name": "Qty value",
-                          "fill": "$text-primary",
-                          "content": "1",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "EH1Qf",
-                      "name": "Unit box",
-                      "width": 92,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "sJuqs",
-                          "name": "Unit value",
-                          "fill": "$text-primary",
-                          "content": "bunch",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "C954i",
-                      "name": "Storage box",
-                      "width": 100,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "yl1FE",
-                          "name": "Storage value",
-                          "fill": "$text-primary",
-                          "content": "Fridge",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "iZfwQ",
-                      "name": "Expiry box",
-                      "width": 110,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "gap": 6,
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "TFdTI",
-                          "name": "icon",
-                          "width": 13,
-                          "height": 13,
-                          "icon": "calendar",
-                          "library": "lucide",
-                          "fill": "$text-tertiary"
-                        },
-                        {
-                          "type": "text",
-                          "id": "y470O7",
-                          "name": "Expiry value",
-                          "fill": "$text-primary",
-                          "content": "Jul 9",
+                          "id": "eOJqU",
+                          "name": "Photo fallback",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Photo unavailable. You can still review the items.",
+                          "lineHeight": 1.5,
+                          "textAlign": "center",
                           "fontFamily": "Inter",
                           "fontSize": 13,
                           "fontWeight": "normal"
@@ -8514,274 +8656,752 @@
                       ]
                     },
                     {
-                      "type": "frame",
-                      "id": "ahj8t",
-                      "name": "Category box",
-                      "width": 104,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "bx152",
-                          "name": "Category value",
-                          "fill": "$text-primary",
-                          "content": "produce",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "i2zfuq",
-                      "name": "Remove",
-                      "fill": "#00000000",
-                      "cornerRadius": "$radius-sm",
-                      "padding": [
-                        8,
-                        6
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "W09jo",
-                          "name": "Remove label",
-                          "fill": "$danger",
-                          "content": "Remove",
-                          "fontFamily": "Inter",
-                          "fontSize": 13,
-                          "fontWeight": "600"
-                        }
-                      ]
+                      "type": "text",
+                      "id": "k6vmG",
+                      "name": "Draft persistence",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Edits are saved in this browser until you confirm.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "FRnL2",
-                  "name": "row3",
+                  "id": "X7lNq",
+                  "name": "Item List",
                   "width": "fill_container",
-                  "fill": "$surface-1",
-                  "cornerRadius": "$radius-md",
-                  "stroke": "$border",
-                  "strokeWidth": 1,
-                  "strokeAlignment": "inner",
+                  "layout": "vertical",
                   "gap": 10,
-                  "padding": [
-                    12,
-                    14
-                  ],
-                  "alignItems": "center",
                   "children": [
                     {
                       "type": "frame",
-                      "id": "JJJc9",
-                      "name": "Name box",
+                      "id": "fS8kc",
+                      "name": "row1",
                       "width": "fill_container",
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
+                      "fill": "$surface-1",
+                      "cornerRadius": "$radius-md",
+                      "stroke": "$border",
                       "strokeWidth": 1,
                       "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 10,
                       "padding": [
-                        11,
-                        13
+                        12,
+                        14
                       ],
-                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "text",
-                          "id": "lBrLe",
-                          "name": "Name value",
-                          "fill": "$text-primary",
-                          "content": "Salmon",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "BZoT7",
-                      "name": "Qty box",
-                      "width": 64,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "VoLxS",
-                          "name": "Qty value",
-                          "fill": "$text-primary",
-                          "content": "2",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "t1Utc",
-                      "name": "Unit box",
-                      "width": 92,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "WFAZW",
-                          "name": "Unit value",
-                          "fill": "$text-primary",
-                          "content": "piece",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "B47mJ",
-                      "name": "Storage box",
-                      "width": 100,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "imhYg",
-                          "name": "Storage value",
-                          "fill": "$text-primary",
-                          "content": "Freezer",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "xmqY2",
-                      "name": "Category box",
-                      "width": 104,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "BsYiN",
-                          "name": "Category value",
-                          "fill": "$text-primary",
-                          "content": "seafood",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "AVIQk",
-                      "name": "Expiry box",
-                      "width": 110,
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "gap": 6,
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "eTZBp",
-                          "name": "icon",
-                          "width": 13,
-                          "height": 13,
-                          "icon": "calendar",
-                          "library": "lucide",
-                          "fill": "$text-tertiary"
+                          "type": "frame",
+                          "id": "EyPr5",
+                          "name": "Name box",
+                          "width": "fill_container",
+                          "fill": "$surface-2",
+                          "cornerRadius": "$radius-sm",
+                          "stroke": "$border-strong",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            11,
+                            13
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "t4LfO",
+                              "name": "Name value",
+                              "fill": "$text-primary",
+                              "content": "Eggs",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
                         },
                         {
-                          "type": "text",
-                          "id": "k8fH7C",
-                          "name": "Expiry value",
-                          "fill": "$text-primary",
-                          "content": "Sep 30",
-                          "fontFamily": "Inter",
-                          "fontSize": 13,
-                          "fontWeight": "normal"
+                          "type": "frame",
+                          "id": "r3FJHV",
+                          "name": "Amount and storage fields",
+                          "width": "fill_container",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "J01MGJ",
+                              "name": "Qty box",
+                              "width": 64,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "lmmld",
+                                  "name": "Qty value",
+                                  "fill": "$text-primary",
+                                  "content": "12",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "g9U10",
+                              "name": "Unit box",
+                              "width": 92,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "fQ1C7",
+                                  "name": "Unit value",
+                                  "fill": "$text-primary",
+                                  "content": "piece",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Fe2zb",
+                              "name": "Storage box",
+                              "width": 100,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "D1w2K",
+                                  "name": "Storage value",
+                                  "fill": "$text-primary",
+                                  "content": "Fridge",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "O7NJ9z",
+                          "name": "Category and expiry fields",
+                          "width": "fill_container",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "MiniJ",
+                              "name": "Category box",
+                              "width": 104,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "M8IVF",
+                                  "name": "Category value",
+                                  "fill": "$text-primary",
+                                  "content": "dairy",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ye8ch",
+                              "name": "Expiry box",
+                              "width": 110,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "gap": 6,
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "uT2I5",
+                                  "name": "icon",
+                                  "width": 13,
+                                  "height": 13,
+                                  "icon": "calendar",
+                                  "library": "lucide",
+                                  "fill": "$text-tertiary"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "t94lya",
+                                  "name": "Expiry value",
+                                  "fill": "$text-primary",
+                                  "content": "Jul 12",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "NwqL9",
+                              "name": "Remove",
+                              "fill": "#00000000",
+                              "cornerRadius": "$radius-sm",
+                              "padding": [
+                                8,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "SPhdq",
+                                  "name": "Remove label",
+                                  "fill": "$danger",
+                                  "content": "Remove",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "dT0gf",
-                      "name": "Remove",
-                      "fill": "#00000000",
-                      "cornerRadius": "$radius-sm",
+                      "id": "OQnSs",
+                      "name": "row2",
+                      "width": "fill_container",
+                      "fill": "$accent-dim",
+                      "cornerRadius": "$radius-md",
+                      "stroke": "$accent-line",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 10,
                       "padding": [
-                        8,
-                        6
+                        12,
+                        14
                       ],
                       "children": [
                         {
                           "type": "text",
-                          "id": "lKifg",
-                          "name": "Remove label",
-                          "fill": "$danger",
-                          "content": "Remove",
+                          "id": "TxQJf",
+                          "name": "warn",
+                          "fill": "$accent",
+                          "content": "⚠️",
                           "fontFamily": "Inter",
-                          "fontSize": 13,
-                          "fontWeight": "600"
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "dMWWK",
+                          "name": "Name box",
+                          "width": "fill_container",
+                          "fill": "$surface-2",
+                          "cornerRadius": "$radius-sm",
+                          "stroke": "$border-strong",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            11,
+                            13
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qHaxe",
+                              "name": "Name value",
+                              "fill": "$text-primary",
+                              "content": "Spinach",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CeCg3",
+                          "name": "Amount and storage fields",
+                          "width": "fill_container",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "xaCTa",
+                              "name": "Qty box",
+                              "width": 64,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "n2rXC",
+                                  "name": "Qty value",
+                                  "fill": "$text-primary",
+                                  "content": "1",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "EH1Qf",
+                              "name": "Unit box",
+                              "width": 92,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "sJuqs",
+                                  "name": "Unit value",
+                                  "fill": "$text-primary",
+                                  "content": "bunch",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "C954i",
+                              "name": "Storage box",
+                              "width": 100,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "yl1FE",
+                                  "name": "Storage value",
+                                  "fill": "$text-primary",
+                                  "content": "Fridge",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "VGLcD",
+                          "name": "Category and expiry fields",
+                          "width": "fill_container",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "iZfwQ",
+                              "name": "Expiry box",
+                              "width": 110,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "gap": 6,
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "TFdTI",
+                                  "name": "icon",
+                                  "width": 13,
+                                  "height": 13,
+                                  "icon": "calendar",
+                                  "library": "lucide",
+                                  "fill": "$text-tertiary"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "y470O7",
+                                  "name": "Expiry value",
+                                  "fill": "$text-primary",
+                                  "content": "Jul 9",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ahj8t",
+                              "name": "Category box",
+                              "width": 104,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "bx152",
+                                  "name": "Category value",
+                                  "fill": "$text-primary",
+                                  "content": "produce",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "i2zfuq",
+                              "name": "Remove",
+                              "fill": "#00000000",
+                              "cornerRadius": "$radius-sm",
+                              "padding": [
+                                8,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "W09jo",
+                                  "name": "Remove label",
+                                  "fill": "$danger",
+                                  "content": "Remove",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FRnL2",
+                      "name": "row3",
+                      "width": "fill_container",
+                      "fill": "$surface-1",
+                      "cornerRadius": "$radius-md",
+                      "stroke": "$border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "JJJc9",
+                          "name": "Name box",
+                          "width": "fill_container",
+                          "fill": "$surface-2",
+                          "cornerRadius": "$radius-sm",
+                          "stroke": "$border-strong",
+                          "strokeWidth": 1,
+                          "strokeAlignment": "inner",
+                          "padding": [
+                            11,
+                            13
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "lBrLe",
+                              "name": "Name value",
+                              "fill": "$text-primary",
+                              "content": "Salmon",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "X2Hawh",
+                          "name": "Amount and storage fields",
+                          "width": "fill_container",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "BZoT7",
+                              "name": "Qty box",
+                              "width": 64,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "VoLxS",
+                                  "name": "Qty value",
+                                  "fill": "$text-primary",
+                                  "content": "2",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "t1Utc",
+                              "name": "Unit box",
+                              "width": 92,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "WFAZW",
+                                  "name": "Unit value",
+                                  "fill": "$text-primary",
+                                  "content": "piece",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "B47mJ",
+                              "name": "Storage box",
+                              "width": 100,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "imhYg",
+                                  "name": "Storage value",
+                                  "fill": "$text-primary",
+                                  "content": "Freezer",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "n0KpL",
+                          "name": "Category and expiry fields",
+                          "width": "fill_container",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "xmqY2",
+                              "name": "Category box",
+                              "width": 104,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "BsYiN",
+                                  "name": "Category value",
+                                  "fill": "$text-primary",
+                                  "content": "seafood",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "AVIQk",
+                              "name": "Expiry box",
+                              "width": 110,
+                              "fill": "$surface-2",
+                              "cornerRadius": "$radius-sm",
+                              "stroke": "$border-strong",
+                              "strokeWidth": 1,
+                              "strokeAlignment": "inner",
+                              "gap": 6,
+                              "padding": [
+                                11,
+                                13
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "eTZBp",
+                                  "name": "icon",
+                                  "width": 13,
+                                  "height": 13,
+                                  "icon": "calendar",
+                                  "library": "lucide",
+                                  "fill": "$text-tertiary"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "k8fH7C",
+                                  "name": "Expiry value",
+                                  "fill": "$text-primary",
+                                  "content": "Sep 30",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "dT0gf",
+                              "name": "Remove",
+                              "fill": "#00000000",
+                              "cornerRadius": "$radius-sm",
+                              "padding": [
+                                8,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "lKifg",
+                                  "name": "Remove label",
+                                  "fill": "$danger",
+                                  "content": "Remove",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 13,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
                         }
                       ]
                     }
@@ -8845,7 +9465,7 @@
       },
       "clip": true,
       "width": 1440,
-      "height": 900,
+      "height": 1060,
       "fill": "$bg",
       "layout": "vertical",
       "justifyContent": "center",
@@ -8945,7 +9565,7 @@
                   "fill": "$text-secondary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "A few quick questions so every meal fits you, your kitchen, and your taste.",
+                  "content": "Start with your household, food needs, and kitchen. You can tune everything else later in Settings.",
                   "lineHeight": 1.5,
                   "fontFamily": "Inter",
                   "fontSize": 14,
@@ -9000,53 +9620,6 @@
                 },
                 {
                   "type": "frame",
-                  "id": "D5ThH",
-                  "name": "field-Location",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 8,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "FNQlT",
-                      "name": "label",
-                      "fill": "$text-primary",
-                      "content": "Location",
-                      "fontFamily": "Inter",
-                      "fontSize": 13,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "QIRL4",
-                      "name": "input",
-                      "width": "fill_container",
-                      "fill": "$surface-2",
-                      "cornerRadius": "$radius-sm",
-                      "stroke": "$border-strong",
-                      "strokeWidth": 1,
-                      "strokeAlignment": "inner",
-                      "padding": [
-                        11,
-                        13
-                      ],
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "yg34b",
-                          "name": "value",
-                          "fill": "$text-primary",
-                          "content": "Austin, TX",
-                          "fontFamily": "Inter",
-                          "fontSize": 14,
-                          "fontWeight": "normal"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
                   "id": "Mn4fh",
                   "name": "field-Allergies",
                   "width": "fill_container",
@@ -9089,8 +9662,381 @@
                           "fontWeight": "normal"
                         }
                       ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "swTtL",
+                      "name": "Allergy guidance",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "We filter known matches; always check ingredient labels.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
+                },
+                {
+                  "type": "frame",
+                  "id": "D5ThH",
+                  "name": "field-Location",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FNQlT",
+                      "name": "label",
+                      "fill": "$text-primary",
+                      "content": "Dietary restrictions",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "QIRL4",
+                      "name": "input",
+                      "width": "fill_container",
+                      "fill": "$surface-2",
+                      "cornerRadius": "$radius-sm",
+                      "stroke": "$border-strong",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "padding": [
+                        11,
+                        13
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "yg34b",
+                          "name": "value",
+                          "fill": "#000000",
+                          "content": "e.g. vegetarian, halal",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yqEPt",
+                  "name": "Kitchen equipment",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "k192kL",
+                      "name": "Equipment label",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Kitchen equipment",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "otRWj",
+                      "name": "Equipment options",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "FxIfx",
+                          "name": "Stovetop",
+                          "fill": "$accent-dim",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "o41VO",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Stovetop",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "y6xBqx",
+                          "name": "Oven",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "iYAku",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Oven",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "r4zf8U",
+                          "name": "Microwave",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ZlLN9",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Microwave",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KRRHY",
+                          "name": "Air fryer",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Q5tw6",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Air fryer",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "siWSl",
+                      "name": "Equipment options",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "eLVKM",
+                          "name": "Blender",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "jYTVw",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Blender",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "l9Kxl",
+                          "name": "Grill",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "r96Rc",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Grill",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "SFklH",
+                          "name": "Slow cooker",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Y0j4h",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Slow cooker",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "R6VMG",
+                          "name": "Toaster",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "g30d0",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Toaster",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AvyfC",
+                      "name": "Equipment options",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "b0V0zE",
+                          "name": "Kettle",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Fay1T",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Kettle",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CnP8t",
+                          "name": "Food processor",
+                          "fill": "$surface-2",
+                          "cornerRadius": 999,
+                          "stroke": "$border",
+                          "strokeWidth": 1,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "pSNFA",
+                              "name": "Option label",
+                              "fill": "$text-primary",
+                              "content": "Food processor",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "CjfjY",
+                  "name": "More preferences disclosure",
+                  "fill": "$accent",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "▸ More preferences (optional)",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "600"
                 },
                 {
                   "id": "e0yrzc",
@@ -9184,9 +10130,50 @@
                   "fill": "$text-secondary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "5 meals planned.",
+                  "content": "2 meals planned",
                   "fontFamily": "Inter",
                   "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "BBEHV",
+              "name": "Planning progress",
+              "width": "fill_container",
+              "fill": "$info-dim",
+              "cornerRadius": 12,
+              "stroke": "$info-line",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 4,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ZYPOq",
+                  "name": "Progress title",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Planning 2 of 5 meals…",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "xz8Ft",
+                  "name": "Progress detail",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "You can leave this page. Your plan will keep building.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
                   "fontWeight": "normal"
                 }
               ]
@@ -9384,6 +10371,7 @@
                   "ref": "CCrQi",
                   "name": "addAllBtn",
                   "width": "fill_container",
+                  "opacity": 0.5,
                   "descendants": {
                     "j2jFf6": {
                       "icon": "shopping-cart"
@@ -9392,6 +10380,55 @@
                       "content": "Add all to shopping list"
                     }
                   }
+                },
+                {
+                  "type": "frame",
+                  "id": "i3Zurc",
+                  "name": "Quantity check",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Kghbh",
+                      "name": "Check amounts label",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Check amounts (1)",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Yz2bj",
+                      "name": "Check amount detail",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Rice · 2 cups needed. Update your inventory amount before importing.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "yM91c",
+                      "name": "Update inventory link",
+                      "fill": "$accent",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Update inventory →",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
                 },
                 {
                   "type": "text",
@@ -9548,7 +10585,7 @@
       },
       "clip": true,
       "width": 1440,
-      "height": 1460,
+      "height": 1660,
       "fill": "$bg",
       "children": [
         {
@@ -9627,7 +10664,7 @@
                       "fill": "$text-secondary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "5 meals planned.",
+                      "content": "2 meals planned",
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "normal"
@@ -9639,6 +10676,7 @@
                   "type": "ref",
                   "ref": "CCrQi",
                   "name": "newPlanBtn",
+                  "opacity": 0.5,
                   "descendants": {
                     "j2jFf6": {
                       "icon": "rotate-ccw"
@@ -9647,6 +10685,47 @@
                       "content": "Start a new plan"
                     }
                   }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "qwBMH",
+              "name": "Planning progress",
+              "width": "fill_container",
+              "fill": "$info-dim",
+              "cornerRadius": 12,
+              "stroke": "$info-line",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 4,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "c4DR5",
+                  "name": "Progress title",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Planning 2 of 5 meals…",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "u1MpA",
+                  "name": "Progress detail",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "You can leave this page. Your plan will keep building.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -9884,6 +10963,7 @@
                       "ref": "CCrQi",
                       "name": "addAllBtn",
                       "width": "fill_container",
+                      "opacity": 0.5,
                       "descendants": {
                         "j2jFf6": {
                           "icon": "shopping-cart"
@@ -9892,6 +10972,55 @@
                           "content": "Add all to shopping list"
                         }
                       }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Gb7iN",
+                      "name": "Quantity check",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gjGmI",
+                          "name": "Check amounts label",
+                          "fill": "$text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Check amounts (1)",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "cCK7W",
+                          "name": "Check amount detail",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Rice · 2 cups needed. Update your inventory amount before importing.",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "wesPr",
+                          "name": "Update inventory link",
+                          "fill": "$accent",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Update inventory →",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
                     },
                     {
                       "type": "text",
@@ -14440,7 +15569,7 @@
               "fill": "$text-secondary",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "Gather everything before you start cooking.",
+              "content": "Gather everything before you start cooking. Your checklist and progress are saved here.",
               "textAlign": "center",
               "fontFamily": "Inter",
               "fontSize": 14,
@@ -32745,6 +33874,373 @@
                       "fontWeight": "600"
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Ef8A4",
+      "x": 0,
+      "y": 4500,
+      "name": "Recovery states and dialogs",
+      "theme": {
+        "mode": "light"
+      },
+      "width": 1300,
+      "height": 820,
+      "fill": "$bg",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 32,
+      "children": [
+        {
+          "type": "text",
+          "id": "P5ww3",
+          "name": "Section heading",
+          "fill": "$text-primary",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "Recovery and safe retries",
+          "lineHeight": 1.5,
+          "fontFamily": "$font-display",
+          "fontSize": 28,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "u3JoGN",
+          "name": "Recovery cards",
+          "width": "fill_container",
+          "gap": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "Mvju8",
+              "name": "QueryError",
+              "reusable": true,
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 20,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Pma78",
+                  "name": "Title",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Couldn’t load your kitchen",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "eJ4i0",
+                  "name": "Description",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Check your connection and try again.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "id": "e98NgM",
+                  "type": "ref",
+                  "ref": "RTWdT",
+                  "name": "Try again",
+                  "width": "fill_container",
+                  "descendants": {
+                    "o4QqwP": {
+                      "content": "Try again"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Jso7t",
+              "name": "Planning paused",
+              "reusable": true,
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 20,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "glIqx",
+                  "name": "Title",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Planning paused",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "H2vaKa",
+                  "name": "Description",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Completed meals are saved. Try resuming, or adjust your preferences.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "id": "YrQES",
+                  "type": "ref",
+                  "ref": "RTWdT",
+                  "name": "Resume remaining meals",
+                  "width": "fill_container",
+                  "descendants": {
+                    "o4QqwP": {
+                      "content": "Resume remaining meals"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "iIBjH",
+              "name": "Scan confirmed",
+              "reusable": true,
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 20,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "lLUx6",
+                  "name": "Title",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "This scan is already saved",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "KpiLu",
+                  "name": "Description",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Your reviewed items are in your inventory.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "id": "Qtu7C",
+                  "type": "ref",
+                  "ref": "RTWdT",
+                  "name": "Open inventory",
+                  "width": "fill_container",
+                  "descendants": {
+                    "o4QqwP": {
+                      "content": "Open inventory"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ZK9p3",
+          "name": "Form and import states",
+          "width": "fill_container",
+          "gap": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "TPsbu",
+              "name": "Item modal save failure",
+              "width": 440,
+              "fill": "$surface-1",
+              "cornerRadius": 20,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "lpS1i",
+                  "name": "Modal title",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Add item",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "Stay8",
+                  "name": "Name label",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Name",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "EiGWW",
+                  "name": "Retained name field",
+                  "width": "fill_container",
+                  "fill": "$surface-2",
+                  "cornerRadius": 10,
+                  "stroke": "$accent",
+                  "strokeWidth": 2,
+                  "padding": 14,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "l2nk9",
+                      "name": "Draft value",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Rice",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "edglp",
+                  "name": "Inline save error",
+                  "fill": "$danger",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Couldn’t save. Please try again.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "id": "FNLbk",
+                  "type": "ref",
+                  "ref": "RTWdT",
+                  "name": "Retry add",
+                  "descendants": {
+                    "o4QqwP": {
+                      "content": "Add"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pevCA",
+              "name": "Shopping import replay",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 20,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ZryJr",
+                  "name": "Import title",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Shopping list",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "600"
+                },
+                {
+                  "id": "C0pqI2",
+                  "type": "ref",
+                  "ref": "CCrQi",
+                  "name": "Already added button",
+                  "descendants": {
+                    "t0Rs2": {
+                      "content": "Already added"
+                    }
+                  }
+                },
+                {
+                  "type": "text",
+                  "id": "fh23h",
+                  "name": "Explicit second copy",
+                  "fill": "$accent",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Add again for another plan",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "DwPqT",
+                  "name": "Import feedback",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Already imported. Use Add again if you are planning another copy.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 }
               ]
             }

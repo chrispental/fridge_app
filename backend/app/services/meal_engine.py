@@ -16,6 +16,8 @@ from ..models import utcnow
 from ..schemas import MealSuggestion, RecipeIngredient, RecipeSource
 from . import brave_search
 from .ai_client import call_structured
+from .allergens import violates_allergies
+from .ingredients import annotate_ingredients, same_ingredient
 from .expiry import expiring_soon
 from .prompts import load_prompt
 from .scope import get_prefs, inventory_for
@@ -27,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 _REPEAT_SIMILARITY = 0.82  # titles at/above this ratio count as the same meal
 _GRILL_KEYWORDS = ("grill", "barbecue", "bbq", "broil")
-# Grocery/commerce domains we'd rather not use as a "view full recipe" source.
+# Grocery/commerce domains we'd rather not use as a related recipe source.
 _STORE_DOMAINS = (
     "kroger.com", "walmart.com", "target.com", "instacart.com", "amazon.",
     "doordash.com", "ubereats.com", "grubhub.com", "costco.com", "safeway.com",
@@ -111,17 +113,7 @@ def _is_repeat(title: str, recent_normalized: list[str]) -> bool:
 
 
 def _allergen_violation(suggestion: MealSuggestion, allergies: list[str]) -> bool:
-    """True if any allergen string appears anywhere in the suggestion."""
-    allergens = [a.lower().strip() for a in allergies if a and a.strip()]
-    if not allergens:
-        return False
-    haystack = " ".join(
-        [suggestion.title or ""]
-        + [i.name for i in suggestion.ingredients]
-        + list(suggestion.missing_ingredients)
-        + list(suggestion.steps)
-    ).lower()
-    return any(allergen in haystack for allergen in allergens)
+    return violates_allergies(suggestion, allergies)
 
 
 def _is_grill(suggestion: MealSuggestion) -> bool:
@@ -154,7 +146,7 @@ def _pick_recipe(results: list[dict], avoid_url: str | None = None) -> dict | No
 
 
 def _enrich_with_brave(suggestion: MealSuggestion, avoid_url: str | None = None) -> None:
-    """Attach a food photo and a 'view full recipe' link via Brave. Fully fail-soft."""
+    """Attach a food photo and a related recipe link via Brave. Fully fail-soft."""
     try:
         query = f"{suggestion.title} recipe"
         suggestion.image_url = brave_search.search_image(query)
@@ -286,20 +278,15 @@ def _parse_suggestions(raw: dict) -> list[MealSuggestion]:
 
 
 def _annotate_in_stock(suggestion: MealSuggestion, inventory: list, staples: list[str]) -> None:
-    """Recompute each ingredient's `in_stock` flag from real inventory (don't trust AI).
-
-    Pantry staples count as in-stock too — they're assumed always on hand.
-    """
-    inv_names = [i.name.lower().strip() for i in inventory]
-    for ing in suggestion.ingredients:
-        nm = ing.name.lower().strip()
-        ing.in_stock = bool(
-            nm
-            and (
-                any(nm in inv or inv in nm for inv in inv_names if inv)
-                or is_staple(nm, staples)
-            )
-        )
+    annotated = annotate_ingredients([i.model_dump() for i in suggestion.ingredients], inventory, staples)
+    suggestion.ingredients = [RecipeIngredient(**i) for i in annotated]
+    covered = {i.name for i in suggestion.ingredients}
+    # AI missing strings can be stale after our own availability check.
+    suggestion.missing_ingredients = [i.name for i in suggestion.ingredients if i.stock_status in ("partial", "missing")] + [
+        m for m in suggestion.missing_ingredients
+        if not any(same_ingredient(m, name) for name in covered) and not is_staple(m, staples)
+        and not any(same_ingredient(m, i.name) for i in inventory)
+    ]
 
 
 def _shortfall(suggestion: MealSuggestion) -> tuple[int, int]:
@@ -319,7 +306,7 @@ def _expiring_used(suggestion: MealSuggestion, expiring_names: list[str]) -> int
     for exp in expiring_names:
         exp = (exp or "").lower().strip()
         if exp and any(
-            exp in ing.name.lower() or ing.name.lower() in exp
+            same_ingredient(exp, ing.name)
             for ing in suggestion.ingredients
             if ing.name
         ):
@@ -423,7 +410,8 @@ def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=
 
 
 def suggest_meals(
-    db: Session, user_id: str, count: int = 3, idea: str | None = None
+    db: Session, user_id: str, count: int = 3, idea: str | None = None,
+    *, commit: bool = True, exclude_titles: list[str] | None = None
 ) -> list[models.Meal]:
     """Generate meal suggestions, enforce rules, persist them, return Meal rows.
 
@@ -437,7 +425,7 @@ def suggest_meals(
     # Past feedback steers the prompt; disliked dishes are added to the avoid list
     # so they're filtered out server-side just like recent meals.
     feedback_lines, disliked = _recent_feedback(db, user_id)
-    avoid = recent + disliked
+    avoid = recent + disliked + (exclude_titles or [])
     avoid_norm = [normalize_title(t) for t in avoid]
 
     # Grilling is gated on live weather (winter/rain). Skipped when no location is set.
@@ -456,13 +444,22 @@ def suggest_meals(
             and not (grill_blocked and _is_grill(s))
         )
 
-    safe = [s for s in suggestions if keep(s)]
+    def filter_distinct(candidates):
+        accepted = []
+        for candidate in candidates:
+            if keep(candidate) and not _is_repeat(candidate.title, [normalize_title(s.title) for s in accepted]):
+                accepted.append(candidate)
+                if len(accepted) >= count:
+                    break
+        return accepted
+
+    safe = filter_distinct(suggestions)
 
     # If everything was filtered out, retry once with the rejects also excluded.
     if not safe and suggestions:
         rejected = [s.title for s in suggestions]
         retry = _generate(db, prefs, inventory, avoid + rejected, count, weather, idea, feedback_lines, expiring)
-        safe = [s for s in retry if keep(s)]
+        safe = filter_distinct(retry)
 
     # Recompute in-stock from real inventory, then order makeable-now meals first
     # (ties broken in favor of meals that use up expiring items).
@@ -488,9 +485,12 @@ def suggest_meals(
         db.add(meal)
         meals.append(meal)
 
-    db.commit()
-    for m in meals:
-        db.refresh(m)
+    if commit:
+        db.commit()
+        for m in meals:
+            db.refresh(m)
+    else:
+        db.flush()
     return meals
 
 
@@ -501,28 +501,32 @@ def create_plan(db: Session, user_id: str, count: int) -> models.MealPlan:
     no-repeat window between calls, so the week's meals come out distinct. Slots where
     generation yields nothing are skipped (no gaps in slot_index).
     """
-    plan = models.MealPlan(user_id=user_id)
-    db.add(plan)
-    db.flush()  # assign plan.id
-
-    slot = 0
-    for _ in range(count):
-        meals = suggest_meals(db, user_id, count=1)
-        if not meals:
-            continue
-        db.add(
-            models.MealPlanEntry(plan_id=plan.id, slot_index=slot, meal_id=meals[0].id)
-        )
-        slot += 1
-
-    db.commit()
-    db.refresh(plan)
-    return plan
+    try:
+        # Collect before publishing. A failure leaves the preceding plan intact.
+        generated = []
+        for _ in range(count):
+            meals = suggest_meals(db, user_id, count=1, commit=False,
+                                  exclude_titles=[m.title for m in generated])
+            if not meals:
+                raise RuntimeError("Could not find enough distinct meals.")
+            generated.extend(meals)
+        plan = models.MealPlan(user_id=user_id, status="ready", requested_count=count)
+        db.add(plan)
+        db.flush()
+        for slot, meal in enumerate(generated):
+            db.add(models.MealPlanEntry(plan_id=plan.id, slot_index=slot, meal_id=meal.id))
+        db.commit()
+        db.refresh(plan)
+        return plan
+    except Exception:
+        db.rollback()
+        raise
 
 
 def swap_slot(db: Session, user_id: str, entry: models.MealPlanEntry) -> models.Meal | None:
     """Re-roll one plan slot with a fresh suggestion; returns the new Meal (or None)."""
-    meals = suggest_meals(db, user_id, count=1)
+    meals = suggest_meals(db, user_id, count=1, commit=False,
+                          exclude_titles=[e.meal.title for e in entry.plan.entries])
     if not meals:
         return None
     entry.meal_id = meals[0].id
