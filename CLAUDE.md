@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Follow [AGENTS.md](AGENTS.md) for the user's cleanup preference: stop temporary dev
+servers and Docker test stacks before finishing unless explicitly asked to keep
+them running.
+
 ## What this is
 
 An AI app that suggests meals from fridge/pantry inventory and user preferences.

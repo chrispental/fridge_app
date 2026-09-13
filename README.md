@@ -190,7 +190,13 @@ docker compose -f docker-compose.test.yml -p fridge-reliability exec \
 The preview is at `http://localhost:18080`, API at `http://localhost:18000`.
 The test Compose file overrides cloud/database settings and uses synthetic local
 accounts. It reads optional AI keys from `.env` for live generation. Its database
-and photos are disposable. Stop it with the same Compose command ending in `down`.
+and photos are disposable. Clean up the containers, network, and test database volume
+when finished:
+
+```bash
+docker compose -f docker-compose.test.yml -p fridge-reliability down --volumes --remove-orphans
+```
+
 **Migration tests wipe `TEST_DATABASE_URL`; never point them at an existing app database.**
 
 Optional live checks load the root `.env` without printing credentials:
