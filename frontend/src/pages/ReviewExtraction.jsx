@@ -1,9 +1,12 @@
-import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Plus, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { UNITS, STORAGE } from '../api/client.js'
+import { api, UNITS, STORAGE } from '../api/client.js'
+import { useAuth } from '../auth/useAuth.js'
+import { kitchenKey, readStored, writeStored } from '../utils/storage.js'
 import { useConfirmExtraction, useExtraction } from '../api/queries.js'
-import { toast } from '../components/Toast.jsx'
+import QueryError from '../components/QueryError.jsx'
+import { toast } from '../components/toast.js'
 import { PageHeader, StickyActionBar, EmptyState, PageSkeleton } from '../components/ui.jsx'
 
 export default function ReviewExtraction() {
@@ -11,10 +14,31 @@ export default function ReviewExtraction() {
   const navigate = useNavigate()
   const extractionQ = useExtraction(batchId)
   const confirmMutation = useConfirmExtraction()
+  const { session } = useAuth()
+  const draftKey = kitchenKey(session?.user?.id, 'scan', batchId)
+  const [photo, setPhoto] = useState(null)
+  const [photoError, setPhotoError] = useState(false)
 
   // The fetched proposal seeds an editable local list; the user owns it from
   // the first edit (edits === null means "untouched, show the proposal").
-  const [edits, setEdits] = useState(null)
+  const [edits, setEdits] = useState(() => {
+    const saved = readStored(draftKey, null)
+    return Array.isArray(saved) && saved.every((i) => typeof i?.name === 'string') ? saved : null
+  })
+  useEffect(() => { if (edits) writeStored(draftKey, edits) }, [draftKey, edits])
+  useEffect(() => {
+    const controller = new AbortController()
+    let objectUrl
+    api.getExtractionImage(batchId, controller.signal).then((blob) => {
+      if (controller.signal.aborted) return
+      objectUrl = URL.createObjectURL(blob)
+      setPhoto(objectUrl)
+    }).catch(() => { if (!controller.signal.aborted) setPhotoError(true) })
+    return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl) }
+  }, [batchId])
+  useEffect(() => {
+    if (extractionQ.data?.status === 'confirmed') writeStored(draftKey, null)
+  }, [draftKey, extractionQ.data?.status])
   const proposed = extractionQ.data
     ? extractionQ.data.items.map((it, i) => ({ ...it, _key: i }))
     : null
@@ -49,6 +73,7 @@ export default function ReviewExtraction() {
       { batchId, items: payload },
       {
         onSuccess: (saved) => {
+          writeStored(draftKey, null)
           toast.success(`Added ${saved.length} item${saved.length === 1 ? '' : 's'} to your fridge`)
           navigate('/inventory')
         },
@@ -56,10 +81,14 @@ export default function ReviewExtraction() {
     )
   }
 
-  if (extractionQ.isError && !items) {
-    return <div className="banner error">{extractionQ.error.message}</div>
+  if (extractionQ.isError) return <QueryError query={extractionQ} title="Couldn’t load this scan. Your edits are saved." />
+  if (extractionQ.isPending || !items) return <PageSkeleton caption="Analyzing your photo…" />
+  if (extractionQ.data?.status === 'confirmed') {
+    return <div className="card"><h1>This scan is already saved</h1><Link className="btn primary" to="/inventory">Open inventory</Link></div>
   }
-  if (!items) return <PageSkeleton caption="Analyzing your photo…" />
+  if (extractionQ.data?.status !== 'pending_review') {
+    return <div className="card"><h1>This scan isn't ready to review</h1><Link className="btn" to="/capture">Start another scan</Link></div>
+  }
 
   const namedCount = items.filter((i) => i.name.trim()).length
   const busy = confirmMutation.isPending
@@ -80,6 +109,11 @@ export default function ReviewExtraction() {
         />
       )}
 
+      <div className="scan-review-layout">
+        <aside className="scan-review-photo">
+          {photo ? <img src={photo} alt="Original grocery photo for comparison" /> : <p>{photoError ? 'Photo unavailable. You can still review the items.' : 'Loading your photo…'}</p>}
+          <p className="hint">Edits are saved in this browser until you confirm.</p>
+        </aside>
       <div className="row-gap">
         {items.map((it) => (
           <div
@@ -87,12 +121,15 @@ export default function ReviewExtraction() {
             className={`item-row editing ${it.confidence < 0.5 ? 'low-conf' : ''}`}
           >
             <input
+              aria-label={`Item name, row ${items.indexOf(it) + 1}`}
               placeholder="name"
               value={it.name}
               onChange={(e) => update(it._key, { name: e.target.value })}
             />
             <input
               type="number"
+              min="0"
+              aria-label={`Quantity for ${it.name || 'new item'}`}
               step="any"
               placeholder="qty"
               value={it.quantity ?? ''}
@@ -103,6 +140,7 @@ export default function ReviewExtraction() {
               }
             />
             <select
+              aria-label={`Unit for ${it.name || 'new item'}`}
               value={it.unit}
               onChange={(e) => update(it._key, { unit: e.target.value })}
             >
@@ -111,6 +149,7 @@ export default function ReviewExtraction() {
               ))}
             </select>
             <select
+              aria-label={`Storage for ${it.name || 'new item'}`}
               value={it.storage || 'unsorted'}
               onChange={(e) => update(it._key, { storage: e.target.value })}
             >
@@ -119,12 +158,14 @@ export default function ReviewExtraction() {
               ))}
             </select>
             <input
+              aria-label={`Category for ${it.name || 'new item'}`}
               placeholder="category"
               value={it.category || ''}
               onChange={(e) => update(it._key, { category: e.target.value })}
             />
             <input
               type="date"
+              aria-label={`Expiry for ${it.name || 'new item'}`}
               title="Expiry date (optional)"
               value={it.expires_at || ''}
               onChange={(e) => update(it._key, { expires_at: e.target.value || null })}
@@ -137,6 +178,7 @@ export default function ReviewExtraction() {
             </button>
           </div>
         ))}
+      </div>
       </div>
 
       <button className="ghost" onClick={addBlank} style={{ marginTop: '0.6rem' }}>

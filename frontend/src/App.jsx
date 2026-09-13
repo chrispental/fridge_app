@@ -15,6 +15,8 @@ import HistoryPage from './pages/HistoryPage.jsx'
 import PreferencesPage from './pages/PreferencesPage.jsx'
 import ShoppingListPage from './pages/ShoppingListPage.jsx'
 import InsightsPage from './pages/InsightsPage.jsx'
+import QueryError from './components/QueryError.jsx'
+import CookingProvider from './components/CookingProvider.jsx'
 
 const Skeleton = () => (
   <div className="app">
@@ -46,8 +48,10 @@ export default function App() {
   }
 
   if (status.isPending) return <Skeleton />
+  if (status.isError && !status.data) {
+    return <main className="content"><QueryError query={status} /></main>
+  }
 
-  // An unreachable backend reads as "not onboarded" — same as before React Query.
   const onboarded = status.data?.onboarded ?? false
 
   if (!onboarded) {
@@ -61,9 +65,11 @@ export default function App() {
   }
 
   return (
+    <CookingProvider key={session?.user?.id || 'local'}>
     <div className="app">
       <Nav />
       <main className="content">
+        {status.isError && <div className="banner error" role="status">Connection interrupted. Showing your saved kitchen.</div>}
         <div className="page-enter" key={location.pathname}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -81,5 +87,6 @@ export default function App() {
         </div>
       </main>
     </div>
+    </CookingProvider>
   )
 }

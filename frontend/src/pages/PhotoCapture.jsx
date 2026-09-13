@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Camera, RefreshCw } from 'lucide-react'
 import { api } from '../api/client.js'
 import { PageHeader } from '../components/ui.jsx'
+import { usePendingExtractions } from '../api/queries.js'
 
 export default function PhotoCapture() {
   const [file, setFile] = useState(null)
@@ -10,10 +11,13 @@ export default function PhotoCapture() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
+  const pendingQ = usePendingExtractions()
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
 
   function onPick(e) {
     const f = e.target.files?.[0]
     if (!f) return
+    if (f.size > 12 * 1024 * 1024) { setError('Choose a photo smaller than 12 MB.'); return }
     setFile(f)
     setPreview(URL.createObjectURL(f))
     setError(null)
@@ -39,16 +43,16 @@ export default function PhotoCapture() {
       <PageHeader
         eyebrow="Inventory"
         title="Scan your fridge"
-        subtitle="Take or upload a clear photo of your fridge or pantry shelves."
+        subtitle="Choose a clear photo of groceries, a receipt, or your fridge shelves."
       />
 
       <label className="file-drop">
         <input
           type="file"
           accept="image/*"
-          capture="environment"
+          aria-label="Choose a grocery photo"
           onChange={onPick}
-          hidden
+          className="sr-only"
         />
         {preview ? (
           <>
@@ -81,6 +85,12 @@ export default function PhotoCapture() {
         <p className="hint">
           The AI is reading your photo — this can take 10–30 seconds.
         </p>
+      )}
+      {pendingQ.data?.length > 0 && (
+        <div className="card" style={{ marginTop: 24 }}>
+          <h2>Finish reviewing a scan</h2>
+          <ul>{pendingQ.data.map((scan) => <li key={scan.batch_id}><Link to={`/review/${scan.batch_id}`}>Review scan from {new Date(scan.created_at + 'Z').toLocaleString()}</Link></li>)}</ul>
+        </div>
       )}
     </div>
   )

@@ -1,12 +1,15 @@
 """Weekly meal plan: create a plan, view the current one, swap a day, and derive a
 live shopping list (have vs. to-buy) for it."""
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from uuid import uuid4
 
 from .. import models, schemas
 from ..auth import CurrentUser
 from ..database import get_db
-from ..services.meal_engine import create_plan, swap_slot
+from ..services.meal_engine import swap_slot
+from ..services.actions import claim_action
 from ..services.scope import get_owned, inventory_for, staples_for
 from ..services.shopping_list import annotate_recipe, build_shopping_list
 
@@ -19,7 +22,7 @@ def _owned_plan(db: Session, plan_id: int, user_id: str) -> models.MealPlan:
 
 def _serialize_plan(db: Session, user_id: str, plan: models.MealPlan) -> schemas.MealPlanOut:
     """Build the plan response, recomputing each meal's in-stock / missing-ingredient
-    state live (against current inventory + staples) so cards match the shopping list."""
+    state live for each meal. The shopping list allocates across the entire plan."""
     inventory = inventory_for(db, user_id)
     staples = staples_for(db, user_id)
     entries = []
@@ -40,21 +43,38 @@ def _serialize_plan(db: Session, user_id: str, plan: models.MealPlan) -> schemas
             feedback_at=m.feedback_at,
         )
         entries.append(schemas.MealPlanEntryOut(slot_index=e.slot_index, meal=meal_out))
-    return schemas.MealPlanOut(id=plan.id, created_at=plan.created_at, entries=entries)
+    return schemas.MealPlanOut(id=plan.id, created_at=plan.created_at, entries=entries,
+                               status=plan.status, requested_count=plan.requested_count, error=plan.error)
 
 
-@router.post("", response_model=schemas.MealPlanOut)
+@router.post("", response_model=schemas.MealPlanOut, status_code=202)
 def create(payload: schemas.CreatePlanRequest, user: CurrentUser, db: Session = Depends(get_db)):
+    receipt, claimed = claim_action(db, user.id, f"plan:{payload.request_id or uuid4()}")
+    if not claimed:
+        plan = _owned_plan(db, receipt.result_json["plan_id"], user.id)
+        return _serialize_plan(db, user.id, plan)
+    plan = models.MealPlan(user_id=user.id, status="queued", requested_count=payload.count)
+    db.add(plan)
     try:
-        plan = create_plan(db, user.id, count=payload.count)
-    except RuntimeError as exc:  # AI/provider failure (mirrors /meals/suggest)
-        raise HTTPException(502, str(exc))
-    if not plan.entries:
-        raise HTTPException(
-            422,
-            "Couldn't plan any meals. Try adding more to your inventory or "
-            "relaxing your preferences.",
-        )
+        db.flush()
+        receipt.result_json = {"plan_id": plan.id}
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "A plan is already being generated. Open your current plan to follow its progress.")
+    return _serialize_plan(db, user.id, plan)
+
+
+@router.post("/{plan_id}/resume", response_model=schemas.MealPlanOut, status_code=202)
+def resume(plan_id: int, user: CurrentUser, db: Session = Depends(get_db)):
+    plan = _owned_plan(db, plan_id, user.id)
+    if plan.status == "failed":
+        plan.status, plan.error = "queued", None
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(409, "Another plan is already being generated.")
     return _serialize_plan(db, user.id, plan)
 
 
@@ -84,6 +104,8 @@ def shopping_list(plan_id: int, user: CurrentUser, db: Session = Depends(get_db)
 )
 def swap(plan_id: int, slot_index: int, user: CurrentUser, db: Session = Depends(get_db)):
     plan = _owned_plan(db, plan_id, user.id)
+    if plan.status in ("queued", "generating"):
+        raise HTTPException(409, "Wait for planning to finish before swapping a meal.")
     entry = next((e for e in plan.entries if e.slot_index == slot_index), None)
     if entry is None:
         raise HTTPException(404, "Plan slot not found")
@@ -100,5 +122,7 @@ def swap(plan_id: int, slot_index: int, user: CurrentUser, db: Session = Depends
 @router.delete("/{plan_id}", status_code=204)
 def delete(plan_id: int, user: CurrentUser, db: Session = Depends(get_db)):
     plan = _owned_plan(db, plan_id, user.id)
+    if plan.status in ("queued", "generating"):
+        raise HTTPException(409, "Wait for planning to finish before starting a new plan.")
     db.delete(plan)  # cascade removes entries; Meal history is left intact
     db.commit()

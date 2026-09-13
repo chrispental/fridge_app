@@ -6,17 +6,18 @@ required ingredient into "already have" vs. "to buy" — recomputed live against
 inventory each call, so adding a missing item to inventory moves it to "have" on
 the next request. Staples are assumed on hand and never appear on either list.
 """
+from .ingredients import StockPool, annotate_ingredients, ingredient_key, same_ingredient
 from .staples import is_staple
+from .units import normalize_unit
 
 
 def _norm(name: str) -> str:
-    return (name or "").lower().strip()
+    return ingredient_key(name)
 
 
 def _matches_inventory(name: str, inv_names: list[str]) -> bool:
-    """Bidirectional substring match — same rule as meal_engine._annotate_in_stock."""
-    nm = _norm(name)
-    return bool(nm and any(nm in inv or inv in nm for inv in inv_names if inv))
+    """Canonical ingredient identity, shared with meal suggestions."""
+    return any(same_ingredient(name, inv) for inv in inv_names)
 
 
 def build_shopping_list(meals, inventory, staples: list[str]) -> dict:
@@ -26,36 +27,45 @@ def build_shopping_list(meals, inventory, staples: list[str]) -> dict:
     `name`. Ingredients are merged by (normalized name, unit), summing known
     quantities (a line whose amounts are all unknown keeps quantity = None).
     """
-    inv_names = [_norm(i.name) for i in inventory]
-
-    # Merge by (normalized name, unit), preserving first-seen display name + order.
-    merged: dict[tuple[str, str], dict] = {}
+    merged = {}
     for meal in meals:
-        ingredients = (getattr(meal, "recipe_json", None) or {}).get("ingredients", [])
+        recipe = getattr(meal, "recipe_json", None) or {}
+        ingredients = list(recipe.get("ingredients", []))
+        covered = {ingredient_key(i.get("name", "")) for i in ingredients}
+        ingredients += [{"name": name} for name in recipe.get("missing_ingredients", [])
+                        if ingredient_key(name) not in covered]
         for ing in ingredients:
             name = str(ing.get("name", "")).strip()
             if not name:
                 continue
-            unit = (ing.get("unit") or "unknown")
-            key = (_norm(name), unit)
-            row = merged.setdefault(
-                key, {"name": name, "unit": unit, "quantity": None}
-            )
+            unit = normalize_unit(ing.get("unit"))
+            row = merged.setdefault((ingredient_key(name), unit), {
+                "name": name, "unit": unit, "quantity": 0, "unknown": False,
+            })
             qty = ing.get("quantity")
-            if qty is not None:
-                row["quantity"] = (row["quantity"] or 0) + qty
+            if qty is None:
+                row["unknown"] = True
+            else:
+                row["quantity"] += qty
 
-    to_buy, have = [], []
+    pool = StockPool(inventory, staples)
+    to_buy, have, check = [], [], []
     for row in merged.values():
-        if is_staple(row["name"], staples):
-            continue  # assumed on hand — never bought or listed
-        item = {"name": row["name"], "quantity": row["quantity"], "unit": row["unit"]}
-        (have if _matches_inventory(row["name"], inv_names) else to_buy).append(item)
+        quantity = None if row.pop("unknown") else row["quantity"]
+        item = {**row, "quantity": quantity}
+        stock = pool.allocate(row["name"], quantity, row["unit"])
+        status = stock["stock_status"]
+        if status == "staple":
+            continue
+        if stock["available_quantity"] > 0:
+            have.append({**item, "quantity": stock["available_quantity"]})
+        if status == "check":
+            check.append(item)
+        elif status in ("partial", "missing"):
+            to_buy.append({**item, "quantity": stock["missing_quantity"]})
 
-    # Inform the user what's being assumed on hand (the configured policy).
-    staples_assumed = [s.strip() for s in (staples or []) if s and s.strip()]
-
-    return {"to_buy": to_buy, "have": have, "staples_assumed": staples_assumed}
+    return {"to_buy": to_buy, "have": have, "check": check,
+            "staples_assumed": [s.strip() for s in (staples or []) if s and s.strip()]}
 
 
 def merge_into_list(existing_rows, new_items: list[dict]) -> tuple[list, list[dict]]:
@@ -105,38 +115,21 @@ def missing_for_meal(recipe_json: dict, inventory, staples: list[str]) -> list[d
     `missing_ingredients` strings not already covered by an ingredient line.
     Uses `annotate_recipe` so staples and current inventory are respected.
     """
-    rj = annotate_recipe(recipe_json, inventory, staples)
-    needed = [
-        {"name": ing.get("name", ""), "quantity": ing.get("quantity"), "unit": ing.get("unit") or "unknown"}
-        for ing in rj.get("ingredients", [])
-        if not ing.get("in_stock") and str(ing.get("name", "")).strip()
-    ]
-    covered = {_norm(n["name"]) for n in needed}
-    for extra in rj.get("missing_ingredients", []):
-        nm = _norm(str(extra))
-        if nm and nm not in covered:
-            covered.add(nm)
-            needed.append({"name": str(extra).strip(), "quantity": None, "unit": "unknown"})
-    return needed
+    from types import SimpleNamespace
+    return build_shopping_list([SimpleNamespace(recipe_json=recipe_json)], inventory, staples)["to_buy"]
 
 
 def annotate_recipe(recipe_json: dict, inventory, staples: list[str]) -> dict:
-    """Return a copy of `recipe_json` with per-ingredient `in_stock` recomputed live
-    against current inventory + staples, and staples / now-in-stock items removed from
-    `missing_ingredients`. Keeps a meal card's display consistent with the shopping
-    list even when inventory or staples changed after the meal was suggested.
-    """
+    """Recompute availability and shortfalls from current inventory, not AI flags."""
     rj = dict(recipe_json or {})
-    inv_names = [_norm(i.name) for i in inventory]
-
-    def on_hand(name: str) -> bool:
-        return is_staple(name, staples) or _matches_inventory(name, inv_names)
-
-    rj["ingredients"] = [
-        {**ing, "in_stock": on_hand(ing.get("name", ""))}
-        for ing in rj.get("ingredients", [])
-    ]
-    rj["missing_ingredients"] = [
-        m for m in rj.get("missing_ingredients", []) if not on_hand(m)
-    ]
+    rj["ingredients"] = annotate_ingredients(rj.get("ingredients", []), inventory, staples)
+    covered = {ingredient_key(i["name"]) for i in rj["ingredients"]}
+    # Keep unstructured extra ingredients, but replace stale AI availability claims.
+    extra_pool = StockPool(inventory, staples)
+    extras = [m for m in rj.get("missing_ingredients", [])
+              if ingredient_key(m) not in covered
+              and extra_pool.allocate(m)["stock_status"] == "missing"]
+    rj["missing_ingredients"] = list(dict.fromkeys(
+        [i["name"] for i in rj["ingredients"] if i["stock_status"] in ("missing", "partial")] + extras
+    ))
     return rj

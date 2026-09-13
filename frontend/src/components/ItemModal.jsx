@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Trash2, Check } from 'lucide-react'
 import { UNITS, STORAGE } from '../api/client.js'
 import { useAddItem, useDeleteItem, useUpdateItem } from '../api/queries.js'
+import { useDialog } from './useDialog.js'
 import { localDatePlus } from '../utils/dates.js'
 
 const EXPIRY_CHIPS = [
@@ -14,6 +15,8 @@ const EXPIRY_CHIPS = [
 // Add (no id) or edit (has id) a single inventory item. Saves are optimistic:
 // the modal closes immediately and errors roll back with a toast.
 export default function ItemModal({ item, onClose }) {
+  const dialogRef = useDialog(onClose)
+  const titleId = useId()
   const isEdit = Boolean(item?.id)
   const [name, setName] = useState(item?.name || '')
   const [quantity, setQuantity] = useState(item?.quantity ?? '')
@@ -26,7 +29,8 @@ export default function ItemModal({ item, onClose }) {
   const updateMutation = useUpdateItem()
   const deleteMutation = useDeleteItem()
 
-  function save() {
+  async function save(event) {
+    event.preventDefault()
     if (!name.trim()) return
     const body = {
       name,
@@ -36,20 +40,24 @@ export default function ItemModal({ item, onClose }) {
       category: category || null,
       expires_at: expires || null,
     }
-    if (isEdit) updateMutation.mutate({ id: item.id, body })
-    else addMutation.mutate(body)
-    onClose()
+    try {
+      if (isEdit) await updateMutation.mutateAsync({ id: item.id, body })
+      else await addMutation.mutateAsync(body)
+      onClose()
+    } catch { /* Keep the user's input available for retry. */ }
   }
 
-  function remove() {
-    deleteMutation.mutate(item.id)
-    onClose()
+  async function remove() {
+    try { await deleteMutation.mutateAsync(item.id); onClose() }
+    catch { /* Error is rendered below. */ }
   }
+  const busy = addMutation.isPending || updateMutation.isPending || deleteMutation.isPending
+  const error = addMutation.error || updateMutation.error || deleteMutation.error
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>{isEdit ? 'Edit item' : 'Add item'}</h2>
+    <dialog ref={dialogRef} className="modal" aria-labelledby={titleId}>
+      <form onSubmit={save}>
+        <h2 id={titleId}>{isEdit ? 'Edit item' : 'Add item'}</h2>
 
         <label className="field">
           <span>Name</span>
@@ -67,6 +75,7 @@ export default function ItemModal({ item, onClose }) {
             <input
               type="number"
               step="any"
+              min="0"
               value={quantity}
               placeholder="qty"
               onChange={(e) => setQuantity(e.target.value)}
@@ -127,20 +136,21 @@ export default function ItemModal({ item, onClose }) {
           </div>
         </label>
 
+        {error && <p className="banner error" role="alert">{error.message}</p>}
         <div className="modal-actions">
           {isEdit && (
-            <button className="ghost danger" onClick={remove}>
+            <button type="button" className="ghost danger" onClick={remove} disabled={busy}>
               <Trash2 size={15} strokeWidth={2.2} /> Delete
             </button>
           )}
           <div className="modal-actions-right">
-            <button className="ghost" onClick={onClose}>Cancel</button>
-            <button className="primary" onClick={save} disabled={!name.trim()}>
-              <Check size={15} strokeWidth={2.4} /> {isEdit ? 'Save' : 'Add'}
+            <button type="button" className="ghost" onClick={onClose}>Cancel</button>
+            <button type="submit" className="primary" disabled={busy || !name.trim()}>
+              <Check size={15} strokeWidth={2.4} /> {busy ? 'Saving…' : isEdit ? 'Save' : 'Add'}
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </form>
+    </dialog>
   )
 }

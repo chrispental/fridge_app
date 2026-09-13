@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import {
   Flame, CookingPot, Microwave, Fan, Blend,
   Beef, Soup, Sandwich, Coffee, Salad,
@@ -29,7 +29,9 @@ export default function PreferencesForm({
   submitLabel = 'Save',
   grouped = false,
   hideSubmit = false,
+  compact = false,
 }) {
+  const prefix = useId()
   const [name, setName] = useState(initial?.name ?? '')
   const [householdSize, setHouseholdSize] = useState(initial?.household_size ?? 1)
   const [allergies, setAllergies] = useState(listToText(initial?.allergies))
@@ -78,10 +80,11 @@ export default function PreferencesForm({
   // ---- Individual fields (shared between grouped + flat layouts) ----
   const nameField = (
     <div className="field">
-      <label>
+      <label htmlFor={`${prefix}-name`}>
         Your name <span className="sub">— for greetings around the app</span>
       </label>
       <input
+        id={`${prefix}-name`}
         type="text"
         placeholder="e.g. Chris"
         value={name}
@@ -92,8 +95,9 @@ export default function PreferencesForm({
 
   const householdField = (
     <div className="field">
-      <label>Household size</label>
+      <label htmlFor={`${prefix}-household`}>Household size</label>
       <input
+        id={`${prefix}-household`}
         type="number"
         min="1"
         max="20"
@@ -105,11 +109,12 @@ export default function PreferencesForm({
 
   const locationField = (
     <div className="field">
-      <label>
+      <label htmlFor={`${prefix}-location`}>
         Location{' '}
         <span className="sub">— city or ZIP. Used for grilling weather & delivery.</span>
       </label>
       <input
+        id={`${prefix}-location`}
         type="text"
         placeholder="e.g. Austin, TX or 78701"
         value={location}
@@ -120,10 +125,11 @@ export default function PreferencesForm({
 
   const allergiesField = (
     <div className="field">
-      <label>
-        Allergies <span className="sub">— comma separated. Never suggested.</span>
+      <label htmlFor={`${prefix}-allergies`}>
+        Allergies <span className="sub">— comma separated. We filter known matches; always check ingredient labels.</span>
       </label>
       <input
+        id={`${prefix}-allergies`}
         type="text"
         placeholder="e.g. peanuts, shellfish"
         value={allergies}
@@ -134,10 +140,11 @@ export default function PreferencesForm({
 
   const dietaryField = (
     <div className="field">
-      <label>
+      <label htmlFor={`${prefix}-dietary`}>
         Dietary restrictions <span className="sub">— comma separated</span>
       </label>
       <input
+        id={`${prefix}-dietary`}
         type="text"
         placeholder="e.g. vegetarian, halal"
         value={dietary}
@@ -148,10 +155,11 @@ export default function PreferencesForm({
 
   const dislikedIngField = (
     <div className="field">
-      <label>
+      <label htmlFor={`${prefix}-disliked-ingredients`}>
         Disliked ingredients <span className="sub">— comma separated</span>
       </label>
       <input
+        id={`${prefix}-disliked-ingredients`}
         type="text"
         placeholder="e.g. olives, blue cheese"
         value={dislikedIng}
@@ -162,10 +170,11 @@ export default function PreferencesForm({
 
   const dislikedCuisField = (
     <div className="field">
-      <label>
+      <label htmlFor={`${prefix}-disliked-cuisines`}>
         Disliked cuisines <span className="sub">— comma separated</span>
       </label>
       <input
+        id={`${prefix}-disliked-cuisines`}
         type="text"
         placeholder="e.g. very spicy"
         value={dislikedCuis}
@@ -199,8 +208,9 @@ export default function PreferencesForm({
 
   const complexityField = (
     <div className="field">
-      <label>Maximum meal complexity: {maxComplexity} / 5</label>
+      <label htmlFor={`${prefix}-complexity`}>Maximum meal complexity: {maxComplexity} / 5</label>
       <input
+        id={`${prefix}-complexity`}
         type="range"
         min="1"
         max="5"
@@ -213,7 +223,7 @@ export default function PreferencesForm({
 
   const staplesField = (
     <div className="field">
-      <label>
+      <label htmlFor={`${prefix}-staples`}>
         Pantry staples{' '}
         <span className="sub">
           — comma separated. Always assumed on hand, so they're never on your
@@ -221,6 +231,7 @@ export default function PreferencesForm({
         </span>
       </label>
       <input
+        id={`${prefix}-staples`}
         type="text"
         placeholder="e.g. salt, pepper, hot sauce"
         value={staples}
@@ -231,11 +242,12 @@ export default function PreferencesForm({
 
   const noRepeatField = (
     <div className="field">
-      <label>
+      <label htmlFor={`${prefix}-no-repeat`}>
         Don't repeat a meal for{' '}
         <span className="sub">(days)</span>
       </label>
       <input
+        id={`${prefix}-no-repeat`}
         type="number"
         min="0"
         max="365"
@@ -286,6 +298,29 @@ export default function PreferencesForm({
           {staplesField}
         </div>
 
+        {errorBanner}
+        {submitButton}
+      </form>
+    )
+  }
+
+  if (compact) {
+    return (
+      <form onSubmit={handleSubmit}>
+        {householdField}
+        {allergiesField}
+        {dietaryField}
+        {equipmentField}
+        <details className="onboarding-extras">
+          <summary>More preferences (optional)</summary>
+          {nameField}
+          {locationField}
+          {complexityField}
+          {dislikedIngField}
+          {dislikedCuisField}
+          {staplesField}
+          {noRepeatField}
+        </details>
         {errorBanner}
         {submitButton}
       </form>

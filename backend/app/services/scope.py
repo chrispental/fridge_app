@@ -7,6 +7,7 @@ from typing import TypeVar
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from .. import models
 from .staples import DEFAULT_STAPLES
@@ -20,7 +21,11 @@ def get_prefs(db: Session, user_id: str) -> models.Preferences:
     if prefs is None:
         prefs = models.Preferences(user_id=user_id, pantry_staples=list(DEFAULT_STAPLES))
         db.add(prefs)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            return db.query(models.Preferences).filter_by(user_id=user_id).one()
         db.refresh(prefs)
     return prefs
 
@@ -29,8 +34,9 @@ def staples_for(db: Session, user_id: str) -> list[str]:
     return list(get_prefs(db, user_id).pantry_staples or [])
 
 
-def inventory_for(db: Session, user_id: str) -> list[models.InventoryItem]:
-    return db.query(models.InventoryItem).filter_by(user_id=user_id).all()
+def inventory_for(db: Session, user_id: str, *, lock=False) -> list[models.InventoryItem]:
+    query = db.query(models.InventoryItem).filter_by(user_id=user_id)
+    return (query.with_for_update() if lock else query).all()
 
 
 def get_owned(db: Session, model: type[T], obj_id: int, user_id: str, *, label: str) -> T:

@@ -2,13 +2,15 @@ import ThemePicker from '../components/ThemePicker.jsx'
 import PreferencesForm from '../components/PreferencesForm.jsx'
 import { PageHeader, PageSkeleton } from '../components/ui.jsx'
 import { usePreferences, useUpdatePreferences } from '../api/queries.js'
-import { toast } from '../components/Toast.jsx'
+import { toast } from '../components/toast.js'
+import QueryError from '../components/QueryError.jsx'
 
 export default function PreferencesPage() {
   const prefsQ = usePreferences()
   const updateMutation = useUpdatePreferences()
 
   if (prefsQ.isPending) return <PageSkeleton />
+  if (prefsQ.isError) return <QueryError query={prefsQ} />
 
   return (
     <div>

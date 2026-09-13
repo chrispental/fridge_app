@@ -15,6 +15,7 @@ export default function SuggestMeal() {
   const deliveryQ = useDeliveryStatus()
   const recentQ = useMeals('suggested')
   const suggestMutation = useSuggestMeals()
+  const mutateSuggestions = suggestMutation.mutate
 
   // When arriving from Home with { run: true }, skip showing stale suggestions —
   // the auto-run below kicks off immediately. Captured once at mount.
@@ -35,9 +36,9 @@ export default function SuggestMeal() {
       const stateIdea = location.state.idea || ''
       const useIdea = stateIdea.trim().length > 0
       navigate(location.pathname, { replace: true, state: null })
-      suggest(useIdea, useIdea ? stateIdea.trim() : null)
+      mutateSuggestions({ count: 5, idea: useIdea ? stateIdea.trim() : null })
     }
-  }, [location.state])
+  }, [location.state, location.pathname, navigate, mutateSuggestions])
 
   const busy = suggestMutation.isPending
   const error = suggestMutation.error?.message

@@ -12,6 +12,7 @@ from ..services.scope import get_owned
 from ..services.storage import normalize_storage
 from ..services.units import normalize_unit
 from ..services.vision import extract_items, parse_items, preprocess
+from sqlalchemy import update
 
 router = APIRouter(prefix="/api/inventory", tags=["inventory"])
 
@@ -121,11 +122,13 @@ def backfill_images(user: CurrentUser, db: Session = Depends(get_db)):
 # Photo extraction
 # --------------------------------------------------------------------------- #
 @router.post("/extract", response_model=schemas.ExtractionResult)
-async def extract(
+def extract(
     user: CurrentUser, file: UploadFile = File(...), db: Session = Depends(get_db)
 ):
     """Upload a fridge/pantry photo; returns proposed items (NOT yet saved)."""
-    raw = await file.read()
+    # A sync route runs blocking Pillow, storage, SQL, and AI work in FastAPI's
+    # threadpool. Bound the read itself, not just the size check afterwards.
+    raw = file.file.read(MAX_UPLOAD_BYTES + 1)
     if not raw:
         raise HTTPException(400, "Uploaded file is empty.")
     if len(raw) > MAX_UPLOAD_BYTES:
@@ -142,7 +145,7 @@ async def extract(
         raise HTTPException(502, f"Could not store the photo: {exc}")
 
     batch = models.ExtractionBatch(
-        user_id=user.id, image_key=image_key, status="pending_review"
+        user_id=user.id, image_key=image_key, status="processing"
     )
     db.add(batch)
     db.commit()
@@ -155,7 +158,9 @@ async def extract(
         db.commit()
         raise HTTPException(502, f"AI extraction failed: {exc}")
 
-    batch.raw_ai_response = raw_response
+    # Persist the dated proposal. Reopening a scan must not extend its expiry.
+    batch.raw_ai_response = {**raw_response, "review_items": [it.model_dump(mode="json") for it in items]}
+    batch.status = "pending_review"
     db.commit()
 
     return schemas.ExtractionResult(
@@ -166,6 +171,12 @@ async def extract(
     )
 
 
+@router.get("/extract/pending")
+def pending_extractions(user: CurrentUser, db: Session = Depends(get_db)):
+    rows = db.query(models.ExtractionBatch).filter_by(user_id=user.id, status="pending_review").order_by(models.ExtractionBatch.created_at.desc()).limit(10).all()
+    return [{"batch_id": row.id, "created_at": row.created_at} for row in rows]
+
+
 @router.get("/extract/{batch_id}", response_model=schemas.ExtractionResult)
 def get_extraction(batch_id: int, user: CurrentUser, db: Session = Depends(get_db)):
     """Re-fetch a pending extraction (so a review can be resumed)."""
@@ -174,7 +185,11 @@ def get_extraction(batch_id: int, user: CurrentUser, db: Session = Depends(get_d
         batch_id=batch.id,
         image_url=f"/api/inventory/extract/{batch.id}/image",
         status=batch.status,
-        items=parse_items(batch.raw_ai_response or {}),
+        items=(
+            [schemas.ExtractedItem.model_validate(it) for it in batch.raw_ai_response["review_items"]]
+            if (batch.raw_ai_response or {}).get("review_items") is not None
+            else parse_items(batch.raw_ai_response or {}, today=batch.created_at.date())
+        ),
     )
 
 
@@ -183,6 +198,7 @@ def get_extraction_image(batch_id: int, user: CurrentUser, db: Session = Depends
     """The photo behind a batch: a redirect to a short-lived signed URL when the
     storage backend can mint one (Supabase), otherwise streamed from the backend."""
     batch = _owned_batch(db, batch_id, user.id)
+
     blob = get_blob_storage()
     url = blob.signed_url(batch.image_key)
     if url:
@@ -206,6 +222,17 @@ def confirm_extraction(
     """Persist the user-reviewed item list into inventory."""
     batch = _owned_batch(db, batch_id, user.id)
 
+    claimed = db.execute(update(models.ExtractionBatch).where(
+        models.ExtractionBatch.id == batch_id,
+        models.ExtractionBatch.user_id == user.id,
+        models.ExtractionBatch.status == "pending_review",
+    ).values(status="confirmed")).rowcount
+    if not claimed:
+        db.refresh(batch)
+        if batch.status == "confirmed":
+            return db.query(models.InventoryItem).filter_by(user_id=user.id, extraction_batch_id=batch_id).all()
+        raise HTTPException(409, "This scan is not ready to confirm. Please start another scan.")
+
     created: list[models.InventoryItem] = []
     for it in payload.items:
         if not it.name.strip():
@@ -224,7 +251,6 @@ def confirm_extraction(
         db.add(item)
         created.append(item)
 
-    batch.status = "confirmed"
     db.commit()
     for c in created:
         db.refresh(c)

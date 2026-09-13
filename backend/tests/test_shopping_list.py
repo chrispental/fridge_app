@@ -8,8 +8,10 @@ class _FakeMeal:
 
 
 class _FakeItem:
-    def __init__(self, name):
+    def __init__(self, name, quantity=None, unit="unknown"):
         self.name = name
+        self.quantity = quantity
+        self.unit = unit
 
 
 def _ing(name, quantity=None, unit="unknown"):
@@ -70,8 +72,8 @@ def test_different_units_kept_separate():
 
 def test_have_vs_buy_split():
     meals = [_FakeMeal([_ing("chicken breast", 1, "lb"), _ing("saffron", 1, "pinch")])]
-    out = build_shopping_list(meals, inventory=[_FakeItem("chicken")], staples=[])
-    # "chicken" inventory matches "chicken breast" by bidirectional substring.
+    out = build_shopping_list(meals, inventory=[_FakeItem("chicken", 2, "lb")], staples=[])
+    # Explicit chicken-cut aliases share known stock quantities.
     assert _find(out["have"], "chicken breast") is not None
     assert _find(out["to_buy"], "saffron") is not None
     assert _find(out["to_buy"], "chicken breast") is None
@@ -95,7 +97,7 @@ def test_annotate_recipe_applies_staples_live():
         ],
         "missing_ingredients": ["olive oil", "chicken"],
     }
-    out = annotate_recipe(recipe, inventory=[_FakeItem("chicken")], staples=["olive oil"])
+    out = annotate_recipe(recipe, inventory=[_FakeItem("chicken", 2, "lb")], staples=["olive oil"])
     by_name = {i["name"]: i for i in out["ingredients"]}
     assert by_name["olive oil"]["in_stock"] is True  # now a staple
     assert by_name["chicken"]["in_stock"] is True     # now in inventory
@@ -106,6 +108,6 @@ def test_live_recompute_ignores_stored_in_stock():
     # Ingredient is flagged in_stock=False in the stored recipe, but it IS in
     # inventory now — it must land in "have", not "to_buy".
     meals = [_FakeMeal([{"name": "eggs", "quantity": 6, "unit": "piece", "in_stock": False}])]
-    out = build_shopping_list(meals, inventory=[_FakeItem("eggs")], staples=[])
+    out = build_shopping_list(meals, inventory=[_FakeItem("eggs", 1, "dozen")], staples=[])
     assert _find(out["have"], "eggs") is not None
     assert _find(out["to_buy"], "eggs") is None

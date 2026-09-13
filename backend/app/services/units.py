@@ -42,6 +42,8 @@ _TO_BASE: dict[str, tuple[str, float]] = {
     "lb": ("mass", 16.0),
     "piece": ("count", 1.0),
     "dozen": ("count", 12.0),
+    # Packaging units are comparable only with the same packaging unit.
+    **{u: (u, 1.0) for u in ("pack", "can", "jar", "bottle", "bunch")},
 }
 
 _ALIASES: dict[str, str] = {

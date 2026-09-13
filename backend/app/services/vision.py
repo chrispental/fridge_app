@@ -2,7 +2,7 @@
 import base64
 import io
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 from ..config import settings
 from ..schemas import ExtractedItem
@@ -44,7 +44,7 @@ def preprocess(raw_bytes: bytes) -> tuple[bytes, str]:
     Downscaling before base64-encoding keeps the vision request small and cheap.
     Persisting the bytes is the caller's job (see `services/blob_storage.py`).
     """
-    img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+    img = ImageOps.exif_transpose(Image.open(io.BytesIO(raw_bytes))).convert("RGB")
     max_dim = settings.max_image_dim
     if max(img.size) > max_dim:
         img.thumbnail((max_dim, max_dim))
@@ -57,7 +57,7 @@ def preprocess(raw_bytes: bytes) -> tuple[bytes, str]:
     return jpeg, data_url
 
 
-def parse_items(raw: dict) -> list[ExtractedItem]:
+def parse_items(raw: dict, today=None) -> list[ExtractedItem]:
     """Coerce a raw AI response into validated ExtractedItem objects."""
     items: list[ExtractedItem] = []
     for it in (raw or {}).get("items", []):
@@ -81,7 +81,7 @@ def parse_items(raw: dict) -> list[ExtractedItem]:
                 category=category,
                 storage=storage,
                 # Heuristic prefill only — the user reviews/edits before confirming.
-                expires_at=estimate_expiry(category, storage),
+                expires_at=estimate_expiry(category, storage, today=today),
                 confidence=min(max(confidence, 0.0), 1.0),
             )
         )
