@@ -8,7 +8,12 @@ useDefault = true
 # "fileToken" is the document's own UUID, not a credential. The generic-api-key
 # rule trips on the "token" keyword + UUID entropy. Both conditions must match,
 # so real secrets in design.pen (or fileTokens elsewhere) still get flagged.
-[[allowlists]]
+# Use a rule-specific allowlist: CI's Gitleaks 8.24.3 does not support the
+# global [[allowlists]] syntax (introduced in 8.25.0).
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
 description = "Pencil design file document id"
 condition = "AND"
 regexTarget = "line"
