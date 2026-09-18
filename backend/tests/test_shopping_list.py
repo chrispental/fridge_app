@@ -35,7 +35,24 @@ def test_staple_matcher_no_substring_false_positives():
     # The reported bug: "pepper" must NOT swallow these real ingredients.
     assert not is_staple("jalapeno peppers", ["salt", "pepper", "hot sauce"])
     assert not is_staple("bell peppers", ["pepper"])
+    assert not is_staple("bell pepper", ["pepper"])
+    assert not is_staple("red bell pepper", ["pepper"])
+    assert not is_staple("peanut butter", ["butter"])
+    assert not is_staple("butter", ["peanut butter"])
+    assert not is_staple("garlic salt", ["salt"])
     assert not is_staple("salted butter", ["salt"])
+    assert is_staple("freshly ground black pepper", ["pepper"])
+    assert is_staple("fine sea salt", ["salt"])
+    assert is_staple("bell pepper", ["bell pepper"])
+
+
+def test_bell_pepper_is_missing_in_saved_recipes_and_shopping():
+    recipe = {"ingredients": [{"name": "bell pepper", "quantity": 1, "unit": "piece", "in_stock": True}]}
+    annotated = annotate_recipe(recipe, inventory=[], staples=DEFAULT_STAPLES)
+    assert annotated["ingredients"][0]["stock_status"] == "missing"
+    assert annotated["missing_ingredients"] == ["bell pepper"]
+    out = build_shopping_list([_FakeMeal(recipe["ingredients"])], [], DEFAULT_STAPLES)
+    assert out["to_buy"] == [_ing("bell pepper", 1, "piece")]
 
 
 def test_staples_in_plan_reach_shopping_list():

@@ -157,6 +157,7 @@ class FeedbackRequest(BaseModel):
 class SuggestRequest(BaseModel):
     count: int = Field(default=5, ge=1, le=5)
     idea: str | None = Field(default=None, max_length=2000)
+    servings: int | None = Field(default=None, ge=1, le=20)
 
 
 class CookRequest(BaseModel):

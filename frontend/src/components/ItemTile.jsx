@@ -1,13 +1,9 @@
-import { useState } from 'react'
 import { Carrot, Beef, Milk, Fish, Wheat, CupSoda, Package } from 'lucide-react'
 import { expiryInfo } from '../utils/dates.js'
 
 // A single inventory item rendered as a tile. Display-only; clicking opens the
-// edit modal (handled by the parent). `image_url`: null = not fetched yet,
-// "" = fetched but none found, otherwise a Brave thumbnail URL.
+// edit modal (handled by the parent). Category icons keep inventory consistent.
 export default function ItemTile({ item, onEdit }) {
-  const [failedImage, setFailedImage] = useState(null)
-  const hasPhoto = Boolean(item.image_url) && failedImage !== item.image_url
   const CategoryIcon = ({ produce: Carrot, meat: Beef, dairy: Milk, seafood: Fish, grain: Wheat, pantry: Wheat, beverage: CupSoda })[item.category?.toLowerCase()] || Package
   const lowStock = item.quantity != null && item.quantity <= 1
   const expiry = expiryInfo(item.expires_at)
@@ -21,11 +17,7 @@ export default function ItemTile({ item, onEdit }) {
         </span>
       )}
       <div className="tile-photo">
-        {hasPhoto ? (
-          <img src={item.image_url} alt={item.name} loading="lazy" onError={() => setFailedImage(item.image_url)} />
-        ) : (
-          <span className="tile-photo-empty"><CategoryIcon size={40} strokeWidth={1.5} aria-hidden="true" /></span>
-        )}
+        <span className="tile-photo-empty"><CategoryIcon size={40} strokeWidth={1.5} aria-hidden="true" /></span>
       </div>
       <div className="tile-name">{item.name}</div>
       <div className="tile-meta">

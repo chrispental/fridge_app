@@ -8,6 +8,7 @@ import { useDialog } from './useDialog.js'
 import { useAuth } from '../auth/useAuth.js'
 import { kitchenKey, readStored, writeStored } from '../utils/storage.js'
 import { parseStepDurations, MAX_TIMER_SECONDS } from '../utils/parseStepDuration.js'
+import StepSafety from './StepSafety.jsx'
 
 const CONFETTI_COLORS = ['#f5a524', '#ffbc52', '#4ade80', '#60a5fa', '#f472b6', '#faf7f3']
 
@@ -200,6 +201,7 @@ export default function CookMode({ meal, onClose, onCook }) {
             <div className="cook-mise">
               <div className="cook-icon-badge"><ChefHat size={30} strokeWidth={2} /></div>
               <h2>Mise en place</h2>
+              {recipe.servings && <p className="cook-sub">Ingredients for {recipe.servings} {recipe.servings === 1 ? 'person' : 'people'}.</p>}
               <p className="cook-sub">Gather everything before you start — tap each as you go. Your checklist and progress are saved here.</p>
               {ingredients.length > 0 ? (
                 <div className="cook-ingredients">
@@ -277,6 +279,7 @@ export default function CookMode({ meal, onClose, onCook }) {
           ) : (
             <div className="cook-step">
               <span className="cook-step-num">{stepIdx + 1}</span>
+              <StepSafety steps={steps} index={stepIdx} />
               <p className="cook-step-text">{stepText}</p>
               {durs.length > 0 && (
                 <div className="cook-timers">

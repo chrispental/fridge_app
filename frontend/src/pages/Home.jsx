@@ -14,6 +14,8 @@ import {
   SectionHeader, MealPreviewCard, PlanStrip, EmptyState, Skeleton,
 } from '../components/ui.jsx'
 import { expiryInfo } from '../utils/dates.js'
+import ServingPicker from '../components/ServingPicker.jsx'
+import QueryError from '../components/QueryError.jsx'
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
 
@@ -28,6 +30,7 @@ function greeting() {
 export default function Home() {
   const navigate = useNavigate()
   const [idea, setIdea] = useState('')
+  const [servingsOverride, setServingsOverride] = useState(null)
 
   const inventoryQ = useInventory()
   const planQ = useCurrentPlan()
@@ -48,10 +51,9 @@ export default function Home() {
   const toBuy = shoppingQ.data ? (shoppingQ.data.to_buy || []).length : null
 
   const hasIdea = idea.trim().length > 0
+  const servings = servingsOverride ?? prefs?.household_size ?? 1
   const go = (run, useIdea) =>
-    navigate('/cook', { state: { run, idea: useIdea ? idea.trim() : '' } })
-
-  const heroImg = suggested?.find((m) => m.recipe_json?.image_url)?.recipe_json?.image_url
+    navigate('/cook', { state: { run, idea: useIdea ? idea.trim() : '', servings } })
 
   // ---- Fridge-at-a-glance derived values ----
   const items = inventory || []
@@ -69,12 +71,14 @@ export default function Home() {
   const hasLocation = Boolean(prefs?.location)
   const name = prefs?.name?.trim()
 
+  if (prefsQ.isError) return <QueryError query={prefsQ} title="Couldn't load your serving preferences" />
+
   return (
     <div className="wide home-page">
       <Bento>
         {/* A. Hero */}
         <BentoItem span={12}>
-          <HeroPanel bgImage={heroImg}>
+          <HeroPanel>
             <div className="home-hero-greeting">
               <span className="eyebrow rule">{greeting()}{name ? `, ${name}` : ''}</span>
               <h1 className="display">What's for dinner?</h1>
@@ -89,16 +93,17 @@ export default function Home() {
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
               />
+              <ServingPicker value={servings} onChange={setServingsOverride} disabled={!prefs} />
               <div className="hero-actions">
                 <button
                   className={`btn big${hasIdea ? ' primary' : ''}`}
                   onClick={() => go(true, true)}
-                  disabled={!hasIdea}
+                  disabled={!hasIdea || !prefs}
                   title={hasIdea ? '' : 'Type an idea first, or hit Surprise me'}
                 >
                   <Sparkles size={18} strokeWidth={2.2} /> Use my idea
                 </button>
-                <button className={`btn big${!hasIdea ? ' primary' : ''}`} onClick={() => go(true, false)}>
+                <button className={`btn big${!hasIdea ? ' primary' : ''}`} onClick={() => go(true, false)} disabled={!prefs}>
                   <Dices size={18} strokeWidth={2.2} /> Surprise me
                 </button>
               </div>

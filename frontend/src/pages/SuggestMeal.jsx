@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Sparkles, Dices, Truck } from 'lucide-react'
 import MealCard from '../components/MealCard.jsx'
-import { useDeliveryStatus, useMeals, useSuggestMeals } from '../api/queries.js'
+import { useDeliveryStatus, useMeals, useSuggestMeals, usePreferences } from '../api/queries.js'
+import ServingPicker from '../components/ServingPicker.jsx'
+import QueryError from '../components/QueryError.jsx'
 import { PageHeader, HeroPanel, EmptyState, Skeleton } from '../components/ui.jsx'
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
@@ -11,6 +13,9 @@ export default function SuggestMeal() {
   const location = useLocation()
   const navigate = useNavigate()
   const [idea, setIdea] = useState(location.state?.idea || '')
+  const [servingsOverride, setServingsOverride] = useState(location.state?.servings ?? null)
+  const prefsQ = usePreferences()
+  const servings = servingsOverride ?? prefsQ.data?.household_size ?? 1
 
   const deliveryQ = useDeliveryStatus()
   const recentQ = useMeals('suggested')
@@ -23,7 +28,7 @@ export default function SuggestMeal() {
 
   function suggest(useIdea, ideaText) {
     const text = ideaText != null ? ideaText : idea.trim()
-    suggestMutation.mutate({ count: 5, idea: useIdea ? text : null })
+    suggestMutation.mutate({ count: 5, idea: useIdea ? text : null, servings })
   }
 
   // Auto-run a suggestion when navigated here with router state (from Home).
@@ -31,14 +36,14 @@ export default function SuggestMeal() {
   const ranFromState = useRef(false)
   useEffect(() => {
     if (ranFromState.current) return
-    if (location.state?.run) {
+    if (location.state?.run && (location.state.servings != null || prefsQ.data)) {
       ranFromState.current = true
       const stateIdea = location.state.idea || ''
       const useIdea = stateIdea.trim().length > 0
       navigate(location.pathname, { replace: true, state: null })
-      mutateSuggestions({ count: 5, idea: useIdea ? stateIdea.trim() : null })
+      mutateSuggestions({ count: 5, idea: useIdea ? stateIdea.trim() : null, servings: location.state.servings ?? prefsQ.data.household_size })
     }
-  }, [location.state, location.pathname, navigate, mutateSuggestions])
+  }, [location.state, location.pathname, navigate, mutateSuggestions, prefsQ.data])
 
   const busy = suggestMutation.isPending
   const error = suggestMutation.error?.message
@@ -50,6 +55,8 @@ export default function SuggestMeal() {
   const deliveryAvailable = delivery ? !delivery.used : true
   const nextDeliveryDate = fmtDate(delivery?.next_available_at)
   const hasIdea = idea.trim().length > 0
+
+  if (prefsQ.isError) return <QueryError query={prefsQ} title="Couldn't load your serving preferences" />
 
   return (
     <div>
@@ -68,16 +75,17 @@ export default function SuggestMeal() {
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
           />
+          <ServingPicker value={servings} onChange={setServingsOverride} disabled={busy || !prefsQ.data} />
           <div className="hero-actions">
             <button
               className="btn primary big"
               onClick={() => suggest(true)}
-              disabled={busy || !hasIdea}
+              disabled={busy || !hasIdea || !prefsQ.data}
               title={hasIdea ? '' : 'Type an idea first, or hit Surprise me'}
             >
               <Sparkles size={18} strokeWidth={2.2} /> {busy ? 'Thinking…' : 'Use my idea'}
             </button>
-            <button className="btn big" onClick={() => suggest(false)} disabled={busy}>
+            <button className="btn big" onClick={() => suggest(false)} disabled={busy || !prefsQ.data}>
               <Dices size={18} strokeWidth={2.2} /> Surprise me
             </button>
           </div>

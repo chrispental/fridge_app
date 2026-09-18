@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Camera, Image, Plus, Search } from 'lucide-react'
+import { Camera, Plus, Search } from 'lucide-react'
 import ItemTile from '../components/ItemTile.jsx'
 import ItemModal from '../components/ItemModal.jsx'
 import { STORAGE } from '../api/client.js'
-import { useBackfillImages, useInventory } from '../api/queries.js'
-import { toast } from '../components/toast.js'
+import { useInventory } from '../api/queries.js'
 import { PageHeader, SegmentedControl, EmptyState, Skeleton } from '../components/ui.jsx'
 
 const SORTS = [
@@ -27,7 +26,6 @@ export default function InventoryPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const inventoryQ = useInventory()
-  const backfill = useBackfillImages()
   const [modalItem, setModalItem] = useState(null) // null=closed, {}=new, item=edit
   const [storageFilter, setStorageFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -42,12 +40,6 @@ export default function InventoryPage() {
       navigate(location.pathname, { replace: true, state: null })
     }
   }, [location.state, location.pathname, navigate])
-
-  function fetchPhotos() {
-    backfill.mutate(undefined, {
-      onSuccess: () => toast.success('Photos updated'),
-    })
-  }
 
   if (inventoryQ.isError) {
     return <div className="banner error">{inventoryQ.error.message}</div>
@@ -84,8 +76,6 @@ export default function InventoryPage() {
     return { ...s, items: cmp ? [...sectionItems].sort(cmp) : sectionItems }
   }).filter((s) => s.items.length > 0)
 
-  const missingPhotos = items.some((it) => it.image_url == null)
-
   // Storage filter options: "All" + only storages that actually have items.
   const filterOptions = [
     { value: 'all', label: 'All' },
@@ -104,11 +94,6 @@ export default function InventoryPage() {
         <Link to="/capture" className="btn primary">
           <Camera size={16} strokeWidth={2.2} /> Scan a photo
         </Link>
-        {missingPhotos && (
-          <button className="ghost" onClick={fetchPhotos} disabled={backfill.isPending}>
-            <Image size={16} strokeWidth={2.2} /> {backfill.isPending ? 'Fetching…' : 'Fetch photos'}
-          </button>
-        )}
         <button className="ghost" onClick={() => setModalItem({})}>
           <Plus size={16} strokeWidth={2.2} /> Add item
         </button>
