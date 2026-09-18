@@ -2,11 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Read [AGENTS.md](AGENTS.md) first for shared working preferences and Docker testing
+commands, and [docs/project-notes.md](docs/project-notes.md) for durable product
+decisions and deferred work.
+
 ## What this is
 
 An AI app that suggests meals from fridge/pantry inventory and user preferences.
 FastAPI + SQLAlchemy backend, React/Vite frontend, AI via OpenRouter, deployed with
-Docker Compose. Brave Search enriches suggestions (recipe photo + source link), gates
+Docker Compose. Brave Search enriches suggestions with related recipe links, gates
 grilling on live weather, and powers the once-a-week delivery lookup.
 
 It runs in one of two modes, chosen by whether `SUPABASE_URL` is set:
@@ -19,29 +23,11 @@ It runs in one of two modes, chosen by whether `SUPABASE_URL` is set:
 
 ## Commands
 
-```bash
-# Run the whole stack (needs .env with OPENROUTER_API_KEY + BRAVE_API_KEY — see .env.example)
-docker compose up --build          # frontend :8080, backend :8000 (docs at /docs)
-docker compose down
-
-# Backend tests (SQLite)
-cd backend && python -m pytest                 # all
-python -m pytest tests/test_units.py            # one file
-python -m pytest tests/test_units.py::test_normalize_known_units   # one test
-docker compose exec backend python -m pytest    # inside the running container
-# Migration + HTTP smoke tests against real Postgres (CI runs this too)
-TEST_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/fridge \
-  python -m pytest tests/test_migrations.py tests/test_app_smoke.py
-
-# Migrations (Alembic). The app upgrades to head on startup; the CLI is for authoring.
-cd backend && DATABASE_URL=sqlite:///./dev.db alembic revision --autogenerate -m "..."
-cd backend && DATABASE_URL=sqlite:///./dev.db alembic upgrade head
-
-# Local dev (without Docker)
-cd backend && DATABASE_URL=sqlite:///./dev.db UPLOAD_DIR=./uploads uvicorn app.main:app --reload
-cd frontend && npm install && npm run dev        # :5173, proxies /api to :8000
-cd frontend && npm run lint
-```
+Use the Docker workflows in [AGENTS.md](AGENTS.md). The user's preference is to run
+and test this app in containers, including backend tests and frontend lint/tests/build.
+Use the isolated preview for test data; the normal `docker compose up --build`
+deployment uses `.env` and saved kitchen data (frontend :8080, API :8000).
+Run Alembic authoring commands inside a backend container with a disposable database.
 
 The frontend has ESLint (flat config), Vitest/Testing Library regression tests, and
 Node theme tests (`npm test`). There is no Python linter.
@@ -118,13 +104,15 @@ post-filter on normalized titles), and the **grill gate** (drop suggestions whos
 `cooking_method`/title/steps look grilled when the weather is bad — see below). Every
 returned suggestion is logged as a `Meal` row immediately, so the no-repeat window
 applies even to un-cooked suggestions. Each kept suggestion is then enriched with a
-Brave photo + source link via `_enrich_with_brave()` before persistence.
+related recipe link via `_enrich_with_brave()` before persistence. `_generate()`
+validates the requested serving count and retries the full recipe once if needed.
 
 **Brave Search — `backend/app/services/brave_search.py`.** Singleton `httpx` client,
 keyed by `BRAVE_API_KEY`. `search_web()` and `search_image()` are **fail-soft by
 contract** — any error (network, non-200, response shape) is logged and returned as
 `[]`/`None`, so suggestion and delivery never hard-fail when Brave is unavailable. Used
-for recipe photos, related recipe links, the weather snippet, and delivery order links.
+for related recipe links, the weather snippet, and delivery order links. Image search
+remains for the legacy inventory backfill API; the UI now uses consistent icons.
 
 **Weather grill gate — `backend/app/services/weather.py`.** Brave has no weather endpoint,
 so `get_weather(location)` web-searches the forecast and keyword-scans the snippet for
@@ -163,7 +151,7 @@ query is `enabled` only once signed in so a 401 is never read as "not onboarded"
 is driven entirely by CSS variables in `src/index.css`; the responsive nav is one
 component (`Nav.jsx`, which shows the account email and a sign-out control in cloud
 mode) that CSS renders as a desktop sidebar or a mobile bottom pill bar. `MealCard.jsx`
-renders the Brave photo, cooking-method chip, source link, and the "Order delivery"
+renders a cooking-method icon/chip, source link, and the "Order delivery"
 button (gated on the weekly quota fetched by the page); the location field lives in
 `PreferencesForm.jsx`.
 
@@ -180,7 +168,8 @@ button (gated on the weekly quota fetched by the page); the location field lives
 - `design.pen` is a Pencil design file — open it with the Pencil tools, never as text.
   **Keep it in sync with the frontend:** whenever you change UI in `frontend/src`, make
   the matching update in `design.pen` (components and the affected screens) in the same
-  change.
+  change unless the user explicitly defers it. See `docs/project-notes.md` for the
+  agreed September 2026 follow-up.
 
 **Reliability:** ingredient identity/quantity allocation is shared in `services/ingredients.py`;
 allergen aliases live in `services/allergens.py`. `ActionReceipt` deduplicates imports,
