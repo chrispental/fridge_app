@@ -95,7 +95,7 @@ export default function PreferencesForm({
 
   const householdField = (
     <div className="field">
-      <label htmlFor={`${prefix}-household`}>Household size</label>
+      <label htmlFor={`${prefix}-household`}>Default servings / household size</label>
       <input
         id={`${prefix}-household`}
         type="number"
@@ -104,6 +104,7 @@ export default function PreferencesForm({
         value={householdSize}
         onChange={(e) => setHouseholdSize(e.target.value)}
       />
+      <p className="hint">Used for meal plans and as your default when asking for a meal.</p>
     </div>
   )
 

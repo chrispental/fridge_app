@@ -49,7 +49,7 @@ SUGGESTION_SCHEMA = {
                     "cuisine": {"type": "string"},
                     "complexity": {"type": "integer"},
                     "estimated_time_minutes": {"type": "integer"},
-                    "servings": {"type": "integer"},
+                    "servings": {"type": "integer", "minimum": 1, "maximum": 20},
                     "cooking_method": {"type": "string"},
                     "ingredients": {
                         "type": "array",
@@ -146,10 +146,13 @@ def _pick_recipe(results: list[dict], avoid_url: str | None = None) -> dict | No
 
 
 def _enrich_with_brave(suggestion: MealSuggestion, avoid_url: str | None = None) -> None:
-    """Attach a food photo and a related recipe link via Brave. Fully fail-soft."""
+    """Attach a related recipe link via Brave. Fully fail-soft.
+
+    Search thumbnails aren't verified photos of our generated recipes, so the
+    app uses consistent icons instead.
+    """
     try:
         query = f"{suggestion.title} recipe"
-        suggestion.image_url = brave_search.search_image(query)
         best = _pick_recipe(brave_search.search_web(query, count=5), avoid_url)
         if best:
             suggestion.source = RecipeSource(
@@ -265,7 +268,7 @@ def _parse_suggestions(raw: dict) -> list[MealSuggestion]:
                 cuisine=s.get("cuisine") or None,
                 complexity=min(max(complexity, 1), 5),
                 estimated_time_minutes=s.get("estimated_time_minutes"),
-                servings=s.get("servings"),
+                servings=s.get("servings") if type(s.get("servings")) is int and 1 <= s["servings"] <= 20 else None,
                 cooking_method=str(s.get("cooking_method") or "stovetop").strip().lower(),
                 ingredients=ingredients,
                 steps=[str(x) for x in s.get("steps", []) if str(x).strip()],
@@ -320,7 +323,7 @@ def _sort_key(suggestion: MealSuggestion, expiring_names: list[str]) -> tuple[in
     return (out_of_stock, missing, -_expiring_used(suggestion, expiring_names))
 
 
-def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None, feedback_lines=None, expiring=None) -> str:
+def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None, feedback_lines=None, expiring=None, servings=None) -> str:
     if inventory:
         inv_lines = []
         for i in inventory:
@@ -380,6 +383,7 @@ def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None,
 
     return f"""USER PREFERENCES
 Household size: {prefs.household_size}
+Requested servings for each recipe: {servings if servings is not None else prefs.household_size}. All ingredient quantities and steps must be for this many people.
 Allergies (NEVER use these): {joined(prefs.allergies)}
 Dietary restrictions: {joined(prefs.dietary_restrictions)}
 Equipment available: {joined(prefs.equipment) if prefs.equipment else 'basic stovetop only'}
@@ -397,21 +401,30 @@ DO NOT SUGGEST THESE RECENT MEALS
 Suggest meals I can make right now."""
 
 
-def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None, feedback_lines=None, expiring=None) -> list[MealSuggestion]:
+def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None, feedback_lines=None, expiring=None, servings=None) -> list[MealSuggestion]:
     system_prompt = load_prompt("suggestion_system.md").replace("{count}", str(count))
-    raw = call_structured(
-        model=settings.openrouter_meal_model,
-        system_prompt=system_prompt,
-        user_content=_build_user_prompt(prefs, inventory, do_not_repeat, weather, idea, feedback_lines, expiring),
-        json_schema=SUGGESTION_SCHEMA,
-        schema_name="meal_suggestions",
-    )
-    return _parse_suggestions(raw)
+    target = servings if servings is not None else prefs.household_size
+    prompt = _build_user_prompt(prefs, inventory, do_not_repeat, weather, idea, feedback_lines, expiring, target)
+    for _ in range(2):
+        raw = call_structured(
+            model=settings.openrouter_meal_model,
+            system_prompt=system_prompt,
+            user_content=prompt,
+            json_schema=SUGGESTION_SCHEMA,
+            schema_name="meal_suggestions",
+        )
+        suggestions = _parse_suggestions(raw)
+        if all(s.servings == target for s in suggestions):
+            return suggestions
+        # Regenerate the whole recipe: changing just the label or ingredient
+        # amounts could leave contradictory quantities embedded in the steps.
+        prompt += "\n" + load_prompt("servings_retry.md").replace("{servings}", str(target))
+    raise RuntimeError("The recipes did not match the requested servings. Please try again.")
 
 
 def suggest_meals(
     db: Session, user_id: str, count: int = 3, idea: str | None = None,
-    *, commit: bool = True, exclude_titles: list[str] | None = None
+    *, commit: bool = True, exclude_titles: list[str] | None = None, servings: int | None = None
 ) -> list[models.Meal]:
     """Generate meal suggestions, enforce rules, persist them, return Meal rows.
 
@@ -435,7 +448,7 @@ def suggest_meals(
     # Items about to go bad get a "use these first" block and a sort preference.
     expiring = expiring_soon(inventory, within_days=3)
 
-    suggestions = _generate(db, prefs, inventory, avoid, count, weather, idea, feedback_lines, expiring)
+    suggestions = _generate(db, prefs, inventory, avoid, count, weather, idea, feedback_lines, expiring, servings)
 
     def keep(s: MealSuggestion) -> bool:
         return (
@@ -458,7 +471,7 @@ def suggest_meals(
     # If everything was filtered out, retry once with the rejects also excluded.
     if not safe and suggestions:
         rejected = [s.title for s in suggestions]
-        retry = _generate(db, prefs, inventory, avoid + rejected, count, weather, idea, feedback_lines, expiring)
+        retry = _generate(db, prefs, inventory, avoid + rejected, count, weather, idea, feedback_lines, expiring, servings)
         safe = filter_distinct(retry)
 
     # Recompute in-stock from real inventory, then order makeable-now meals first

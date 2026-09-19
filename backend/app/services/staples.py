@@ -14,27 +14,32 @@ def _words(s: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", (s or "").lower())
 
 
-def _contains_seq(haystack: list[str], needle: list[str]) -> bool:
-    """True if `needle` appears as a contiguous run of whole words in `haystack`."""
-    n, m = len(haystack), len(needle)
-    if m == 0 or m > n:
-        return False
-    return any(haystack[i : i + m] == needle for i in range(n - m + 1))
+def _staple_words(name: str) -> list[str]:
+    tokens = _words(name)
+    while tokens and tokens[0] in {"freshly", "fresh", "ground", "finely", "coarsely", "chopped", "minced"}:
+        tokens.pop(0)
+    return tokens
 
 
 def is_staple(name: str, staples: list[str]) -> bool:
-    """True if `name` is one of the staples, matched on WHOLE WORDS.
+    """Match complete names, allowing known variants of generic salt/pepper.
 
-    Word matching (not raw substring) is deliberate: a substring rule would treat
-    "jalapeno peppers", "bell pepper", or "salted butter" as the staples "pepper"/
-    "salt" and silently drop real shopping-list items. Whole-word matching keeps
-    "black pepper" / "sea salt" as staples while leaving those compounds alone.
+    A whole-word containment test still confuses bell pepper with pepper and
+    peanut butter with butter. Unknown compounds must remain shopping needs.
     """
-    ingredient = _words(name)
+    ingredient = _staple_words(name)
     if not ingredient:
         return False
     for s in staples or []:
-        staple = _words(s)
-        if staple and (_contains_seq(ingredient, staple) or _contains_seq(staple, ingredient)):
+        staple = _staple_words(s)
+        if ingredient == staple:
+            return True
+        variants = {
+            "salt": {"sea", "kosher", "table", "fine", "coarse", "iodized"},
+            "pepper": {"black", "white"},
+        }
+        if (len(staple) == 1 and staple[0] in variants and
+                ingredient[-1] == staple[0] and
+                set(ingredient[:-1]) <= variants[staple[0]]):
             return True
     return False

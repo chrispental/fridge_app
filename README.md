@@ -67,9 +67,15 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
    this browser.
    You can also add items by hand.
 3. **Cook** — type a craving ("something with chicken & spinach") or hit *Surprise
-   me* and get recipes you can make right now, with quantities checked against your inventory, a photo, and a related recipe
+   me* and get recipes you can make right now, with quantities checked against your inventory, consistent cooking-method icons, and a related recipe
    link. Unknown amounts or incompatible units are marked **Check amount**. Meals that use up expiring items
    float to the top; grilled dishes are skipped when the weather says no.
+   Choose **Cooking for** on Home or Cook to set the number of people for a request;
+   it defaults to household size. Recipes are generated for that count, and a mismatched
+   serving count triggers a retry. Weekly plans use the household default.
+   Instructions and Cook Mode show contextual reminders for hot cookware, steam,
+   boiling liquids, and hot oil, including older saved recipes. These common-hazard
+   reminders are not a comprehensive safety check.
    **Cook Mode** saves your step, ingredient checklist, and timer deadlines in this
    browser, so closing or reloading it does not reset your progress.
 4. **Plan** — generate a week of distinct meals, swap any day, and turn it into one
@@ -97,8 +103,8 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
 
 - Docker + Docker Compose
 - An OpenRouter API key — create one at https://openrouter.ai/keys (pay-as-you-go)
-- Optionally, a Brave Search API key — https://brave.com/search/api/ — for recipe
-  photos, related recipe links, weather-aware grilling, and delivery search.
+- Optionally, a Brave Search API key — https://brave.com/search/api/ — for
+  related recipe links, weather-aware grilling, and delivery search.
   Without it those extras are silently skipped; suggestions still work.
 
 ## Quick start
@@ -126,7 +132,7 @@ To stop: `docker compose down`. Your data lives in `./data/` and survives restar
 | `OPENROUTER_VISION_MODEL` | Model for reading fridge photos (must support images) | `openai/gpt-4o-mini` |
 | `OPENROUTER_MEAL_MODEL` | Model for meal suggestions | `anthropic/claude-sonnet-4.6` |
 | `OPENROUTER_BASE_URL` | OpenAI-compatible API endpoint | `https://openrouter.ai/api/v1` |
-| `BRAVE_API_KEY` | Brave Search key — recipe photos, source links, weather, delivery (optional; features skip gracefully without it) | — |
+| `BRAVE_API_KEY` | Brave Search key — source links, weather, delivery (optional; features skip gracefully without it) | — |
 | `BRAVE_COUNTRY` | Country bias for Brave results (ISO 3166-1 alpha-2) | `US` |
 | `BRAVE_BASE_URL` | Brave Search API endpoint | `https://api.search.brave.com/res/v1` |
 | `BRAVE_REQUEST_TIMEOUT` | Seconds before a Brave call times out | `10` |

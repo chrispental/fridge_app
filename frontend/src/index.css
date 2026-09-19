@@ -641,6 +641,16 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .meal-media > img { width: 100%; height: clamp(180px, 25vw, 300px); object-fit: cover; display: block; }
 .meal-media-body { position: relative; padding: 20px 20px 0; display: grid; gap: 10px; background: var(--surface-1); }
 .meal-media-body h3 { font-size: 1.3rem; color: var(--text-primary); }
+.meal-icon { color: var(--accent); }
+.meal-preview-thumb, .plan-chip-thumb { color: var(--accent); }
+.serving-picker { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.serving-picker label { font-weight: 600; }
+.serving-picker select { width: auto; min-width: 120px; }
+.serving-picker .hint { margin: 0; }
+.step-safety { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; margin: 10px 0; border: 1px solid var(--warning-line); border-radius: 12px; background: var(--warning-dim); color: var(--warning); font-size: var(--fs-small); text-align: left; line-height: 1.5; }
+.step-safety > svg { flex-shrink: 0; margin-top: 2px; }
+.step-safety p { margin: 0; }
+.step-safety p + p { margin-top: 6px; }
 .meal-meta {
   display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
   color: var(--text-secondary); font-size: var(--fs-caption); font-weight: 600;

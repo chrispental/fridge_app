@@ -42,7 +42,7 @@ def suggest(
     db: Session = Depends(get_db),
 ):
     try:
-        meals = suggest_meals(db, user.id, count=payload.count, idea=payload.idea)
+        meals = suggest_meals(db, user.id, count=payload.count, idea=payload.idea, servings=payload.servings)
     except RuntimeError as exc:
         raise HTTPException(502, str(exc))
     if not meals:

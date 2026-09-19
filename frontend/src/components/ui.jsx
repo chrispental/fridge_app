@@ -3,6 +3,7 @@
 // Icons are passed in as elements (e.g. icon={<Camera size={20} />}) to keep
 // this module decoupled from lucide-react.
 import { Link } from 'react-router-dom'
+import MealIcon from './MealIcon.jsx'
 
 export function PageHeader({ eyebrow, title, subtitle, children }) {
   return (
@@ -160,7 +161,7 @@ export function MealPreviewCard({ meal, to = '/cook' }) {
   return (
     <Link to={to} className="meal-preview">
       <div className="meal-preview-thumb">
-        {r.image_url ? <img src={r.image_url} alt="" loading="lazy" /> : '🍽'}
+        <MealIcon method={r.cooking_method} />
       </div>
       <div className="meal-preview-body">
         <span className="meal-preview-title">{meal.title}</span>
@@ -168,6 +169,7 @@ export function MealPreviewCard({ meal, to = '/cook' }) {
           {r.cuisine && <span>{r.cuisine}</span>}
           {r.cooking_method && <span className="method-chip">{r.cooking_method}</span>}
           {r.estimated_time_minutes && <span>⏱ {r.estimated_time_minutes}m</span>}
+          {r.servings && <span>Serves {r.servings}</span>}
           {ingredients.length > 0 && (
             <span>{have}/{ingredients.length} in stock</span>
           )}
@@ -186,7 +188,7 @@ export function PlanStrip({ entries = [], toBuyCount = null }) {
         return (
           <Link key={e.meal.id} to="/plan" className="plan-chip">
             <div className="plan-chip-thumb">
-              {r.image_url ? <img src={r.image_url} alt="" loading="lazy" /> : '🍽'}
+              <MealIcon method={r.cooking_method} size={24} />
             </div>
             <div className="plan-chip-body">
               <span className="plan-chip-day">Day {e.slot_index + 1}</span>

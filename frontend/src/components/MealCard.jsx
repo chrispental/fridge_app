@@ -8,6 +8,8 @@ import {
 } from '../api/queries.js'
 import { toast } from './toast.js'
 import CookMode from './CookMode.jsx'
+import StepSafety from './StepSafety.jsx'
+import MealIcon from './MealIcon.jsx'
 
 const FEEDBACK_TAGS = [
   'Too salty', 'Too bland', 'Too spicy', 'Too sweet',
@@ -82,7 +84,6 @@ export default function MealCard({
   const missing = recipe.missing_ingredients || []
   const outOfStock = ingredients.some((i) => ['missing', 'partial'].includes(i.stock_status) || (!i.stock_status && !i.in_stock)) || missing.length > 0
   const checkAmounts = ingredients.some((i) => i.stock_status === 'check')
-  const hasPhoto = Boolean(recipe.image_url)
 
   function addMissingToList(again = false) {
     importMutation.mutate({ mealId: meal.id, copyId: again ? crypto.randomUUID() : undefined }, {
@@ -110,14 +111,20 @@ export default function MealCard({
   return (
     <div className="meal-card interactive">
       <div
-        className={`meal-media${hasPhoto ? '' : ' no-photo'}`}
+        className="meal-media no-photo"
         onClick={() => setExpanded((v) => !v)}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setExpanded((v) => !v)
+          }
+        }}
       >
-        {hasPhoto && <img src={recipe.image_url} alt={meal.title} />}
         <div className="meal-media-body">
+          <span className="meal-icon"><MealIcon method={recipe.cooking_method} /></span>
           <h3>{meal.title}</h3>
           {meta}
         </div>
@@ -174,7 +181,7 @@ export default function MealCard({
             {steps.length > 0 ? (
               <ol className="steps">
                 {steps.map((s, i) => (
-                  <li key={i}>{s}</li>
+                  <li key={i}><StepSafety steps={steps} index={i} />{s}</li>
                 ))}
               </ol>
             ) : (
