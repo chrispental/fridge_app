@@ -37,19 +37,25 @@ Dark uses neutral charcoal surfaces with green accents. Change the theme from th
 sidebar, **More** on mobile, or **Settings → Appearance**. The choice saves
 immediately in this browser; System follows your device's appearance.
 
-Screenshots below use sample data in a local preview.
+Screenshots below were captured from the running app on October 4, 2026, using
+fictional sample data in the isolated Docker preview. Recipe cards use cooking-method
+icons; ingredient availability and serving counts come from the sample kitchen.
 
 | Home — light | Home — dark |
 |---|---|
-| ![Home in light mode](docs/screenshots/home.png) | ![Home in neutral charcoal dark mode](docs/screenshots/home-dark.png) |
+| ![Home in light mode with serving selector and recipe icons](docs/screenshots/home.jpg) | ![Home in neutral charcoal dark mode](docs/screenshots/home-dark.jpg) |
 
 | Inventory | Meal history |
 |---|---|
-| ![Inventory with category icons](docs/screenshots/inventory.png) | ![Meal history with readable recipe details](docs/screenshots/history.png) |
+| ![Inventory with storage filters and category icons](docs/screenshots/inventory.jpg) | ![Meal history with ingredient shortages and expanded instructions](docs/screenshots/history.jpg) |
 
 | On a phone — light | On a phone — dark |
 |---|---|
-| <img src="docs/screenshots/mobile-home.png" alt="Home on mobile in light mode" width="300"> | <img src="docs/screenshots/mobile-home-dark.png" alt="Home on mobile in dark mode" width="300"> |
+| <img src="docs/screenshots/mobile-home.jpg" alt="Home on mobile in light mode" width="300"> | <img src="docs/screenshots/mobile-home-dark.jpg" alt="Home on mobile in dark mode" width="300"> |
+
+| Edit a purchase | Resume cooking after a reload |
+|---|---|
+| <img src="docs/screenshots/mobile-shopping-edit.jpg" alt="Shopping item editor with quantity and unit fields" width="300"> | <img src="docs/screenshots/mobile-resume-cooking.jpg" alt="Home with a reminder to resume an unfinished recipe" width="300"> |
 
 The editable [design file](design.pen) includes shared light/dark color variables
 and refreshed Home screens for desktop and mobile. Imported design assets live in
