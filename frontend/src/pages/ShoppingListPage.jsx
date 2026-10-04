@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, ShoppingCart, Trash2, PackageCheck, Eraser } from 'lucide-react'
+import { Plus, ShoppingCart, Trash2, PackageCheck, Eraser, Pencil } from 'lucide-react'
+import ShoppingItemModal from '../components/ShoppingItemModal.jsx'
 import { UNITS } from '../api/client.js'
 import {
   useAddShoppingItem, useCheckedToInventory, useClearChecked,
@@ -12,7 +13,7 @@ import {
 } from '../components/ui.jsx'
 import { formatAmount } from '../utils/quantity.js'
 
-function ShopRow({ item, onToggle, onDelete }) {
+function ShopRow({ item, onToggle, onDelete, onEdit }) {
   return (
     <div className={`shop-row${item.checked ? ' checked' : ''}`}>
       <label className="shop-row-main">
@@ -31,6 +32,9 @@ function ShopRow({ item, onToggle, onDelete }) {
           <span className="shop-row-src">{item.source === 'plan' ? 'from plan' : 'from meal'}</span>
         )}
       </label>
+      <button className="ghost shop-row-edit" onClick={() => onEdit(item)} aria-label={`Edit ${item.name}`} disabled={item.id < 0}>
+        <Pencil size={15} strokeWidth={2.2} />
+      </button>
       <button className="ghost danger shop-row-del" onClick={() => onDelete(item)} aria-label={`Remove ${item.name}`}>
         <Trash2 size={15} strokeWidth={2.2} />
       </button>
@@ -49,6 +53,7 @@ export default function ShoppingListPage() {
   const [name, setName] = useState('')
   const [quantity, setQuantity] = useState('')
   const [unit, setUnit] = useState('piece')
+  const [editing, setEditing] = useState(null)
 
   function add(ev) {
     ev.preventDefault()
@@ -129,6 +134,8 @@ export default function ShoppingListPage() {
         </button>
       </form>
 
+      {editing && <ShoppingItemModal item={editing} onClose={() => setEditing(null)} />}
+
       {items.length === 0 ? (
         <EmptyState
           icon={<ShoppingCart size={22} strokeWidth={2} />}
@@ -145,7 +152,7 @@ export default function ShoppingListPage() {
             ) : (
               <div className="stack" style={{ gap: 8 }}>
                 {toBuy.map((it) => (
-                  <ShopRow key={it.id} item={it} onToggle={toggle} onDelete={remove} />
+                  <ShopRow key={it.id} item={it} onToggle={toggle} onDelete={remove} onEdit={setEditing} />
                 ))}
               </div>
             )}
@@ -156,7 +163,7 @@ export default function ShoppingListPage() {
               <h3>In your cart ({checked.length})</h3>
               <div className="stack" style={{ gap: 8 }}>
                 {checked.map((it) => (
-                  <ShopRow key={it.id} item={it} onToggle={toggle} onDelete={remove} />
+                  <ShopRow key={it.id} item={it} onToggle={toggle} onDelete={remove} onEdit={setEditing} />
                 ))}
               </div>
             </div>

@@ -79,7 +79,8 @@ export default function InventoryPage() {
   // Storage filter options: "All" + only storages that actually have items.
   const filterOptions = [
     { value: 'all', label: 'All' },
-    ...sections.map((s) => ({ value: s.value, label: `${s.label} (${s.items.length})` })),
+    ...STORAGE.filter((s) => items.some((it) => (it.storage || 'unsorted') === s.value))
+      .map((s) => ({ value: s.value, label: `${s.label} (${sections.find((section) => section.value === s.value)?.items.length || 0})` })),
   ]
   const visibleSections =
     storageFilter === 'all' ? sections : sections.filter((s) => s.value === storageFilter)
@@ -123,10 +124,10 @@ export default function InventoryPage() {
                 aria-label="Search inventory"
               />
             </div>
-            <SegmentedControl options={SORTS} value={sort} onChange={setSort} />
+            <SegmentedControl options={SORTS} value={sort} onChange={setSort} scroll />
           </div>
 
-          {filterOptions.length > 2 && (
+          {(filterOptions.length > 2 || storageFilter !== 'all') && (
             <div style={{ marginBottom: 'var(--sp-5)' }}>
               <SegmentedControl
                 options={filterOptions}
@@ -137,11 +138,12 @@ export default function InventoryPage() {
             </div>
           )}
 
-          {matched.length === 0 ? (
+          {visibleSections.length === 0 ? (
             <EmptyState
               icon={<Search size={22} strokeWidth={2} />}
               title="No matches"
-              message={`Nothing in your fridge matches “${search.trim()}”.`}
+              message={storageFilter === 'all' ? `Nothing in your fridge matches “${search.trim()}”.` : 'No matching items in this storage location. Try all locations or change your search.'}
+              action={storageFilter !== 'all' && <button className="btn" onClick={() => setStorageFilter('all')}>Search all locations</button>}
             />
           ) : (
             visibleSections.map((section) => (

@@ -44,6 +44,9 @@ export const usePreferences = () =>
 export const useInventory = () =>
   useQuery({ queryKey: ['inventory'], queryFn: api.getInventory })
 
+export const useMeal = (id) =>
+  useQuery({ queryKey: ['meals', 'detail', id], queryFn: () => api.getMeal(id), enabled: id != null })
+
 export const useMeals = (status) =>
   useQuery({
     queryKey: ['meals', { status: status || '' }],

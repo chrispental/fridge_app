@@ -11,6 +11,8 @@ import CookMode from './CookMode.jsx'
 import StepSafety from './StepSafety.jsx'
 import MealIcon from './MealIcon.jsx'
 import { formatAmount, formatQty } from '../utils/quantity.js'
+import { useAuth } from '../auth/useAuth.js'
+import { canResume, useCookProgress } from '../utils/cookingProgress.js'
 
 const FEEDBACK_TAGS = [
   'Too salty', 'Too bland', 'Too spicy', 'Too sweet',
@@ -24,6 +26,8 @@ export default function MealCard({
   nextDeliveryDate = null,
 }) {
   const recipe = meal.recipe_json || {}
+  const { session } = useAuth()
+  const savedProgress = useCookProgress(session?.user?.id, meal.id)
   const [expanded, setExpanded] = useState(false)
   const [cooking, setCooking] = useState(false)
   const [decrement, setDecrement] = useState(true)
@@ -203,7 +207,7 @@ export default function MealCard({
 
         {steps.length > 0 && (
           <button className="btn primary begin-cooking" onClick={() => setCooking(true)}>
-            <Play size={15} strokeWidth={2.4} /> {cooked ? 'Cook again' : 'Begin cooking'}
+            <Play size={15} strokeWidth={2.4} /> {canResume(savedProgress, meal) ? 'Resume cooking' : cooked ? 'Cook again' : 'Begin cooking'}
           </button>
         )}
 

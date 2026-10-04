@@ -6,6 +6,7 @@ vi.mock('../src/api/queries.js', () => ({ useOnboardStatus: () => state.query })
 vi.mock('../src/auth/useAuth.js', () => ({ useAuth: () => ({ authEnabled: false, session: null, loading: false }) }))
 vi.mock('../src/pages/Home.jsx', () => ({ default: () => <p>Your kitchen dashboard</p> }))
 vi.mock('../src/components/Nav.jsx', () => ({ default: () => <nav>Kitchen navigation</nav> }))
+vi.mock('../src/components/ResumeCooking.jsx', () => ({ default: () => null }))
 import App from '../src/App.jsx'
 
 describe('connection recovery', () => {
