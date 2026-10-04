@@ -449,7 +449,7 @@
             {
               "type": "frame",
               "id": "r0Uxs",
-              "name": "recipeImage",
+              "name": "mealIcon",
               "metadata": {
                 "type": "unsplash",
                 "username": "fotoinshadows",
@@ -457,44 +457,19 @@
                 "author": "Monika Borys"
               },
               "width": "fill_container",
-              "height": 180,
-              "fill": {
-                "type": "image",
-                "enabled": true,
-                "url": "https://images.unsplash.com/photo-1708509360429-e5824ae38b86?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4NDM0ODN8MHwxfHJhbmRvbXx8fHx8fHx8fDE3ODA3NTEzMTR8&ixlib=rb-4.1.0&q=80&w=1080",
-                "mode": "fill"
-              },
-              "cornerRadius": 14,
-              "layout": "vertical",
+              "fill": "#00000000",
               "gap": 8,
-              "justifyContent": "center",
               "alignItems": "center",
               "children": [
                 {
                   "type": "icon",
-                  "id": "YInxW",
-                  "x": 137,
-                  "y": 49.5,
-                  "name": "imgIcon",
-                  "enabled": false,
-                  "width": 30,
-                  "height": 30,
-                  "icon": "image",
+                  "id": "LEQjX",
+                  "name": "methodGlyph",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "cooking-pot",
                   "library": "lucide",
-                  "fill": "$text-tertiary"
-                },
-                {
-                  "type": "text",
-                  "id": "JaVaF",
-                  "x": 117,
-                  "y": 87.5,
-                  "name": "imgCaption",
-                  "enabled": false,
-                  "fill": "$text-tertiary",
-                  "content": "Recipe photo",
-                  "fontFamily": "Inter",
-                  "fontSize": 11,
-                  "fontWeight": "500"
+                  "fill": "$accent"
                 }
               ]
             },
@@ -593,7 +568,7 @@
                       "id": "x5i2Pz",
                       "width": 13,
                       "height": 13,
-                      "icon": "gauge",
+                      "icon": "star",
                       "library": "lucide",
                       "fill": "$text-secondary"
                     },
@@ -601,7 +576,7 @@
                       "type": "text",
                       "id": "b6KCXT",
                       "fill": "$text-secondary",
-                      "content": "Easy",
+                      "content": "2/5",
                       "fontFamily": "Inter",
                       "fontSize": 12,
                       "fontWeight": "500"
@@ -681,7 +656,7 @@
                       "type": "text",
                       "id": "O3Cn6",
                       "fill": "$success",
-                      "content": "Eggs",
+                      "content": "Eggs (4 piece)",
                       "fontFamily": "Inter",
                       "fontSize": 11,
                       "fontWeight": "500"
@@ -714,40 +689,7 @@
                       "type": "text",
                       "id": "dy10L",
                       "fill": "$success",
-                      "content": "Cheddar cheese",
-                      "fontFamily": "Inter",
-                      "fontSize": 11,
-                      "fontWeight": "500"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "rC2Fg",
-                  "name": "c3",
-                  "fill": "$success-dim",
-                  "cornerRadius": 100,
-                  "gap": 4,
-                  "padding": [
-                    10,
-                    6
-                  ],
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "J7XPF",
-                      "width": 11,
-                      "height": 11,
-                      "icon": "check",
-                      "library": "lucide",
-                      "fill": "$success"
-                    },
-                    {
-                      "type": "text",
-                      "id": "Z1aP5",
-                      "fill": "$success",
-                      "content": "Butter",
+                      "content": "Cheddar cheese (3 oz)",
                       "fontFamily": "Inter",
                       "fontSize": 11,
                       "fontWeight": "500"
@@ -763,6 +705,39 @@
               "width": "fill_container",
               "gap": 6,
               "children": [
+                {
+                  "type": "frame",
+                  "id": "rC2Fg",
+                  "name": "c3",
+                  "fill": "$warning-dim",
+                  "cornerRadius": 100,
+                  "gap": 4,
+                  "padding": [
+                    10,
+                    6
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "J7XPF",
+                      "width": 11,
+                      "height": 11,
+                      "icon": "circle-question-mark",
+                      "library": "lucide",
+                      "fill": "$warning"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Z1aP5",
+                      "fill": "$warning",
+                      "content": "Butter (1 tbsp) · check amount",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
                 {
                   "type": "frame",
                   "id": "Mvouy",
@@ -789,13 +764,22 @@
                       "type": "text",
                       "id": "wBFtI",
                       "fill": "$success",
-                      "content": "Bread",
+                      "content": "Bread (2 piece)",
                       "fontFamily": "Inter",
                       "fontSize": 11,
                       "fontWeight": "500"
                     }
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Cw4Ex",
+              "name": "chips-3",
+              "width": "fill_container",
+              "gap": 6,
+              "children": [
                 {
                   "type": "frame",
                   "id": "F77VQb",
@@ -822,7 +806,7 @@
                       "type": "text",
                       "id": "SUKcl",
                       "fill": "$accent",
-                      "content": "Salt",
+                      "content": "Salt (0.5 tsp)",
                       "fontFamily": "Inter",
                       "fontSize": 11,
                       "fontWeight": "500"
@@ -855,7 +839,7 @@
                       "type": "text",
                       "id": "zqUh4",
                       "fill": "$accent",
-                      "content": "Black pepper",
+                      "content": "Hot sauce · need 1 more",
                       "fontFamily": "Inter",
                       "fontSize": 11,
                       "fontWeight": "500"
@@ -892,6 +876,19 @@
                   "fontWeight": "600"
                 }
               ]
+            },
+            {
+              "type": "text",
+              "id": "eABK1",
+              "name": "checkHint",
+              "fill": "$text-secondary",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Check ingredient amounts in your inventory before cooking. Unknown amounts are not automatically added to shopping.",
+              "lineHeight": 1.4,
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
             },
             {
               "type": "text",
@@ -954,6 +951,49 @@
               "fill": "$border",
               "width": "fill_container",
               "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "j8Fxq",
+              "name": "subtractRow",
+              "width": "fill_container",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "PgfNC",
+                  "name": "checkbox",
+                  "width": 16,
+                  "height": 16,
+                  "fill": "$accent",
+                  "cornerRadius": 4,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "XoPpP",
+                      "name": "tick",
+                      "width": 11,
+                      "height": 11,
+                      "icon": "check",
+                      "library": "lucide",
+                      "fill": "$accent-fg"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Om2cc",
+                  "name": "subtractLabel",
+                  "fill": "$text-secondary",
+                  "content": "Subtract used ingredients from inventory",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "500"
+                }
+              ]
             },
             {
               "type": "frame",
@@ -1715,14 +1755,14 @@
               "alignItems": "center",
               "children": [
                 {
-                  "type": "text",
-                  "id": "Sx2jG",
-                  "name": "emoji",
-                  "fill": "$text-primary",
-                  "content": "🥚",
-                  "fontFamily": "Inter",
-                  "fontSize": 34,
-                  "fontWeight": "normal"
+                  "type": "icon",
+                  "id": "rTMfr",
+                  "name": "categoryIcon",
+                  "width": 40,
+                  "height": 40,
+                  "icon": "package",
+                  "library": "lucide",
+                  "fill": "$accent"
                 }
               ]
             },
@@ -1774,7 +1814,7 @@
                           "id": "qzoDR",
                           "name": "qtyLabel",
                           "fill": "$text-primary",
-                          "content": "6 pcs",
+                          "content": "6 piece",
                           "fontFamily": "Inter",
                           "fontSize": 11,
                           "fontWeight": "600"
@@ -1840,6 +1880,18 @@
                   "fontWeight": "650"
                 }
               ]
+            },
+            {
+              "type": "ellipse",
+              "id": "iWES3",
+              "layoutPosition": "absolute",
+              "x": 153,
+              "y": 8,
+              "name": "lowStockDot",
+              "enabled": false,
+              "fill": "$warning",
+              "width": 9,
+              "height": 9
             }
           ]
         },
@@ -2261,6 +2313,64 @@
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ScCQo",
+                  "name": "Serving Picker",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "VwrEE",
+                      "name": "servingLabel",
+                      "fill": "$text-primary",
+                      "content": "Cooking for",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "QMAiq",
+                      "name": "servingSelect",
+                      "fill": "$surface-2",
+                      "cornerRadius": "$radius-sm",
+                      "stroke": "$border-strong",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "gap": 6,
+                      "padding": [
+                        10,
+                        7
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "l0sr4",
+                          "name": "servingValue",
+                          "fill": "$text-primary",
+                          "content": "2 people",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "dkmvY",
+                          "name": "servingChevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "$text-secondary"
+                        }
+                      ]
                     }
                   ]
                 },
@@ -2752,14 +2862,14 @@
                           "name": "Eggs",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🥚"
+                            "rTMfr": {
+                              "icon": "milk"
                             },
                             "baVIt": {
                               "content": "Eggs"
                             },
                             "qzoDR": {
-                              "content": "6 pcs"
+                              "content": "6 piece"
                             },
                             "m0acx": {
                               "content": "Dairy"
@@ -2773,14 +2883,14 @@
                           "name": "Cheddar cheese",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🧀"
+                            "rTMfr": {
+                              "icon": "milk"
                             },
                             "baVIt": {
                               "content": "Cheddar cheese"
                             },
                             "qzoDR": {
-                              "content": "200 g"
+                              "content": "8 oz"
                             },
                             "m0acx": {
                               "content": "Dairy"
@@ -2803,14 +2913,14 @@
                           "name": "Spinach",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🥬"
+                            "rTMfr": {
+                              "icon": "carrot"
                             },
                             "baVIt": {
                               "content": "Spinach"
                             },
                             "qzoDR": {
-                              "content": "1 bag"
+                              "content": "1 pack"
                             },
                             "m0acx": {
                               "content": "Produce"
@@ -2827,14 +2937,14 @@
                           "name": "Butter",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🧈"
+                            "rTMfr": {
+                              "icon": "milk"
                             },
                             "baVIt": {
                               "content": "Butter"
                             },
                             "qzoDR": {
-                              "content": "250 g"
+                              "content": "1 lb"
                             },
                             "m0acx": {
                               "content": "Dairy"
@@ -2941,14 +3051,14 @@
                           "name": "Salmon fillet",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🐟"
+                            "rTMfr": {
+                              "icon": "beef"
                             },
                             "baVIt": {
                               "content": "Salmon fillet"
                             },
                             "qzoDR": {
-                              "content": "2 pcs"
+                              "content": "2 piece"
                             },
                             "m0acx": {
                               "content": "Meat"
@@ -2962,14 +3072,11 @@
                           "name": "Frozen peas",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🫛"
-                            },
                             "baVIt": {
                               "content": "Frozen peas"
                             },
                             "qzoDR": {
-                              "content": "1 bag"
+                              "content": "1 pack"
                             },
                             "m0acx": {
                               "content": "Frozen"
@@ -3076,14 +3183,14 @@
                           "name": "Pasta",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🍝"
+                            "rTMfr": {
+                              "icon": "wheat"
                             },
                             "baVIt": {
                               "content": "Pasta"
                             },
                             "qzoDR": {
-                              "content": "1 box"
+                              "content": "1 pack"
                             },
                             "m0acx": {
                               "content": "Pantry"
@@ -3097,17 +3204,20 @@
                           "name": "Olive oil",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🫒"
+                            "rTMfr": {
+                              "icon": "wheat"
                             },
                             "baVIt": {
                               "content": "Olive oil"
                             },
                             "qzoDR": {
-                              "content": "1 bottle"
+                              "content": "0.5 bottle"
                             },
                             "m0acx": {
                               "content": "Pantry"
+                            },
+                            "iWES3": {
+                              "enabled": true
                             }
                           }
                         }
@@ -3127,14 +3237,14 @@
                           "name": "Canned tomatoes",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🍅"
+                            "rTMfr": {
+                              "icon": "wheat"
                             },
                             "baVIt": {
                               "content": "Canned tomatoes"
                             },
                             "qzoDR": {
-                              "content": "2 cans"
+                              "content": "2 can"
                             },
                             "m0acx": {
                               "content": "Pantry"
@@ -5943,14 +6053,14 @@
       },
       "clip": true,
       "width": 1440,
-      "height": 1500,
+      "height": 1700,
       "fill": "$bg",
       "children": [
         {
           "id": "GxHHN",
           "type": "ref",
           "ref": "MmEGn",
-          "height": "fill_container",
+          "height": 1700,
           "name": "cdNav",
           "descendants": {
             "ETxEW": {
@@ -5970,7 +6080,7 @@
           "name": "Content",
           "clip": true,
           "width": "fill_container",
-          "height": "fill_container",
+          "height": 1700,
           "layout": "vertical",
           "gap": 26,
           "padding": 40,
@@ -6070,6 +6180,74 @@
                       "content": "What are you craving? e.g. something with chicken & spinach, a cozy soup…",
                       "fontFamily": "Inter",
                       "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "K9MoEV",
+                  "name": "Serving Picker",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RiuTx",
+                      "name": "servingLabel",
+                      "fill": "$text-primary",
+                      "content": "Cooking for",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "wbrkl",
+                      "name": "servingSelect",
+                      "fill": "$surface-2",
+                      "cornerRadius": "$radius-sm",
+                      "stroke": "$border-strong",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "gap": 6,
+                      "padding": [
+                        10,
+                        7
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ej2yA",
+                          "name": "servingValue",
+                          "fill": "$text-primary",
+                          "content": "2 people",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "UVN4W",
+                          "name": "servingChevron",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "chevron-down",
+                          "library": "lucide",
+                          "fill": "$text-secondary"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "Mt4VT",
+                      "name": "servingHint",
+                      "fill": "$text-secondary",
+                      "content": "Ingredient amounts will match.",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
                       "fontWeight": "normal"
                     }
                   ]
@@ -6731,14 +6909,14 @@
                           "name": "Eggs",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🥚"
+                            "rTMfr": {
+                              "icon": "milk"
                             },
                             "baVIt": {
                               "content": "Eggs"
                             },
                             "qzoDR": {
-                              "content": "6 pcs"
+                              "content": "6 piece"
                             },
                             "m0acx": {
                               "content": "Dairy"
@@ -6752,14 +6930,14 @@
                           "name": "Cheddar cheese",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🧀"
+                            "rTMfr": {
+                              "icon": "milk"
                             },
                             "baVIt": {
                               "content": "Cheddar cheese"
                             },
                             "qzoDR": {
-                              "content": "200 g"
+                              "content": "8 oz"
                             },
                             "m0acx": {
                               "content": "Dairy"
@@ -6773,14 +6951,14 @@
                           "name": "Spinach",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🥬"
+                            "rTMfr": {
+                              "icon": "carrot"
                             },
                             "baVIt": {
                               "content": "Spinach"
                             },
                             "qzoDR": {
-                              "content": "1 bag"
+                              "content": "1 pack"
                             },
                             "m0acx": {
                               "content": "Produce"
@@ -6797,14 +6975,14 @@
                           "name": "Butter",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🧈"
+                            "rTMfr": {
+                              "icon": "milk"
                             },
                             "baVIt": {
                               "content": "Butter"
                             },
                             "qzoDR": {
-                              "content": "250 g"
+                              "content": "1 lb"
                             },
                             "m0acx": {
                               "content": "Dairy"
@@ -6911,14 +7089,14 @@
                           "name": "Salmon fillet",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🐟"
+                            "rTMfr": {
+                              "icon": "beef"
                             },
                             "baVIt": {
                               "content": "Salmon fillet"
                             },
                             "qzoDR": {
-                              "content": "2 pcs"
+                              "content": "2 piece"
                             },
                             "m0acx": {
                               "content": "Meat"
@@ -6932,14 +7110,11 @@
                           "name": "Frozen peas",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🫛"
-                            },
                             "baVIt": {
                               "content": "Frozen peas"
                             },
                             "qzoDR": {
-                              "content": "1 bag"
+                              "content": "1 pack"
                             },
                             "m0acx": {
                               "content": "Frozen"
@@ -7060,14 +7235,14 @@
                           "name": "Pasta",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🍝"
+                            "rTMfr": {
+                              "icon": "wheat"
                             },
                             "baVIt": {
                               "content": "Pasta"
                             },
                             "qzoDR": {
-                              "content": "1 box"
+                              "content": "1 pack"
                             },
                             "m0acx": {
                               "content": "Pantry"
@@ -7081,17 +7256,20 @@
                           "name": "Olive oil",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🫒"
+                            "rTMfr": {
+                              "icon": "wheat"
                             },
                             "baVIt": {
                               "content": "Olive oil"
                             },
                             "qzoDR": {
-                              "content": "1 bottle"
+                              "content": "0.5 bottle"
                             },
                             "m0acx": {
                               "content": "Pantry"
+                            },
+                            "iWES3": {
+                              "enabled": true
                             }
                           }
                         },
@@ -7102,14 +7280,14 @@
                           "name": "Canned tomatoes",
                           "width": "fill_container",
                           "descendants": {
-                            "Sx2jG": {
-                              "content": "🍅"
+                            "rTMfr": {
+                              "icon": "wheat"
                             },
                             "baVIt": {
                               "content": "Canned tomatoes"
                             },
                             "qzoDR": {
-                              "content": "2 cans"
+                              "content": "2 can"
                             },
                             "m0acx": {
                               "content": "Pantry"
@@ -14718,6 +14896,48 @@
               ]
             },
             {
+              "type": "frame",
+              "id": "T89KyL",
+              "name": "Step Safety",
+              "width": 334,
+              "fill": "$warning-dim",
+              "cornerRadius": "$radius-sm",
+              "stroke": "$warning-line",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "gap": 8,
+              "padding": [
+                12,
+                8
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "KraAV",
+                  "name": "safetyIcon",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "triangle-alert",
+                  "library": "lucide",
+                  "fill": "$warning"
+                },
+                {
+                  "type": "text",
+                  "id": "J1DyG",
+                  "name": "safetyText",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Use dry oven mitts to handle hot cookware; handles stay hot after cooking.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
               "type": "text",
               "id": "UNt9k",
               "name": "stepText",
@@ -15561,6 +15781,16 @@
               "fontFamily": "$font-display",
               "fontSize": 30,
               "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "GdQqN",
+              "name": "servingsLine",
+              "fill": "$text-secondary",
+              "content": "Ingredients for 2 people.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "text",
@@ -20432,7 +20662,7 @@
       },
       "clip": true,
       "width": 958,
-      "height": 2216,
+      "height": 2264,
       "fill": "$bg",
       "children": [
         {
@@ -21456,7 +21686,7 @@
           "name": "main",
           "context": "main",
           "width": "fill_container",
-          "height": 2216,
+          "height": 2264,
           "layout": "vertical",
           "padding": [
             28,
@@ -21480,14 +21710,14 @@
                   "name": "div",
                   "context": "div",
                   "width": "fill_container",
-                  "height": 1536.34,
+                  "height": 1584.34,
                   "layout": "none",
                   "children": [
                     {
                       "type": "frame",
                       "id": "RxG3E",
                       "x": 0,
-                      "y": 378.72,
+                      "y": 426.72,
                       "name": "div",
                       "context": "div",
                       "width": "fill_container(702)",
@@ -21670,14 +21900,22 @@
                                       "id": "POE7n",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/f0b0c698f5a19553.jpg",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 120,
                                       "height": 120
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "upTOt",
+                                      "layoutPosition": "absolute",
+                                      "x": 45,
+                                      "y": 45,
+                                      "name": "methodGlyph",
+                                      "width": 30,
+                                      "height": 30,
+                                      "icon": "cooking-pot",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -21793,14 +22031,22 @@
                                       "id": "AgEXt",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/82d03c44b6835c68.png",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 120,
                                       "height": 120
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "nhMMx",
+                                      "layoutPosition": "absolute",
+                                      "x": 45,
+                                      "y": 45,
+                                      "name": "methodGlyph",
+                                      "width": 30,
+                                      "height": 30,
+                                      "icon": "microwave",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -21916,14 +22162,22 @@
                                       "id": "aOe8T",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/ef96d4cdfb0c4095.jpg",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 120,
                                       "height": 120
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "lCnj9",
+                                      "layoutPosition": "absolute",
+                                      "x": 45,
+                                      "y": 45,
+                                      "name": "methodGlyph",
+                                      "width": 30,
+                                      "height": 30,
+                                      "icon": "cooking-pot",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -22017,7 +22271,7 @@
                       "type": "frame",
                       "id": "Y35YO",
                       "x": 0,
-                      "y": 874.72,
+                      "y": 922.72,
                       "name": "a",
                       "context": "Link - a",
                       "width": "fill_container(702)",
@@ -22198,7 +22452,7 @@
                       "type": "frame",
                       "id": "L0yWv",
                       "x": 0,
-                      "y": 1072.91,
+                      "y": 1120.91,
                       "name": "div",
                       "context": "div",
                       "width": 460,
@@ -22403,14 +22657,22 @@
                                       "id": "pWR7b",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/f0b0c698f5a19553.jpg",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 128,
                                       "height": 76
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "z9ozg",
+                                      "layoutPosition": "absolute",
+                                      "x": 52,
+                                      "y": 26,
+                                      "name": "methodGlyph",
+                                      "width": 24,
+                                      "height": 24,
+                                      "icon": "cooking-pot",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -22488,14 +22750,22 @@
                                       "id": "JnUsA",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/82d03c44b6835c68.png",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 128,
                                       "height": 76
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "T9mda",
+                                      "layoutPosition": "absolute",
+                                      "x": 52,
+                                      "y": 26,
+                                      "name": "methodGlyph",
+                                      "width": 24,
+                                      "height": 24,
+                                      "icon": "microwave",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -22573,14 +22843,22 @@
                                       "id": "I9meh7",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/ef96d4cdfb0c4095.jpg",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 128,
                                       "height": 76
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "ZJn7Z",
+                                      "layoutPosition": "absolute",
+                                      "x": 52,
+                                      "y": 26,
+                                      "name": "methodGlyph",
+                                      "width": 24,
+                                      "height": 24,
+                                      "icon": "cooking-pot",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -22637,7 +22915,7 @@
                       "type": "frame",
                       "id": "vCL7D",
                       "x": 484,
-                      "y": 1072.91,
+                      "y": 1120.91,
                       "name": "div",
                       "context": "Xo - div",
                       "width": 218,
@@ -23100,7 +23378,7 @@
                       "type": "frame",
                       "id": "xQsNl",
                       "x": 0,
-                      "y": 1406.06,
+                      "y": 1454.06,
                       "name": "div",
                       "context": "div",
                       "width": "fill_container(702)",
@@ -23623,7 +23901,7 @@
                       "context": "Yo - section",
                       "clip": true,
                       "width": "fill_container(702)",
-                      "height": 354.72,
+                      "height": 402.72,
                       "fill": "$surface-3",
                       "cornerRadius": 28,
                       "layout": "none",
@@ -23636,7 +23914,7 @@
                           "y": 0,
                           "name": "Icon",
                           "width": "fill_container(702)",
-                          "height": 354.72
+                          "height": 402.72
                         },
                         {
                           "type": "frame",
@@ -23646,7 +23924,7 @@
                           "name": "div",
                           "context": "div",
                           "width": 292.5,
-                          "height": 354.72,
+                          "height": 402.72,
                           "layout": "none",
                           "children": [
                             {
@@ -23656,6 +23934,7 @@
                               "y": 0,
                               "name": "img",
                               "context": "img",
+                              "enabled": false,
                               "fill": {
                                 "type": "image",
                                 "enabled": true,
@@ -23675,7 +23954,7 @@
                           "name": "div",
                           "context": "div",
                           "width": 409.5,
-                          "height": 354.72,
+                          "height": 402.72,
                           "layout": "none",
                           "children": [
                             {
@@ -23809,6 +24088,64 @@
                                       "fontFamily": "Inter",
                                       "fontSize": 16,
                                       "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Yn6lg",
+                                  "name": "Serving Picker",
+                                  "width": "fill_container",
+                                  "gap": 8,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "S2KuD9",
+                                      "name": "servingLabel",
+                                      "fill": "$text-primary",
+                                      "content": "Cooking for",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 13,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "P6LJr",
+                                      "name": "servingSelect",
+                                      "fill": "$surface-1",
+                                      "cornerRadius": "$radius-sm",
+                                      "stroke": "$border-strong",
+                                      "strokeWidth": 1,
+                                      "strokeAlignment": "inner",
+                                      "gap": 6,
+                                      "padding": [
+                                        10,
+                                        7
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "B8Zld8",
+                                          "name": "servingValue",
+                                          "fill": "$text-primary",
+                                          "content": "2 people",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 13,
+                                          "fontWeight": "500"
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "hLK5i",
+                                          "name": "servingChevron",
+                                          "width": 13,
+                                          "height": 13,
+                                          "icon": "chevron-down",
+                                          "library": "lucide",
+                                          "fill": "$text-secondary"
+                                        }
+                                      ]
                                     }
                                   ]
                                 },
@@ -24107,7 +24444,7 @@
       },
       "clip": true,
       "width": 958,
-      "height": 2216,
+      "height": 2264,
       "fill": "$bg",
       "children": [
         {
@@ -25122,7 +25459,7 @@
           "name": "main",
           "context": "main",
           "width": "fill_container",
-          "height": 2216,
+          "height": 2264,
           "layout": "vertical",
           "padding": [
             28,
@@ -25146,14 +25483,14 @@
                   "name": "div",
                   "context": "div",
                   "width": "fill_container",
-                  "height": 1536.34,
+                  "height": 1584.34,
                   "layout": "none",
                   "children": [
                     {
                       "type": "frame",
                       "id": "d2OW1",
                       "x": 0,
-                      "y": 378.72,
+                      "y": 426.72,
                       "name": "div",
                       "context": "div",
                       "width": "fill_container(702)",
@@ -25336,14 +25673,22 @@
                                       "id": "UbCxk",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/f0b0c698f5a19553.jpg",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 120,
                                       "height": 120
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "VuIyy",
+                                      "layoutPosition": "absolute",
+                                      "x": 45,
+                                      "y": 45,
+                                      "name": "methodGlyph",
+                                      "width": 30,
+                                      "height": 30,
+                                      "icon": "cooking-pot",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -25459,14 +25804,22 @@
                                       "id": "P35BwR",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/82d03c44b6835c68.png",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 120,
                                       "height": 120
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "gGo5C",
+                                      "layoutPosition": "absolute",
+                                      "x": 45,
+                                      "y": 45,
+                                      "name": "methodGlyph",
+                                      "width": 30,
+                                      "height": 30,
+                                      "icon": "microwave",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -25582,14 +25935,22 @@
                                       "id": "bAQi2",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/ef96d4cdfb0c4095.jpg",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 120,
                                       "height": 120
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "D7CJAe",
+                                      "layoutPosition": "absolute",
+                                      "x": 45,
+                                      "y": 45,
+                                      "name": "methodGlyph",
+                                      "width": 30,
+                                      "height": 30,
+                                      "icon": "cooking-pot",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -25683,7 +26044,7 @@
                       "type": "frame",
                       "id": "anHKB",
                       "x": 0,
-                      "y": 874.72,
+                      "y": 922.72,
                       "name": "a",
                       "context": "Link - a",
                       "width": "fill_container(702)",
@@ -25864,7 +26225,7 @@
                       "type": "frame",
                       "id": "qzpzj",
                       "x": 0,
-                      "y": 1072.91,
+                      "y": 1120.91,
                       "name": "div",
                       "context": "div",
                       "width": 460,
@@ -26069,14 +26430,22 @@
                                       "id": "nf59T",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/f0b0c698f5a19553.jpg",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 128,
                                       "height": 76
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "bdmQ8",
+                                      "layoutPosition": "absolute",
+                                      "x": 52,
+                                      "y": 26,
+                                      "name": "methodGlyph",
+                                      "width": 24,
+                                      "height": 24,
+                                      "icon": "cooking-pot",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -26154,14 +26523,22 @@
                                       "id": "ogJvu",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/82d03c44b6835c68.png",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 128,
                                       "height": 76
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "KoaCq",
+                                      "layoutPosition": "absolute",
+                                      "x": 52,
+                                      "y": 26,
+                                      "name": "methodGlyph",
+                                      "width": 24,
+                                      "height": 24,
+                                      "icon": "microwave",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -26239,14 +26616,22 @@
                                       "id": "YYWjb",
                                       "name": "img",
                                       "context": "img",
-                                      "fill": {
-                                        "type": "image",
-                                        "enabled": true,
-                                        "url": "images/localhost/ef96d4cdfb0c4095.jpg",
-                                        "mode": "fill"
-                                      },
+                                      "fill": "$surface-2",
                                       "width": 128,
                                       "height": 76
+                                    },
+                                    {
+                                      "type": "icon",
+                                      "id": "fvcQZ",
+                                      "layoutPosition": "absolute",
+                                      "x": 52,
+                                      "y": 26,
+                                      "name": "methodGlyph",
+                                      "width": 24,
+                                      "height": 24,
+                                      "icon": "cooking-pot",
+                                      "library": "lucide",
+                                      "fill": "$accent"
                                     }
                                   ]
                                 },
@@ -26303,7 +26688,7 @@
                       "type": "frame",
                       "id": "EO2OL",
                       "x": 484,
-                      "y": 1072.91,
+                      "y": 1120.91,
                       "name": "div",
                       "context": "Xo - div",
                       "width": 218,
@@ -26766,7 +27151,7 @@
                       "type": "frame",
                       "id": "VjixC",
                       "x": 0,
-                      "y": 1406.06,
+                      "y": 1454.06,
                       "name": "div",
                       "context": "div",
                       "width": "fill_container(702)",
@@ -27289,7 +27674,7 @@
                       "context": "Yo - section",
                       "clip": true,
                       "width": "fill_container(702)",
-                      "height": 354.72,
+                      "height": 402.72,
                       "fill": "$surface-3",
                       "cornerRadius": 28,
                       "layout": "none",
@@ -27302,7 +27687,7 @@
                           "y": 0,
                           "name": "Icon",
                           "width": "fill_container(702)",
-                          "height": 354.72
+                          "height": 402.72
                         },
                         {
                           "type": "frame",
@@ -27312,7 +27697,7 @@
                           "name": "div",
                           "context": "div",
                           "width": 292.5,
-                          "height": 354.72,
+                          "height": 402.72,
                           "layout": "none",
                           "children": [
                             {
@@ -27322,6 +27707,7 @@
                               "y": 0,
                               "name": "img",
                               "context": "img",
+                              "enabled": false,
                               "fill": {
                                 "type": "image",
                                 "enabled": true,
@@ -27341,7 +27727,7 @@
                           "name": "div",
                           "context": "div",
                           "width": 409.5,
-                          "height": 354.72,
+                          "height": 402.72,
                           "layout": "none",
                           "children": [
                             {
@@ -27475,6 +27861,64 @@
                                       "fontFamily": "Inter",
                                       "fontSize": 16,
                                       "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "rChFf",
+                                  "name": "Serving Picker",
+                                  "width": "fill_container",
+                                  "gap": 8,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "krHMJ",
+                                      "name": "servingLabel",
+                                      "fill": "$text-primary",
+                                      "content": "Cooking for",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 13,
+                                      "fontWeight": "600"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "zQV5E",
+                                      "name": "servingSelect",
+                                      "fill": "$surface-1",
+                                      "cornerRadius": "$radius-sm",
+                                      "stroke": "$border-strong",
+                                      "strokeWidth": 1,
+                                      "strokeAlignment": "inner",
+                                      "gap": 6,
+                                      "padding": [
+                                        10,
+                                        7
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "nebWk",
+                                          "name": "servingValue",
+                                          "fill": "$text-primary",
+                                          "content": "2 people",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 13,
+                                          "fontWeight": "500"
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "FFJfD",
+                                          "name": "servingChevron",
+                                          "width": 13,
+                                          "height": 13,
+                                          "icon": "chevron-down",
+                                          "library": "lucide",
+                                          "fill": "$text-secondary"
+                                        }
+                                      ]
                                     }
                                   ]
                                 },
@@ -27773,7 +28217,7 @@
       },
       "clip": true,
       "width": 360,
-      "height": 844,
+      "height": 892,
       "fill": "$bg",
       "layout": "vertical",
       "children": [
@@ -27814,7 +28258,7 @@
                       "name": "div",
                       "context": "div",
                       "width": "fill_container",
-                      "height": 2074.47,
+                      "height": 2122.47,
                       "layout": "vertical",
                       "gap": 24,
                       "children": [
@@ -27838,7 +28282,7 @@
                               "y": 0,
                               "name": "Icon",
                               "width": "fill_container(324)",
-                              "height": 378.91
+                              "height": 426.91
                             },
                             {
                               "type": "frame",
@@ -27846,7 +28290,7 @@
                               "name": "div",
                               "context": "div",
                               "width": "fill_container",
-                              "height": 378.91,
+                              "height": 426.91,
                               "layout": "none",
                               "children": [
                                 {
@@ -27982,6 +28426,64 @@
                                           "fontFamily": "Inter",
                                           "fontSize": 16,
                                           "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "J5TfyP",
+                                      "name": "Serving Picker",
+                                      "width": "fill_container",
+                                      "gap": 8,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "A5lv5Y",
+                                          "name": "servingLabel",
+                                          "fill": "$text-primary",
+                                          "content": "Cooking for",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 13,
+                                          "fontWeight": "600"
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "LllL5",
+                                          "name": "servingSelect",
+                                          "fill": "$surface-1",
+                                          "cornerRadius": "$radius-sm",
+                                          "stroke": "$border-strong",
+                                          "strokeWidth": 1,
+                                          "strokeAlignment": "inner",
+                                          "gap": 6,
+                                          "padding": [
+                                            10,
+                                            7
+                                          ],
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "JqdLY",
+                                              "name": "servingValue",
+                                              "fill": "$text-primary",
+                                              "content": "2 people",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "500"
+                                            },
+                                            {
+                                              "type": "icon",
+                                              "id": "mAVWb",
+                                              "name": "servingChevron",
+                                              "width": 13,
+                                              "height": 13,
+                                              "icon": "chevron-down",
+                                              "library": "lucide",
+                                              "fill": "$text-secondary"
+                                            }
+                                          ]
                                         }
                                       ]
                                     },
@@ -28327,14 +28829,22 @@
                                           "id": "xb3jS",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/f0b0c698f5a19553.jpg",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 100,
                                           "height": 120
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "YgxJj",
+                                          "layoutPosition": "absolute",
+                                          "x": 35,
+                                          "y": 45,
+                                          "name": "methodGlyph",
+                                          "width": 30,
+                                          "height": 30,
+                                          "icon": "cooking-pot",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -28454,14 +28964,22 @@
                                           "id": "OXDxo",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/82d03c44b6835c68.png",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 100,
                                           "height": 120
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "v8Hpb0",
+                                          "layoutPosition": "absolute",
+                                          "x": 35,
+                                          "y": 45,
+                                          "name": "methodGlyph",
+                                          "width": 30,
+                                          "height": 30,
+                                          "icon": "microwave",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -28581,14 +29099,22 @@
                                           "id": "TSvcM",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/ef96d4cdfb0c4095.jpg",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 100,
                                           "height": 120
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "Q6qIzI",
+                                          "layoutPosition": "absolute",
+                                          "x": 35,
+                                          "y": 45,
+                                          "name": "methodGlyph",
+                                          "width": 30,
+                                          "height": 30,
+                                          "icon": "cooking-pot",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -29066,14 +29592,22 @@
                                           "id": "DTaBE",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/f0b0c698f5a19553.jpg",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 128,
                                           "height": 76
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "GWgZd",
+                                          "layoutPosition": "absolute",
+                                          "x": 52,
+                                          "y": 26,
+                                          "name": "methodGlyph",
+                                          "width": 24,
+                                          "height": 24,
+                                          "icon": "cooking-pot",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -29151,14 +29685,22 @@
                                           "id": "k56Gw",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/82d03c44b6835c68.png",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 128,
                                           "height": 76
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "AdL1Q",
+                                          "layoutPosition": "absolute",
+                                          "x": 52,
+                                          "y": 26,
+                                          "name": "methodGlyph",
+                                          "width": 24,
+                                          "height": 24,
+                                          "icon": "microwave",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -29236,14 +29778,22 @@
                                           "id": "Gj8X2",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/ef96d4cdfb0c4095.jpg",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 128,
                                           "height": 76
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "R6AIiC",
+                                          "layoutPosition": "absolute",
+                                          "x": 52,
+                                          "y": 26,
+                                          "name": "methodGlyph",
+                                          "width": 24,
+                                          "height": 24,
+                                          "icon": "cooking-pot",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -30833,7 +31383,7 @@
       },
       "clip": true,
       "width": 360,
-      "height": 844,
+      "height": 892,
       "fill": "$bg",
       "layout": "vertical",
       "children": [
@@ -30874,7 +31424,7 @@
                       "name": "div",
                       "context": "div",
                       "width": "fill_container",
-                      "height": 2074.47,
+                      "height": 2122.47,
                       "layout": "vertical",
                       "gap": 24,
                       "children": [
@@ -30898,7 +31448,7 @@
                               "y": 0,
                               "name": "Icon",
                               "width": "fill_container(324)",
-                              "height": 378.91
+                              "height": 426.91
                             },
                             {
                               "type": "frame",
@@ -30906,7 +31456,7 @@
                               "name": "div",
                               "context": "div",
                               "width": "fill_container",
-                              "height": 378.91,
+                              "height": 426.91,
                               "layout": "none",
                               "children": [
                                 {
@@ -31042,6 +31592,64 @@
                                           "fontFamily": "Inter",
                                           "fontSize": 16,
                                           "fontWeight": "normal"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "M39ZVl",
+                                      "name": "Serving Picker",
+                                      "width": "fill_container",
+                                      "gap": 8,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "XKzon",
+                                          "name": "servingLabel",
+                                          "fill": "$text-primary",
+                                          "content": "Cooking for",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 13,
+                                          "fontWeight": "600"
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "XLkkQ",
+                                          "name": "servingSelect",
+                                          "fill": "$surface-1",
+                                          "cornerRadius": "$radius-sm",
+                                          "stroke": "$border-strong",
+                                          "strokeWidth": 1,
+                                          "strokeAlignment": "inner",
+                                          "gap": 6,
+                                          "padding": [
+                                            10,
+                                            7
+                                          ],
+                                          "alignItems": "center",
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "i0ty8",
+                                              "name": "servingValue",
+                                              "fill": "$text-primary",
+                                              "content": "2 people",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 13,
+                                              "fontWeight": "500"
+                                            },
+                                            {
+                                              "type": "icon",
+                                              "id": "ruVAN",
+                                              "name": "servingChevron",
+                                              "width": 13,
+                                              "height": 13,
+                                              "icon": "chevron-down",
+                                              "library": "lucide",
+                                              "fill": "$text-secondary"
+                                            }
+                                          ]
                                         }
                                       ]
                                     },
@@ -31387,14 +31995,22 @@
                                           "id": "M1n2n",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/f0b0c698f5a19553.jpg",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 100,
                                           "height": 120
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "T3pjvH",
+                                          "layoutPosition": "absolute",
+                                          "x": 35,
+                                          "y": 45,
+                                          "name": "methodGlyph",
+                                          "width": 30,
+                                          "height": 30,
+                                          "icon": "cooking-pot",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -31514,14 +32130,22 @@
                                           "id": "e7xgVJ",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/82d03c44b6835c68.png",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 100,
                                           "height": 120
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "s56Mwt",
+                                          "layoutPosition": "absolute",
+                                          "x": 35,
+                                          "y": 45,
+                                          "name": "methodGlyph",
+                                          "width": 30,
+                                          "height": 30,
+                                          "icon": "microwave",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -31641,14 +32265,22 @@
                                           "id": "YEIjv",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/ef96d4cdfb0c4095.jpg",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 100,
                                           "height": 120
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "P2josD",
+                                          "layoutPosition": "absolute",
+                                          "x": 35,
+                                          "y": 45,
+                                          "name": "methodGlyph",
+                                          "width": 30,
+                                          "height": 30,
+                                          "icon": "cooking-pot",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -32126,14 +32758,22 @@
                                           "id": "L8MvA",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/f0b0c698f5a19553.jpg",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 128,
                                           "height": 76
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "N1gtt",
+                                          "layoutPosition": "absolute",
+                                          "x": 52,
+                                          "y": 26,
+                                          "name": "methodGlyph",
+                                          "width": 24,
+                                          "height": 24,
+                                          "icon": "cooking-pot",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -32211,14 +32851,22 @@
                                           "id": "QXuOJ",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/82d03c44b6835c68.png",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 128,
                                           "height": 76
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "b0xkw",
+                                          "layoutPosition": "absolute",
+                                          "x": 52,
+                                          "y": 26,
+                                          "name": "methodGlyph",
+                                          "width": 24,
+                                          "height": 24,
+                                          "icon": "microwave",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -32296,14 +32944,22 @@
                                           "id": "euAf3",
                                           "name": "img",
                                           "context": "img",
-                                          "fill": {
-                                            "type": "image",
-                                            "enabled": true,
-                                            "url": "images/localhost/ef96d4cdfb0c4095.jpg",
-                                            "mode": "fill"
-                                          },
+                                          "fill": "$surface-2",
                                           "width": 128,
                                           "height": 76
+                                        },
+                                        {
+                                          "type": "icon",
+                                          "id": "Qr6x7",
+                                          "layoutPosition": "absolute",
+                                          "x": 52,
+                                          "y": 26,
+                                          "name": "methodGlyph",
+                                          "width": 24,
+                                          "height": 24,
+                                          "icon": "cooking-pot",
+                                          "library": "lucide",
+                                          "fill": "$accent"
                                         }
                                       ]
                                     },
@@ -33891,7 +34547,6 @@
         "mode": "light"
       },
       "width": 1300,
-      "height": 820,
       "fill": "$bg",
       "layout": "vertical",
       "gap": 24,
@@ -34241,6 +34896,330 @@
                   "fontFamily": "Inter",
                   "fontSize": 14,
                   "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "h4Sj7A",
+          "name": "Section heading 2",
+          "fill": "$text-primary",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "Delivery, cooking and empty states",
+          "lineHeight": 1.5,
+          "fontFamily": "$font-display",
+          "fontSize": 28,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "jaVfU",
+          "name": "Delivery and cook states",
+          "width": "fill_container",
+          "gap": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "xUXEH",
+              "name": "Delivery confirm",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": "$radius-lg",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "c7HGvc",
+                  "name": "stateCaption",
+                  "fill": "$text-tertiary",
+                  "content": "MEAL CARD · CONFIRM DELIVERY NIGHT",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "text",
+                  "id": "ln0gK",
+                  "name": "confirmText",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Use this week's delivery night on this meal? You'll get links to delivery services and place the order yourself. This can't be undone.",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "nxeLR",
+                  "name": "confirmActions",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "id": "zprQj",
+                      "type": "ref",
+                      "ref": "RTWdT",
+                      "name": "useDeliveryBtn",
+                      "descendants": {
+                        "wgc0e": {
+                          "icon": "truck"
+                        },
+                        "o4QqwP": {
+                          "content": "Use delivery night"
+                        }
+                      }
+                    },
+                    {
+                      "id": "erH73",
+                      "type": "ref",
+                      "ref": "CCrQi",
+                      "name": "cancelBtn",
+                      "descendants": {
+                        "j2jFf6": {
+                          "enabled": false
+                        },
+                        "t0Rs2": {
+                          "content": "Cancel"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "J6f8o",
+              "name": "Delivery night",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": "$radius-lg",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "JUJ50",
+                  "name": "stateCaption",
+                  "fill": "$text-tertiary",
+                  "content": "MEAL CARD · AFTER CONFIRMING",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "frame",
+                  "id": "CvZ8X",
+                  "name": "deliveryBadge",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "K8WNG",
+                      "name": "truck",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "truck",
+                      "library": "lucide",
+                      "fill": "$success"
+                    },
+                    {
+                      "type": "text",
+                      "id": "RKvhs",
+                      "name": "badgeLabel",
+                      "fill": "$success",
+                      "content": "Delivery night",
+                      "lineHeight": 1.45,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "urGJn",
+                  "name": "notOrderedHint",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Nothing has been ordered yet — these search results may help you place the order yourself.",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "VNZG7",
+                  "name": "deliveryLink",
+                  "fill": "$accent",
+                  "content": "•  Frittata Near Me | Grubhub ↗",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "VhVJ2",
+                  "name": "deliveryLink",
+                  "fill": "$accent",
+                  "content": "•  Frittata delivery | DoorDash ↗",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "X8axc",
+                  "name": "deliveryLink",
+                  "fill": "$accent",
+                  "content": "•  Frittatas Restaurant | Uber Eats ↗",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "DhxIS",
+              "name": "Cook empty state",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": "$radius-lg",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "XVvoK",
+                  "name": "stateCaption",
+                  "fill": "$text-tertiary",
+                  "content": "COOK · BEFORE ANY REQUEST",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "frame",
+                  "id": "HspIl",
+                  "name": "empty",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": [
+                    12,
+                    18
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "MsJhq",
+                      "name": "emptyIcon",
+                      "width": 40,
+                      "height": 40,
+                      "fill": "$accent-dim",
+                      "cornerRadius": 12,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ByFnl",
+                          "name": "sparkles",
+                          "width": 20,
+                          "height": 20,
+                          "icon": "sparkles",
+                          "library": "lucide",
+                          "fill": "$accent"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "A7syN",
+                      "name": "emptyTitle",
+                      "fill": "$text-primary",
+                      "content": "No ideas yet",
+                      "lineHeight": 1.45,
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "AczlI",
+                      "name": "emptyMessage",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Type a craving above, or hit “Surprise me” to get suggestions from what's in your fridge.",
+                      "lineHeight": 1.45,
+                      "textAlign": "center",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "ymc1M",
+                  "name": "stateCaption",
+                  "fill": "$text-tertiary",
+                  "content": "TOAST · AFTER COOKING",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "id": "TitKN",
+                  "type": "ref",
+                  "ref": "sKkYV",
+                  "name": "Toast/Not subtracted",
+                  "fill": "$info-dim",
+                  "stroke": "$info-line",
+                  "descendants": {
+                    "fyNCA": {
+                      "icon": "info",
+                      "fill": "$info"
+                    },
+                    "u9Aydz": {
+                      "content": "Not subtracted — update in your fridge: rice, olive oil",
+                      "fill": "$info"
+                    }
+                  }
                 }
               ]
             }

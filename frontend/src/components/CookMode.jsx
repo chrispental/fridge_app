@@ -9,7 +9,7 @@ import { useAuth } from '../auth/useAuth.js'
 import { kitchenKey, readStored, writeStored } from '../utils/storage.js'
 import { parseStepDurations, MAX_TIMER_SECONDS } from '../utils/parseStepDuration.js'
 import StepSafety from './StepSafety.jsx'
-import { formatQty } from '../utils/quantity.js'
+import { formatAmount } from '../utils/quantity.js'
 
 const CONFETTI_COLORS = ['#f5a524', '#ffbc52', '#4ade80', '#60a5fa', '#f472b6', '#faf7f3']
 
@@ -225,7 +225,7 @@ export default function CookMode({ meal, onClose, onCook }) {
                         onClick={() => toggleChecked(i)}
                       >
                         {on ? '✓' : ing.stock_status === 'check' ? '?' : ing.in_stock ? '✓' : '+'} {ing.name}
-                        {ing.quantity != null ? ` (${formatQty(ing.quantity)} ${ing.unit})` : ''}
+                        {ing.quantity != null ? ` (${formatAmount(ing.quantity, ing.unit)})` : ''}
                       </button>
                     )
                   })}

@@ -63,3 +63,22 @@ it('judges low stock by unit', async () => {
   expect(isLowStock({ quantity: 1, unit: 'unknown' })).toBe(false)
   expect(isLowStock({ quantity: null, unit: 'jar' })).toBe(false)
 })
+
+it('pluralises spelled-out units and leaves abbreviations alone', async () => {
+  const { formatAmount } = await import('../src/utils/quantity.js')
+  expect(formatAmount(2, 'piece')).toBe('2 pieces')
+  expect(formatAmount(1, 'piece')).toBe('1 piece')
+  expect(formatAmount(0.5, 'bunch')).toBe('0.5 bunches')
+  expect(formatAmount(10 / 12, 'dozen')).toBe('0.83 dozen')
+  expect(formatAmount(2, 'lb')).toBe('2 lb')
+  expect(formatAmount(3, 'unknown')).toBe('3')
+})
+
+it('matches category icons regardless of plural or case', async () => {
+  const { default: ItemTile } = await import('../src/components/ItemTile.jsx')
+  const icon = (category) => render(<ItemTile item={{ name: 'x', quantity: 2, unit: 'lb', category }} onEdit={() => {}} />)
+    .container.querySelector('.tile-photo svg').getAttribute('class')
+  expect(icon('Grains')).toBe(icon('grain'))
+  expect(icon('Vegetables')).toBe(icon('produce'))
+  expect(icon('Grains')).not.toBe(icon('spreads'))
+})
