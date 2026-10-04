@@ -176,6 +176,10 @@ plan shopping and imports share `remaining_plan_meals()` to exclude cooked and
 ordered meals. Generated batches use a refreshable query cache, retaining order
 and cooked cards while stock changes. Plain cooking water is always a staple;
 specialty waters still require stock.
+Cooking progress and the active-recipe reminder are scoped by user in browser
+storage; the reminder fetches the owned recipe and validates its saved stamp.
+Shopping-row editing uses the existing owned PATCH endpoint and preserves its
+checked state and import source.
 allergen aliases live in `services/allergens.py`. `ActionReceipt` deduplicates imports,
 cooking requests, and plan submissions. `/api/plans` creates a durable queued job;
 `services/plan_jobs.py` processes it in the single shipped Uvicorn process. Preserve

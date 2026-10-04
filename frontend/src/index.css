@@ -1232,6 +1232,11 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .shop-row.checked { opacity: 0.55; }
 .shop-row.checked .shop-row-name { text-decoration: line-through; }
 .shop-row-del { flex: none; padding: 6px 8px; }
+.shop-row-edit { flex: none; padding: 6px 8px; }
+.shop-row-main { min-width: 0; flex-wrap: wrap; }
+.shop-row-name { min-width: 0; }
+.resume-cooking { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.resume-cooking .btn { white-space: normal; text-align: left; }
 
 /* ---- Insights bars ---- */
 .bar-list { display: flex; flex-direction: column; gap: 9px; }

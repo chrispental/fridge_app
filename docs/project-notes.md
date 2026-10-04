@@ -24,6 +24,11 @@ code and PR state before acting; update or remove notes as decisions change.
   meals and delivery nights. An individual recipe can still be imported for an
   intentional repeat. Ordinary cooking water needs no purchase; specialty waters
   such as coconut, bottled, and sparkling water remain inventory items.
+- **Shopping edits:** Quantity/unit edits represent the amount purchased, which
+  moves into inventory. A blank quantity stays unknown; editing preserves whether
+  the item is checked and where it was imported from.
+- **Cooking recovery:** Surface the latest unfinished cooking session throughout
+  the app. Dismissing its reminder keeps the recipe's saved steps and timers.
 
 ## Previously recorded environment context
 

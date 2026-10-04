@@ -17,6 +17,7 @@ import ShoppingListPage from './pages/ShoppingListPage.jsx'
 import InsightsPage from './pages/InsightsPage.jsx'
 import QueryError from './components/QueryError.jsx'
 import CookingProvider from './components/CookingProvider.jsx'
+import ResumeCooking from './components/ResumeCooking.jsx'
 
 const Skeleton = () => (
   <div className="app">
@@ -70,6 +71,7 @@ export default function App() {
       <Nav />
       <main className="content">
         {status.isError && <div className="banner error" role="status">Connection interrupted. Showing your saved kitchen.</div>}
+        <ResumeCooking />
         <div className="page-enter" key={location.pathname}>
           <Routes>
             <Route path="/" element={<Home />} />

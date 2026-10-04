@@ -2172,6 +2172,16 @@
             },
             {
               "type": "icon",
+              "id": "gN4YQ",
+              "name": "Edit purchased amount",
+              "width": 15,
+              "height": 15,
+              "icon": "pencil",
+              "library": "lucide",
+              "fill": "$text-tertiary"
+            },
+            {
+              "type": "icon",
               "id": "i124CD",
               "name": "delete",
               "width": 15,
@@ -35220,6 +35230,334 @@
                       "fill": "$info"
                     }
                   }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "urDEy",
+          "name": "Kitchen flow recovery",
+          "width": "fill_container",
+          "gap": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "XSGBE",
+              "name": "Edit shopping item",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 20,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "DFXAJ",
+                  "name": "Edit shopping item",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Edit shopping item",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "BFURz",
+                  "name": "Enter the amount you plan to buy or actually bought. This amount will be added to inventory.",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Enter the amount you plan to buy or actually bought. This amount will be added to inventory.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "d0BWci",
+                  "name": "Name",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Name",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "Ur43G",
+                  "name": "Butter input",
+                  "width": "fill_container",
+                  "fill": "$surface-2",
+                  "cornerRadius": 10,
+                  "stroke": "$border-strong",
+                  "strokeWidth": 1,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "fPjPL",
+                      "name": "Input value",
+                      "fill": "$text-primary",
+                      "content": "Butter",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "KJRkR",
+                  "name": "Quantity                   Unit",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Quantity                   Unit",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "XeiKo",
+                  "name": "1                              lb input",
+                  "width": "fill_container",
+                  "fill": "$surface-2",
+                  "cornerRadius": 10,
+                  "stroke": "$border-strong",
+                  "strokeWidth": 1,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "uSPQv",
+                      "name": "Input value",
+                      "fill": "$text-primary",
+                      "content": "1                              lb",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "By8nE",
+                  "name": "Cancel                       Save action",
+                  "width": "fill_container",
+                  "fill": "$accent",
+                  "cornerRadius": 10,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "xlqFP",
+                      "name": "Button label",
+                      "fill": "$bg",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Cancel                       Save",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "N7FCK",
+              "name": "Filtered search with no matches",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 20,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "VmVrk",
+                  "name": "Your kitchen",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Your kitchen",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "N2Qo8y",
+                  "name": "Search: milk input",
+                  "width": "fill_container",
+                  "fill": "$surface-2",
+                  "cornerRadius": 10,
+                  "stroke": "$border-strong",
+                  "strokeWidth": 1,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bVnYu",
+                      "name": "Input value",
+                      "fill": "$text-primary",
+                      "content": "Search: milk",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "EQtCw",
+                  "name": "All 1      Fridge 1      Pantry 0",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "All 1      Fridge 1      Pantry 0",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "wOtbZ",
+                  "name": "No matches",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "No matches",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "dlTGO",
+                  "name": "Nothing in Pantry matches your search.",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Nothing in Pantry matches your search.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "NL4TI",
+                  "name": "Search all locations action",
+                  "width": "fill_container",
+                  "fill": "$accent",
+                  "cornerRadius": 10,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "s8XBP",
+                      "name": "Button label",
+                      "fill": "$bg",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Search all locations",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "vrhFe",
+              "name": "Resume cooking reminder",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 20,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Fx9pa",
+                  "name": "Resume cooking: Egg fried rice action",
+                  "width": "fill_container",
+                  "fill": "$accent",
+                  "cornerRadius": 10,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "AFWqm",
+                      "name": "Button label",
+                      "fill": "$bg",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Resume cooking: Egg fried rice",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "STh5Y",
+                  "name": "Dismiss",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Dismiss",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "fjUHO",
+                  "name": "Saved progress and running timers return after reloading.",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Saved progress and running timers return after reloading.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "IjXpG",
+                  "name": "Recipe card action: Resume cooking",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Recipe card action: Resume cooking",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 }
               ]
             }

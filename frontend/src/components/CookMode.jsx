@@ -6,7 +6,8 @@ import { TimerRing, TimerChip } from './CountdownTimer.jsx'
 import { useTimers } from './useTimers.js'
 import { useDialog } from './useDialog.js'
 import { useAuth } from '../auth/useAuth.js'
-import { kitchenKey, readStored, writeStored } from '../utils/storage.js'
+import { kitchenKey, readStored } from '../utils/storage.js'
+import { recipeStamp, saveCookProgress } from '../utils/cookingProgress.js'
 import { parseStepDurations, MAX_TIMER_SECONDS } from '../utils/parseStepDuration.js'
 import StepSafety from './StepSafety.jsx'
 import { formatAmount } from '../utils/quantity.js'
@@ -40,7 +41,7 @@ export default function CookMode({ meal, onClose, onCook }) {
   const ingredients = recipe.ingredients || []
   // Meal ids restart after a database reset or restore, so saved progress also records
   // which recipe it belongs to. Progress saved before the stamp existed is kept.
-  const stamp = `${meal.title}|${steps.length}`
+  const stamp = recipeStamp(meal)
   const [saved] = useState(() => readStored(storageKey, null))
   const stale = Boolean(saved?.meal && saved.meal !== stamp)
   const fresh = !saved || saved.complete || stale
@@ -60,8 +61,8 @@ export default function CookMode({ meal, onClose, onCook }) {
 
   const { timers, start, pause, reset, dismiss, clear } = useTimers(`${storageKey}:timers`)
   useEffect(() => {
-    writeStored(storageKey, { index, checked: [...checked], requestId: requestId.current, complete: cooked, meal: stamp })
-  }, [storageKey, index, checked, cooked, stamp])
+    saveCookProgress(session?.user?.id, { id: meal.id }, { index, checked: [...checked], requestId: requestId.current, complete: cooked, meal: stamp })
+  }, [session?.user?.id, meal.id, index, checked, cooked, stamp])
   // Timers left behind by another recipe that had this id must not attach to this one.
   useEffect(() => {
     if (stale) clear()
