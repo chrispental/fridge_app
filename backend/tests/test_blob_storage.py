@@ -107,11 +107,13 @@ def _reset_backend_cache():
 
 
 def test_backend_auto_local_by_default(monkeypatch):
+    monkeypatch.setattr(settings, "blob_backend", "auto")
     monkeypatch.setattr(settings, "supabase_url", "")
     assert isinstance(get_blob_storage(), LocalDiskStorage)
 
 
 def test_backend_auto_supabase_in_cloud_mode(monkeypatch):
+    monkeypatch.setattr(settings, "blob_backend", "auto")
     monkeypatch.setattr(settings, "supabase_url", "https://abc.supabase.co")
     monkeypatch.setattr(settings, "supabase_secret_key", "sb_secret_x")
     assert isinstance(get_blob_storage(), SupabaseStorage)
