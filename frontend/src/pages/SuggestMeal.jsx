@@ -72,7 +72,7 @@ export default function SuggestMeal() {
           <textarea
             rows={2}
             className="idea-input"
-            placeholder="What are you craving? e.g. “something with chicken & spinach”, “a cozy soup”, “quick Thai noodles”…"
+            placeholder="What are you craving? e.g. “a cozy soup”…"
             value={idea}
             onChange={(e) => setIdea(e.target.value)}
           />
@@ -92,7 +92,7 @@ export default function SuggestMeal() {
           </div>
           {delivery && (
             <p className="hint" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Truck size={14} strokeWidth={2.2} />
+              <Truck size={14} strokeWidth={2.2} style={{ flexShrink: 0 }} />
               {deliveryAvailable
                 ? 'Weekly delivery available — order one meal instead of cooking.'
                 : `Weekly delivery used — next available ${nextDeliveryDate}.`}
