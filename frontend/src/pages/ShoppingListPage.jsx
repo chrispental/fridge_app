@@ -10,6 +10,7 @@ import { toast } from '../components/toast.js'
 import {
   PageHeader, EmptyState, Skeleton, StickyActionBar,
 } from '../components/ui.jsx'
+import { formatQty } from '../utils/quantity.js'
 
 function ShopRow({ item, onToggle, onDelete }) {
   return (
@@ -23,7 +24,7 @@ function ShopRow({ item, onToggle, onDelete }) {
         <span className="shop-row-name">{item.name}</span>
         {item.quantity != null && (
           <span className="shop-row-qty">
-            {item.quantity}{item.unit !== 'unknown' ? ` ${item.unit}` : ''}
+            {formatQty(item.quantity)}{item.unit !== 'unknown' ? ` ${item.unit}` : ''}
           </span>
         )}
         {item.source !== 'manual' && (

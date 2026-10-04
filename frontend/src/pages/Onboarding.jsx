@@ -34,7 +34,11 @@ export default function Onboarding() {
             initial={prefsQ.data || {}}
             compact
             submitLabel="Get started"
-            onSubmit={(body) => updateMutation.mutateAsync(body)}
+            onSubmit={async (body) => {
+              const saved = await updateMutation.mutateAsync(body)
+              window.scrollTo(0, 0) // Home replaces this long form in place
+              return saved
+            }}
           />
         </div>
       </div>
