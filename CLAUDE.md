@@ -169,8 +169,7 @@ button (gated on the weekly quota fetched by the page); the location field lives
 - `design.pen` is a Pencil design file — open it with the Pencil tools, never as text.
   **Keep it in sync with the frontend:** whenever you change UI in `frontend/src`, make
   the matching update in `design.pen` (components and the affected screens) in the same
-  change unless the user explicitly defers it. See `docs/project-notes.md` for the
-  agreed September 2026 follow-up.
+  change unless the user explicitly defers it.
 
 **Reliability:** ingredient identity/quantity allocation is shared in `services/ingredients.py`;
 allergen aliases live in `services/allergens.py`. `ActionReceipt` deduplicates imports,

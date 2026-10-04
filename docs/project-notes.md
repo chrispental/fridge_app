@@ -21,15 +21,6 @@ code and PR state before acting; update or remove notes as decisions change.
   bell pepper appear available; butter must not cover peanut butter. Unknown
   quantities or incompatible units require checking, not an “in stock” claim.
 
-## Follow-up from September 18, 2026
-
-- Sync `design.pen` with the serving controls, focused cooking warnings, and
-  icon-based meal/inventory views introduced in
-  [PR #41](https://github.com/chrispental/fridge_app/pull/41).
-  The user explicitly deferred this sync after the Pen/Pencil connector could not
-  read the design. Reconnect and verify the existing document loads before editing.
-  Remove this follow-up once the design is synced.
-
 ## Previously recorded environment context
 
 - A September 1, 2026 project memory records Supabase's free plan and an accepted
