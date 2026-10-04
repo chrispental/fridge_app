@@ -96,6 +96,7 @@ export const api = {
     request(`/inventory/extract/${batchId}/confirm`, json('POST', { items })),
 
   // Meals
+  getMeal: (id) => request(`/meals/${id}`),
   suggestMeals: ({ count = 5, idea = null, servings = null } = {}) =>
     request('/meals/suggest', json('POST', { count, idea, servings })),
   getMeals: ({ status, q, limit, offset } = {}) => {

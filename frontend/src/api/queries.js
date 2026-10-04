@@ -50,6 +50,16 @@ export const useMeals = (status) =>
     queryFn: () => api.getMeals({ status }),
   })
 
+// Preserve the generated batch's order and cooked cards, but refresh its stock
+// and status through the same cache invalidation as history and plans.
+export const useMealBatch = (meals) =>
+  useQuery({
+    queryKey: ['meals', 'batch', meals?.map((meal) => meal.id)],
+    queryFn: () => Promise.all(meals.map((meal) => api.getMeal(meal.id))),
+    initialData: meals,
+    enabled: meals != null,
+  })
+
 const HISTORY_PAGE = 20
 
 export const useInfiniteMeals = ({ status, q }) =>
@@ -279,6 +289,7 @@ export function useOrderDelivery() {
     onSuccess: (updated) => {
       patchMealCaches(queryClient, updated.id, updated)
       queryClient.invalidateQueries({ queryKey: ['meals', 'delivery-status'] })
+      queryClient.invalidateQueries({ queryKey: ['plans'] })
     },
     meta: { silent: true }, // MealCard shows the error inline next to the button
   })

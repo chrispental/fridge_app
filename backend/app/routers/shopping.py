@@ -8,7 +8,7 @@ from ..auth import CurrentUser
 from ..database import get_db
 from ..models import utcnow
 from ..services.scope import get_owned, inventory_for, staples_for
-from ..services.shopping_list import build_shopping_list, merge_into_list, missing_for_meal
+from ..services.shopping_list import build_shopping_list, merge_into_list, missing_for_meal, remaining_plan_meals
 from ..services.units import normalize_unit
 from ..services.actions import claim_action
 
@@ -142,7 +142,7 @@ def import_plan(plan_id: int, user: CurrentUser, db: Session = Depends(get_db),
     plan = get_owned(db, models.MealPlan, plan_id, user.id, label="Plan")
     if plan.status in ("queued", "generating"):
         raise HTTPException(409, "Wait for planning to finish before importing its shopping list.")
-    meals = [e.meal for e in plan.entries]
+    meals = remaining_plan_meals(plan)
     to_buy = build_shopping_list(
         meals, inventory_for(db, user.id), staples_for(db, user.id)
     )["to_buy"]

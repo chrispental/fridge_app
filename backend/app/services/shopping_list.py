@@ -20,6 +20,11 @@ def _matches_inventory(name: str, inv_names: list[str]) -> bool:
     return any(same_ingredient(name, inv) for inv in inv_names)
 
 
+def remaining_plan_meals(plan):
+    """Only uncooked meals still need groceries; delivery nights need none."""
+    return [entry.meal for entry in plan.entries if entry.meal.status == "suggested"]
+
+
 def build_shopping_list(meals, inventory, staples: list[str]) -> dict:
     """Aggregate plan ingredients into {to_buy, have, staples_assumed}.
 

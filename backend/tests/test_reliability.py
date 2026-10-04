@@ -29,6 +29,42 @@ def recipe(name="rice", qty=4, unit="cup"):
     return {"ingredients": [{"name": name, "quantity": qty, "unit": unit, "in_stock": True}], "steps": ["Cook."]}
 
 
+def test_plan_only_shops_for_remaining_meals_after_cooking(db):
+    stock = models.InventoryItem(user_id=LOCAL_USER.id, name="eggs", quantity=2, unit="piece")
+    planned = [models.Meal(user_id=LOCAL_USER.id, title=f"Eggs {i}", title_normalized=f"eggs {i}",
+                           recipe_json=recipe("eggs", 2, "piece")) for i in range(3)]
+    plan = models.MealPlan(user_id=LOCAL_USER.id)
+    plan.entries = [models.MealPlanEntry(slot_index=i, meal=m) for i, m in enumerate(planned)]
+    db.add_all([stock, plan]); db.commit()
+    # A delivery night needs no groceries either.
+    planned[2].status = "ordered"
+    db.commit()
+    meals.cook_meal(planned[0].id, schemas.CookRequest(decrement_inventory=True), LOCAL_USER, db)
+    assert plans.shopping_list(plan.id, LOCAL_USER, db)["to_buy"] == [
+        {"name": "eggs", "quantity": 2, "unit": "piece"}]
+    imported = shopping.import_plan(plan.id, LOCAL_USER, db)
+    assert [(i.name, i.quantity) for i in imported] == [("eggs", 2)]
+    assert shopping.import_plan(plan.id, LOCAL_USER, db) == []
+    with pytest.raises(HTTPException) as exc:
+        plans.shopping_list(plan.id, OTHER_USER, db)
+    assert exc.value.status_code == 404
+    meals.cook_meal(planned[1].id, schemas.CookRequest(decrement_inventory=False), LOCAL_USER, db)
+    assert plans.shopping_list(plan.id, LOCAL_USER, db)["to_buy"] == []
+    # An explicit second cook can still import the individual recipe.
+    assert shopping.import_meal(planned[0].id, LOCAL_USER, db)[0].quantity == 4
+
+
+@pytest.mark.parametrize("name", ["water", "tap water", "cold water", "boiling water"])
+def test_cooking_water_needs_no_purchase(name):
+    assert build_shopping_list([NS(recipe_json=recipe(name))], [], [])["to_buy"] == []
+    assert annotate_recipe(recipe(name), [], [])["ingredients"][0]["in_stock"]
+
+
+@pytest.mark.parametrize("name", ["coconut water", "sparkling water", "bottled water", "rose water", "water chestnuts"])
+def test_water_products_still_need_stock(name):
+    assert build_shopping_list([NS(recipe_json=recipe(name))], [], [])["to_buy"][0]["name"] == name
+
+
 @pytest.mark.parametrize("a,b", [("ham", "graham crackers"), ("butter", "peanut butter"), ("milk", "almond milk"), ("chicken", "chicken broth"), ("rice", "cooked rice")])
 def test_distinct_ingredients_do_not_share_stock(a, b):
     assert not same_ingredient(a, b)

@@ -21,7 +21,7 @@ function ShoppingList({ data, onAddAll, adding, added, planning }) {
 
   return (
     <div className="shopping-card">
-      <h2>🛒 Shopping list</h2>
+      <h2>🛒 Shopping for remaining meals</h2>
 
       {staples_assumed.length > 0 && (
         <div className="banner info">

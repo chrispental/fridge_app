@@ -172,6 +172,10 @@ button (gated on the weekly quota fetched by the page); the location field lives
   change unless the user explicitly defers it.
 
 **Reliability:** ingredient identity/quantity allocation is shared in `services/ingredients.py`;
+plan shopping and imports share `remaining_plan_meals()` to exclude cooked and
+ordered meals. Generated batches use a refreshable query cache, retaining order
+and cooked cards while stock changes. Plain cooking water is always a staple;
+specialty waters still require stock.
 allergen aliases live in `services/allergens.py`. `ActionReceipt` deduplicates imports,
 cooking requests, and plan submissions. `/api/plans` creates a durable queued job;
 `services/plan_jobs.py` processes it in the single shipped Uvicorn process. Preserve

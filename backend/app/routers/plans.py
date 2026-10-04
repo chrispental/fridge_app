@@ -11,7 +11,7 @@ from ..database import get_db
 from ..services.meal_engine import swap_slot
 from ..services.actions import claim_action
 from ..services.scope import get_owned, inventory_for, staples_for
-from ..services.shopping_list import annotate_recipe, build_shopping_list
+from ..services.shopping_list import annotate_recipe, build_shopping_list, remaining_plan_meals
 
 router = APIRouter(prefix="/api/plans", tags=["plans"])
 
@@ -95,7 +95,7 @@ def current(user: CurrentUser, db: Session = Depends(get_db)):
 @router.get("/{plan_id}/shopping-list", response_model=schemas.ShoppingListOut)
 def shopping_list(plan_id: int, user: CurrentUser, db: Session = Depends(get_db)):
     plan = _owned_plan(db, plan_id, user.id)
-    meals = [e.meal for e in plan.entries]
+    meals = remaining_plan_meals(plan)
     return build_shopping_list(meals, inventory_for(db, user.id), staples_for(db, user.id))
 
 
