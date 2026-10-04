@@ -6,7 +6,6 @@ export function stepSafety(steps, index) {
   const step = heatText(steps[index] || '')
   const prior = heatText(steps.slice(0, index).join(' '))
   const heat = /\b(hot|heat|heated|heating|preheat|fry|frying|sear|searing|sauté|saute|bake|baking|roast|roasting|broil|grill|boil|simmer)\w*\b/
-  const cookware = /\b(pan|skillet|pot|tray|baking sheet|dish|handle|oven|grill)\b/
   const hotContext = heat.test(step) || heat.test(prior)
   // Ordinary heating, simmering and stirring don't need an extra banner.
   // Keep one concise cue for the handling action, unless the step covers it.
@@ -14,15 +13,19 @@ export function stepSafety(steps, index) {
       !/\b(away from|slowly|carefully|steam can burn)\b/.test(step)) {
     return ['Watch for steam: open lids away from your face and drain hot liquid slowly.']
   }
+  // A spoonful of oil for sautéing or stir-frying doesn't splash like a pan of frying oil.
+  const spoonfulOfOil = /\b(tsp|teaspoons?|tbsp|tablespoons?)\s+(?:of\s+)?(?:[a-z]+\s+){0,2}oil\b/.test(step)
   const addingToHotOil = /\b(add|lower|place|drop)\w*\b/.test(step) &&
-    /\boil\b/.test(step) && /\b(heat|hot|sizzl)\w*\b/.test(step)
-  if ((/\b(fry|frying|sauté|saute|sear|searing)\w*\b/.test(step) || addingToHotOil) &&
+    /\boil\b/.test(step) && /\b(heat|hot|sizzl)\w*\b/.test(step) && !spoonfulOfOil
+  const frying = /\b(fry|frying|fried|sear|searing)\b/.test(step.replace(/\bstir[- ]?fr\w*/g, '')) && !spoonfulOfOil
+  if ((frying || addingToHotOil) &&
       !/\b(gently|carefully|splatter|splash)\w*\b/.test(step)) {
     return ['Lower food gently into hot oil to avoid splashes.']
   }
-  const handling = /\b(remove|take|lift|move|carry|transfer)\w*\b/
+  // The handled thing must be the cookware itself, not food taken out of it.
+  const handlingCookware = /\b(remove|take|lift|move|carry|transfer)\w*\b[^.;]{0,40}?\b(pan|skillet|pot|tray|baking sheet|dish|oven)\b/
   const ovenTurning = /\b(flip|turn)\w*\b/.test(step) && /\b(oven|roast|bake)\w*\b/.test(step + ' ' + prior)
-  if (((handling.test(step) && cookware.test(step)) || ovenTurning) && hotContext &&
+  if ((handlingCookware.test(step) || ovenTurning) && hotContext &&
       !/\b(mitts?|potholders?|pot holders?|heat.resistant gloves?)\b/.test(step) &&
       !/\b(remove|take)\w*\s+(?:the\s+)?(?:pan|pot|skillet)\s+(?:from|off)\s+(?:the\s+)?heat\b/.test(step)) {
     return ['Use dry oven mitts to handle hot cookware; handles stay hot after cooking.']

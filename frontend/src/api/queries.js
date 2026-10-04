@@ -237,6 +237,11 @@ export function useCookMeal() {
       restoreSnapshots(queryClient, ctx.snapshots)
       toast.error(e.message)
     },
+    onSuccess: (meal) => {
+      if (meal?.not_subtracted?.length) {
+        toast.info(`Not subtracted — update in your fridge: ${meal.not_subtracted.join(', ')}`)
+      }
+    },
     onSettled: () => {
       invalidateStock(queryClient)
     },

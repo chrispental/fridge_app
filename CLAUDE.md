@@ -126,7 +126,8 @@ this is a soft convenience, not a safety rule. Results are cached in-memory per 
 row (`delivery_ordered_at` + `status="ordered"`); `most_recent_delivery(db, user_id)`
 enforces the quota. `POST /meals/{id}/order-delivery` returns 422 if no location is set,
 409 if the weekly slot is used, else stamps the order and stores Brave order links in
-`recipe_json["delivery_options"]`. `GET /meals/delivery/status` reports
+`recipe_json["delivery_options"]`. Only results on known delivery services (`DELIVERY_HOSTS`)
+are kept; the UI asks for confirmation first and states that nothing was actually ordered. `GET /meals/delivery/status` reports
 `{used, remaining, next_available_at}` — declared **before** the dynamic `/{meal_id}`
 route so the path isn't captured as an id.
 

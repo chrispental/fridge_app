@@ -227,3 +227,26 @@ def test_failed_plan_slot_does_not_leave_an_orphan_meal(api_client, monkeypatch)
         assert db.query(models.Meal).count() == 0
         assert db.query(models.MealPlanEntry).count() == 0
         assert db.get(models.MealPlan, plan_id).status == 'failed'
+
+
+def test_cook_reports_stocked_ingredients_it_could_not_subtract(db):
+    rice = models.InventoryItem(user_id=LOCAL_USER.id, name="rice", quantity=2, unit="lb")
+    eggs = models.InventoryItem(user_id=LOCAL_USER.id, name="eggs", quantity=6, unit="piece")
+    ingredients = [{"name": "rice", "quantity": 1, "unit": "cup"}, {"name": "eggs", "quantity": 2, "unit": "piece"},
+                   {"name": "soy sauce", "quantity": 1, "unit": "tbsp"}]
+    meal = models.Meal(user_id=LOCAL_USER.id, title="Fried rice", title_normalized="fried rice",
+                       recipe_json={"ingredients": ingredients, "steps": ["Cook."]})
+    db.add_all([rice, eggs, meal]); db.commit()
+    result = meals.cook_meal(meal.id, schemas.CookRequest(decrement_inventory=True, request_id=uuid4()), LOCAL_USER, db)
+    assert schemas.MealOut.model_validate(result).not_subtracted == ["rice"]
+    assert db.get(models.InventoryItem, rice.id).quantity == 2
+    assert db.get(models.InventoryItem, eggs.id).quantity == 4
+
+
+def test_delivery_links_keep_only_delivery_services(monkeypatch):
+    results = [{"title": "Recipe", "url": "https://www.thekitchn.com/chicken"},
+               {"title": "DoorDash", "url": "https://www.doordash.com/food-delivery/austin-tx/"},
+               {"title": "Lookalike", "url": "https://notdoordash.com/x"},
+               {"title": "Uber Eats", "url": "https://www.ubereats.com/city/austin-tx"}, {"title": "No url"}]
+    monkeypatch.setattr(meals.brave_search, "search_web", lambda *a, **k: results)
+    assert [link["title"] for link in meals._delivery_links("Chicken", "Austin, TX")] == ["DoorDash", "Uber Eats"]

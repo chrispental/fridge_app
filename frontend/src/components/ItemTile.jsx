@@ -1,17 +1,17 @@
 import { Carrot, Beef, Milk, Fish, Wheat, CupSoda, Package } from 'lucide-react'
 import { expiryInfo } from '../utils/dates.js'
-import { formatQty } from '../utils/quantity.js'
+import { formatQty, isLowStock } from '../utils/quantity.js'
 
 // A single inventory item rendered as a tile. Display-only; clicking opens the
 // edit modal (handled by the parent). Category icons keep inventory consistent.
 export default function ItemTile({ item, onEdit }) {
   const CategoryIcon = ({ produce: Carrot, meat: Beef, dairy: Milk, seafood: Fish, grain: Wheat, pantry: Wheat, beverage: CupSoda })[item.category?.toLowerCase()] || Package
-  const lowStock = item.quantity != null && item.quantity <= 1
+  const lowStock = isLowStock(item)
   const expiry = expiryInfo(item.expires_at)
 
   return (
     <button className="item-tile" onClick={() => onEdit(item)} title="Edit item">
-      {lowStock && <span className="tile-low" />}
+      {lowStock && <span className="tile-low" role="img" aria-label="Running low" title="Running low" />}
       {expiry && (
         <span className={`tile-expiry${expiry.expired ? ' expired' : ''}`}>
           {expiry.expired ? 'expired' : `⏳ ${expiry.label}`}
