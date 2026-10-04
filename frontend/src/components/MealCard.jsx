@@ -10,7 +10,7 @@ import { toast } from './toast.js'
 import CookMode from './CookMode.jsx'
 import StepSafety from './StepSafety.jsx'
 import MealIcon from './MealIcon.jsx'
-import { formatQty } from '../utils/quantity.js'
+import { formatAmount, formatQty } from '../utils/quantity.js'
 
 const FEEDBACK_TAGS = [
   'Too salty', 'Too bland', 'Too spicy', 'Too sweet',
@@ -146,7 +146,7 @@ export default function MealCard({
             {ingredients.map((ing, i) => (
               <span key={i} className={`chip ${ing.stock_status === 'check' ? 'warn' : ing.in_stock ? 'have' : 'missing'}`}>
                 {ing.stock_status === 'check' ? '?' : ing.in_stock ? '✓' : '+'} {ing.name}
-                {ing.quantity != null ? ` (${formatQty(ing.quantity)} ${ing.unit})` : ''}
+                {ing.quantity != null ? ` (${formatAmount(ing.quantity, ing.unit)})` : ''}
                 {ing.stock_status === 'check' ? ' · check amount' : ing.stock_status === 'partial' ? ` · need ${formatQty(ing.missing_quantity)} more` : ''}
               </span>
             ))}

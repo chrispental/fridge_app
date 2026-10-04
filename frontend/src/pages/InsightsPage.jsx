@@ -80,7 +80,7 @@ export default function InsightsPage() {
         <BentoItem span={4}>
           <StatCard icon={<Sparkles size={20} strokeWidth={2} />} title="Suggested">
             <div className="stat-row">
-              <span className="stat-big">{totals.suggested}</span>
+              <span className="stat-big">{totals.total ?? totals.suggested}</span>
               <span className="caption">ideas offered</span>
             </div>
           </StatCard>

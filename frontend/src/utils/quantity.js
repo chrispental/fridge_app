@@ -6,3 +6,14 @@ export const formatQty = (n) => String(Number(Number(n).toFixed(2)))
 const LOW_AT_ONE = new Set(['piece', 'tsp', 'tbsp', 'fl oz', 'oz', 'cup'])
 export const isLowStock = (item) =>
   item.quantity != null && item.unit !== 'unknown' && item.quantity <= (LOW_AT_ONE.has(item.unit) ? 1 : 0.5)
+
+const PLURAL_UNITS = {
+  piece: 'pieces', cup: 'cups', pint: 'pints', quart: 'quarts', gallon: 'gallons',
+  pack: 'packs', can: 'cans', jar: 'jars', bottle: 'bottles', bunch: 'bunches',
+}
+// "2 pieces", "1 piece", "0.83 dozen"; abbreviations and "dozen" never take an s.
+export const formatAmount = (quantity, unit) => {
+  const qty = formatQty(quantity)
+  if (!unit || unit === 'unknown') return qty
+  return `${qty} ${qty !== '1' && PLURAL_UNITS[unit] ? PLURAL_UNITS[unit] : unit}`
+}
