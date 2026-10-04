@@ -10,6 +10,7 @@ import { toast } from './toast.js'
 import CookMode from './CookMode.jsx'
 import StepSafety from './StepSafety.jsx'
 import MealIcon from './MealIcon.jsx'
+import { formatQty } from '../utils/quantity.js'
 
 const FEEDBACK_TAGS = [
   'Too salty', 'Too bland', 'Too spicy', 'Too sweet',
@@ -27,6 +28,7 @@ export default function MealCard({
   const [cooking, setCooking] = useState(false)
   const [decrement, setDecrement] = useState(true)
   const [swapBusy, setSwapBusy] = useState(false)
+  const [confirmingDelivery, setConfirmingDelivery] = useState(false)
 
   const cookMutation = useCookMeal()
   const cookRequestId = useRef(crypto.randomUUID())
@@ -144,8 +146,8 @@ export default function MealCard({
             {ingredients.map((ing, i) => (
               <span key={i} className={`chip ${ing.stock_status === 'check' ? 'warn' : ing.in_stock ? 'have' : 'missing'}`}>
                 {ing.stock_status === 'check' ? '?' : ing.in_stock ? '✓' : '+'} {ing.name}
-                {ing.quantity != null ? ` (${ing.quantity} ${ing.unit})` : ''}
-                {ing.stock_status === 'check' ? ' · check amount' : ing.stock_status === 'partial' ? ` · need ${Number(ing.missing_quantity.toFixed(3))} more` : ''}
+                {ing.quantity != null ? ` (${formatQty(ing.quantity)} ${ing.unit})` : ''}
+                {ing.stock_status === 'check' ? ' · check amount' : ing.stock_status === 'partial' ? ` · need ${formatQty(ing.missing_quantity)} more` : ''}
               </span>
             ))}
           </div>
@@ -156,17 +158,19 @@ export default function MealCard({
         )}
 
         {outOfStock && !ordered && (
-          <button
-            className="link-btn"
-            onClick={() => addMissingToList()}
-            disabled={importMutation.isPending}
-          >
-            <ShoppingCart size={14} strokeWidth={2.2} style={{ verticalAlign: '-2px' }} />{' '}
-            {importMutation.isPending ? 'Adding…' : importMutation.isSuccess ? 'Already added' : 'Add missing to shopping list'}
-          </button>
+          <div className="import-row">
+            <button
+              className="link-btn"
+              onClick={() => addMissingToList()}
+              disabled={importMutation.isPending}
+            >
+              <ShoppingCart size={14} strokeWidth={2.2} style={{ verticalAlign: '-2px' }} />{' '}
+              {importMutation.isPending ? 'Adding…' : importMutation.isSuccess ? 'Already added' : 'Add missing to shopping list'}
+            </button>
+            {importMutation.isSuccess && <button className="link-btn" onClick={() => addMissingToList(true)} disabled={importMutation.isPending}>Add again for another cook</button>}
+          </div>
         )}
 
-        {importMutation.isSuccess && outOfStock && <button className="link-btn" onClick={() => addMissingToList(true)} disabled={importMutation.isPending}>Add again for another cook</button>}
         {checkAmounts && <p className="hint">Check ingredient amounts in your inventory before cooking. Unknown amounts are not automatically added to shopping.</p>}
         {recipe.source?.url && (
           <p className="recipe-source">
@@ -205,7 +209,12 @@ export default function MealCard({
 
         {ordered ? (
           <div className="delivery-block">
-            <div className="cooked-badge"><Truck size={16} strokeWidth={2.2} /> Ordered for delivery</div>
+            <div className="cooked-badge"><Truck size={16} strokeWidth={2.2} /> Delivery night</div>
+            <p className="hint">
+              {deliveryOptions.length > 0
+                ? 'Nothing has been ordered yet — these search results may help you place the order yourself.'
+                : 'Nothing has been ordered yet, and no delivery links were found. Order from your usual delivery app.'}
+            </p>
             {deliveryOptions.length > 0 && (
               <ul className="delivery-links">
                 {deliveryOptions.map((o, i) => (
@@ -272,6 +281,25 @@ export default function MealCard({
               {feedbackMutation.isPending ? 'Saving…' : fbSaved ? 'Saved ✓' : 'Save feedback'}
             </button>
           </div>
+        ) : confirmingDelivery ? (
+          <div className="delivery-confirm" role="group" aria-label="Confirm delivery night">
+            <p className="hint">
+              Use this week's delivery night on this meal? You'll get links to delivery services and
+              place the order yourself. This can't be undone.
+            </p>
+            <div className="cook-actions">
+              <button
+                className="btn primary"
+                onClick={() => orderMutation.mutate(meal.id, { onSettled: () => setConfirmingDelivery(false) })}
+                disabled={orderMutation.isPending}
+              >
+                <Truck size={15} strokeWidth={2.2} /> {orderMutation.isPending ? 'Finding links…' : 'Use delivery night'}
+              </button>
+              <button className="btn" onClick={() => setConfirmingDelivery(false)} disabled={orderMutation.isPending}>
+                Cancel
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="cook-row">
             <label>
@@ -285,17 +313,17 @@ export default function MealCard({
             <div className="cook-actions">
               <button
                 className="btn"
-                onClick={() => orderMutation.mutate(meal.id)}
-                disabled={orderMutation.isPending || !deliveryAvailable}
+                onClick={() => setConfirmingDelivery(true)}
+                disabled={!deliveryAvailable}
                 title={
                   deliveryAvailable
-                    ? 'Order this meal for delivery'
+                    ? 'Use this week\'s delivery night on this meal'
                     : nextDeliveryDate
                       ? `Weekly delivery used — next available ${nextDeliveryDate}`
                       : 'Set your location in Settings to order delivery'
                 }
               >
-                <Truck size={15} strokeWidth={2.2} /> {orderMutation.isPending ? 'Ordering…' : 'Order delivery'}
+                <Truck size={15} strokeWidth={2.2} /> Order delivery
               </button>
               <button
                 className="btn"

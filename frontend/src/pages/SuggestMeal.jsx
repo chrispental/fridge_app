@@ -46,6 +46,7 @@ export default function SuggestMeal() {
   }, [location.state, location.pathname, navigate, mutateSuggestions, prefsQ.data])
 
   const busy = suggestMutation.isPending
+  const busyWithIdea = busy && Boolean(suggestMutation.variables?.idea)
   const error = suggestMutation.error?.message
   const delivery = deliveryQ.data
   const meals =
@@ -83,10 +84,10 @@ export default function SuggestMeal() {
               disabled={busy || !hasIdea || !prefsQ.data}
               title={hasIdea ? '' : 'Type an idea first, or hit Surprise me'}
             >
-              <Sparkles size={18} strokeWidth={2.2} /> {busy ? 'Thinking…' : 'Use my idea'}
+              <Sparkles size={18} strokeWidth={2.2} /> {busyWithIdea ? 'Thinking…' : 'Use my idea'}
             </button>
             <button className="btn big" onClick={() => suggest(false)} disabled={busy || !prefsQ.data}>
-              <Dices size={18} strokeWidth={2.2} /> Surprise me
+              <Dices size={18} strokeWidth={2.2} /> {busy && !busyWithIdea ? 'Thinking…' : 'Surprise me'}
             </button>
           </div>
           {delivery && (
@@ -111,7 +112,7 @@ export default function SuggestMeal() {
       )}
 
       {busy && (
-        <p className="hint" style={{ marginTop: 18 }}>Asking the chef — this can take 10–30 seconds.</p>
+        <p className="hint" style={{ marginTop: 18 }}>Asking the chef — this can take up to a minute.</p>
       )}
 
       <div className="meal-results">
@@ -131,12 +132,20 @@ export default function SuggestMeal() {
       </div>
 
       {!busy && meals && meals.length === 0 && (
-        <EmptyState
-          icon={<Sparkles size={22} strokeWidth={2} />}
-          title="No suggestions"
-          message="Try adding more to your fridge, then ask again."
-          action={<Link to="/inventory" className="btn primary">Go to inventory</Link>}
-        />
+        suggestMutation.data ? (
+          <EmptyState
+            icon={<Sparkles size={22} strokeWidth={2} />}
+            title="No suggestions"
+            message="Try adding more to your fridge, then ask again."
+            action={<Link to="/inventory" className="btn primary">Go to inventory</Link>}
+          />
+        ) : (
+          <EmptyState
+            icon={<Sparkles size={22} strokeWidth={2} />}
+            title="No ideas yet"
+            message="Type a craving above, or hit “Surprise me” to get suggestions from what's in your fridge."
+          />
+        )
       )}
     </div>
   )

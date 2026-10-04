@@ -1,5 +1,6 @@
 import { Carrot, Beef, Milk, Fish, Wheat, CupSoda, Package } from 'lucide-react'
 import { expiryInfo } from '../utils/dates.js'
+import { formatQty } from '../utils/quantity.js'
 
 // A single inventory item rendered as a tile. Display-only; clicking opens the
 // edit modal (handled by the parent). Category icons keep inventory consistent.
@@ -22,7 +23,7 @@ export default function ItemTile({ item, onEdit }) {
       <div className="tile-name">{item.name}</div>
       <div className="tile-meta">
         <span className="tile-qty">
-          {item.quantity != null ? `${item.quantity} ${item.unit}` : '—'}
+          {item.quantity != null ? `${formatQty(item.quantity)} ${item.unit}` : '—'}
         </span>
         {item.category && <span className="tile-cat">{item.category}</span>}
       </div>

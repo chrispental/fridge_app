@@ -695,6 +695,11 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 
 /* delivery */
 .delivery-block { margin-top: 14px; }
+.delivery-confirm {
+  display: flex; flex-direction: column; gap: 10px; margin-top: 16px;
+  border-top: 1px solid var(--border); padding-top: 14px;
+}
+.import-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 16px; }
 .delivery-links { margin: 10px 0 0; padding-left: 1.2rem; }
 .delivery-links li { margin-bottom: 6px; font-size: var(--fs-small); }
 .delivery-links a { color: var(--accent); }
@@ -878,7 +883,7 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
   margin-left: auto; flex: 0 0 auto; width: 40px; height: 40px;
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-pill); background: var(--surface-2);
-  border: 1px solid var(--border); color: var(--text-secondary);
+  border: 1px solid var(--border); color: var(--text-secondary); padding: 0;
 }
 .cook-close:hover { background: var(--surface-3); color: var(--text-primary); }
 
@@ -945,7 +950,7 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .timer-chip-label { font-size: var(--fs-caption); color: var(--text-tertiary); font-weight: 500; }
 .timer-chip-btn {
   width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-pill); background: var(--surface-3); border: none; color: var(--text-secondary);
+  border-radius: var(--radius-pill); background: var(--surface-3); border: none; color: var(--text-secondary); padding: 0;
 }
 .timer-chip-btn:hover { background: var(--surface-4); color: var(--text-primary); }
 

@@ -9,6 +9,7 @@ import {
 import QueryError from '../components/QueryError.jsx'
 import { toast } from '../components/toast.js'
 import { PageHeader, HeroPanel, Bento, BentoItem, PageSkeleton } from '../components/ui.jsx'
+import { formatQty } from '../utils/quantity.js'
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
 
@@ -16,7 +17,7 @@ function ShoppingList({ data, onAddAll, adding, added, planning }) {
   if (!data) return null
   const { to_buy = [], have = [], check = [], staples_assumed = [] } = data
   const line = (it) =>
-    it.quantity != null ? `${it.name} (${it.quantity} ${it.unit})` : it.name
+    it.quantity != null ? `${it.name} (${formatQty(it.quantity)} ${it.unit})` : it.name
 
   return (
     <div className="shopping-card">

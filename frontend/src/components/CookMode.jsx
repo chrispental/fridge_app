@@ -9,6 +9,7 @@ import { useAuth } from '../auth/useAuth.js'
 import { kitchenKey, readStored, writeStored } from '../utils/storage.js'
 import { parseStepDurations, MAX_TIMER_SECONDS } from '../utils/parseStepDuration.js'
 import StepSafety from './StepSafety.jsx'
+import { formatQty } from '../utils/quantity.js'
 
 const CONFETTI_COLORS = ['#f5a524', '#ffbc52', '#4ade80', '#60a5fa', '#f472b6', '#faf7f3']
 
@@ -34,12 +35,16 @@ export default function CookMode({ meal, onClose, onCook }) {
   const dialogRef = useDialog(onClose)
   const { session } = useAuth()
   const storageKey = kitchenKey(session?.user?.id, 'cook', meal.id)
-  const [saved] = useState(() => readStored(storageKey, null))
-  const fresh = !saved || saved.complete
-  const requestId = useRef(!fresh && saved.requestId ? saved.requestId : crypto.randomUUID())
   const recipe = meal.recipe_json || {}
   const steps = recipe.steps || []
   const ingredients = recipe.ingredients || []
+  // Meal ids restart after a database reset or restore, so saved progress also records
+  // which recipe it belongs to. Progress saved before the stamp existed is kept.
+  const stamp = `${meal.title}|${steps.length}`
+  const [saved] = useState(() => readStored(storageKey, null))
+  const stale = Boolean(saved?.meal && saved.meal !== stamp)
+  const fresh = !saved || saved.complete || stale
+  const requestId = useRef(!fresh && saved.requestId ? saved.requestId : crypto.randomUUID())
 
   // Slides: [mise en place] + [...steps] + [finish]
   const total = steps.length + 2
@@ -55,8 +60,13 @@ export default function CookMode({ meal, onClose, onCook }) {
 
   const { timers, start, pause, reset, dismiss, clear } = useTimers(`${storageKey}:timers`)
   useEffect(() => {
-    writeStored(storageKey, { index, checked: [...checked], requestId: requestId.current, complete: cooked })
-  }, [storageKey, index, checked, cooked])
+    writeStored(storageKey, { index, checked: [...checked], requestId: requestId.current, complete: cooked, meal: stamp })
+  }, [storageKey, index, checked, cooked, stamp])
+  // Timers left behind by another recipe that had this id must not attach to this one.
+  useEffect(() => {
+    if (stale) clear()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const isMise = index === 0
   const isFinish = index === finishIndex
@@ -215,7 +225,7 @@ export default function CookMode({ meal, onClose, onCook }) {
                         onClick={() => toggleChecked(i)}
                       >
                         {on ? '✓' : ing.stock_status === 'check' ? '?' : ing.in_stock ? '✓' : '+'} {ing.name}
-                        {ing.quantity != null ? ` (${ing.quantity} ${ing.unit})` : ''}
+                        {ing.quantity != null ? ` (${formatQty(ing.quantity)} ${ing.unit})` : ''}
                       </button>
                     )
                   })}
