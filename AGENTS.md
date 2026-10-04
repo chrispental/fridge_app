@@ -24,6 +24,11 @@ PRs for session history rather than turning these notes into a running transcrip
   remove the task's containers, disposable volumes, network, test image tags, and
   temporary files, unless the user asked to keep the preview running. Do not use
   global Docker prune or remove unrelated containers/images/volumes.
+- Before the final response, verify the cleanup: the stopped services no longer
+  appear in Docker, their ports are no longer listening, and preview browser tabs
+  you opened are closed. Clean up synthetic cloud users, photos, and scratch
+  schemas created by tests, and report any cleanup failure. If the user asked to
+  keep a service running, state its URL and exact stop command instead.
 - Never put credentials, `.env` contents, personal kitchen data, or auth tokens
   into project notes, logs, commits, or PRs.
 

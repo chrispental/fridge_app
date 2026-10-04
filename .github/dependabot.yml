@@ -33,6 +33,10 @@ updates:
       # deliberately together with the CI matrix, not via a base-image bump.
       - dependency-name: python
         update-types: [version-update:semver-major, version-update:semver-minor]
+      # Node stays on the LTS line pinned in frontend/Dockerfile and CI; it moves
+      # deliberately, not via a base-image bump to a non-LTS release.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
