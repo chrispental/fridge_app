@@ -145,6 +145,8 @@ class MealOut(BaseModel):
     feedback_tags: list[str] | None = None
     feedback_notes: str | None = None
     feedback_at: datetime | None = None
+    # Set only on the cook response: stocked ingredients that could not be subtracted.
+    not_subtracted: list[str] | None = None
     model_config = ConfigDict(from_attributes=True)
 
 

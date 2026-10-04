@@ -45,6 +45,9 @@ it('does not repeat precautions already in the instruction or warn on routine he
     'Open the lid away from your face to release steam.',
     'Drain the boiling pasta slowly away from your body.',
     'Remove the pan from the heat and let it rest.',
+    'Heat 1 tbsp olive oil in a skillet over medium heat. Add the garlic and cook for 30 seconds.',
+    'Add 1 tbsp olive oil to the same pan. Add the bell pepper and stir-fry for 2 minutes.',
+    'Heat 1 tbsp olive oil in a large skillet. Cook the chicken for 5 minutes. Remove and set aside.',
   ]) expect(stepSafety([step], 0)).toEqual([])
   expect(stepSafety(['Drain boiling water and remove the hot pot.'], 0)).toHaveLength(1)
 })

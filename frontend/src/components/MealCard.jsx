@@ -136,7 +136,7 @@ export default function MealCard({
         {onSwap && (
           <div className="swap-row">
             <button className="btn ghost" onClick={handleSwap} disabled={swapBusy}>
-              <RefreshCw size={15} strokeWidth={2.2} /> {swapBusy ? 'Swapping…' : 'Swap this day'}
+              <RefreshCw size={15} strokeWidth={2.2} /> {swapBusy ? 'Swapping…' : 'Swap this meal'}
             </button>
           </div>
         )}

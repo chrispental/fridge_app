@@ -54,3 +54,12 @@ it('does not blame the fridge before any suggestion was requested', () => {
   expect(screen.getByText('No ideas yet')).toBeTruthy()
   expect(screen.queryByText('No suggestions')).toBeNull()
 })
+
+it('judges low stock by unit', async () => {
+  const { isLowStock } = await import('../src/utils/quantity.js')
+  expect(isLowStock({ quantity: 1, unit: 'piece' })).toBe(true)
+  expect(isLowStock({ quantity: 1, unit: 'gallon' })).toBe(false)
+  expect(isLowStock({ quantity: 0.5, unit: 'dozen' })).toBe(true)
+  expect(isLowStock({ quantity: 1, unit: 'unknown' })).toBe(false)
+  expect(isLowStock({ quantity: null, unit: 'jar' })).toBe(false)
+})

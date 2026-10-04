@@ -1,5 +1,6 @@
 """Meal suggestion, history, cook logging, and weekly delivery."""
 from datetime import timedelta
+from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -21,6 +22,26 @@ router = APIRouter(prefix="/api/meals", tags=["meals"])
 
 def _owned_meal(db: Session, meal_id: int, user_id: str) -> models.Meal:
     return get_owned(db, models.Meal, meal_id, user_id, label="Meal")
+
+
+# A dish-name search mostly returns recipe pages; only links on a delivery service
+# are useful as "order links".
+DELIVERY_HOSTS = (
+    "doordash.com", "ubereats.com", "grubhub.com", "postmates.com", "seamless.com",
+    "delivery.com", "caviar.com", "chownow.com", "slicelife.com", "ezcater.com",
+)
+
+
+def _delivery_links(title: str, location: str) -> list[dict]:
+    """Brave results for ordering this dish nearby, limited to delivery services."""
+    # `location` sets Brave's X-Loc-* headers so results actually serve the user's area.
+    results = brave_search.search_web(f"{title} restaurant delivery", count=15, location=location)
+    links = []
+    for result in results:
+        host = (urlsplit(result.get("url") or "").hostname or "").lower()
+        if any(host == known or host.endswith("." + known) for known in DELIVERY_HOSTS):
+            links.append(result)
+    return links[:5]
 
 
 def _delivery_status(db: Session, user_id: str) -> schemas.DeliveryStatusOut:
@@ -127,10 +148,7 @@ def order_delivery(meal_id: int, user: CurrentUser, db: Session = Depends(get_db
     meal.status = "ordered"
 
     # Best-effort: find places to order this dish nearby. Never blocks the order.
-    # `location` sets Brave's X-Loc-* headers so results actually serve the user's area.
-    links = brave_search.search_web(
-        f"{meal.title} restaurant delivery", count=5, location=prefs.location
-    )
+    links = _delivery_links(meal.title, prefs.location)
     meal.recipe_json = {**(meal.recipe_json or {}), "delivery_options": links}
 
     db.commit()
@@ -155,10 +173,11 @@ def cook_meal(
         return meal
     meal.status = "cooked"
     meal.cooked_at = utcnow()
-    if payload.decrement_inventory:
-        _decrement_inventory(db, meal)
+    not_subtracted = _decrement_inventory(db, meal) if payload.decrement_inventory else []
     db.commit()
     db.refresh(meal)
+    # Response-only: tells the client which stocked ingredients it must adjust by hand.
+    meal.not_subtracted = not_subtracted
     return meal
 
 
@@ -190,8 +209,13 @@ def delete_meal(meal_id: int, user: CurrentUser, db: Session = Depends(get_db)):
     db.commit()
 
 
-def _decrement_inventory(db: Session, meal: models.Meal) -> None:
-    """Best-effort: subtract a cooked meal's in-stock ingredients from inventory."""
+def _decrement_inventory(db: Session, meal: models.Meal) -> list[str]:
+    """Best-effort: subtract a cooked meal's in-stock ingredients from inventory.
+
+    Returns the ingredients that are stocked but could not be subtracted because
+    their amount or unit is unknown or incompatible.
+    """
+    not_subtracted = []
     ingredients = (meal.recipe_json or {}).get("ingredients", [])
     inventory = inventory_for(db, meal.user_id, lock=True)
     pool = StockPool(inventory)
@@ -202,6 +226,9 @@ def _decrement_inventory(db: Session, meal: models.Meal) -> None:
         stock = pool.allocate(name, ing.get("quantity"), ing.get("unit"))
         for match, amount in stock["allocations"]:
             match.quantity = max(0, match.quantity - amount)
+        if stock["stock_status"] == "check":
+            not_subtracted.append(name)
     for item in inventory:
         if item.quantity == 0:
             db.delete(item)
+    return not_subtracted

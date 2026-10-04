@@ -200,7 +200,7 @@ export default function WeekPlanPage() {
       {planning && <div className="banner info" role="status"><strong>Planning {plan.entries.length} of {plan.requested_count} meals…</strong><p>You can leave this page. Your plan will keep building.</p></div>}
       {plan.status === 'failed' && <div className="banner error" role="alert"><p>{plan.error}</p><button className="btn" disabled={resumeMutation.isPending} onClick={() => resumeMutation.mutate(plan.id)}>Resume remaining meals</button></div>}
       <Bento>
-        {/* LEFT: the week's meals, with per-day swap */}
+        {/* LEFT: the week's meals, with per-meal swap */}
         <BentoItem span={8}>
           <div className="stack">
             {plan.entries.map((entry) => (
