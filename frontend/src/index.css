@@ -733,9 +733,9 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 
 .tile-photo-empty { color: var(--accent); display: grid; place-items: center; }
 .tile-name { font-weight: 600; font-size: var(--fs-small); color: var(--text-primary); padding: 14px 14px 0; text-transform: capitalize; white-space: normal; line-height: 1.4; overflow-wrap: anywhere; }
-.tile-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 14px 16px; margin-top: auto; }
-.tile-qty { font-size: var(--fs-caption); font-weight: 600; color: var(--text-primary); background: var(--surface-2); padding: 3px 9px; border-radius: var(--radius-pill); }
-.tile-cat { font-size: var(--fs-caption); font-weight: 600; color: var(--accent); background: var(--accent-dim); padding: 3px 9px; border-radius: var(--radius-pill); text-transform: capitalize; }
+.tile-meta { display: flex; gap: 6px; align-items: center; padding: 8px 14px 16px; margin-top: auto; }
+.tile-qty { flex: none; white-space: nowrap; font-size: var(--fs-caption); font-weight: 600; color: var(--text-primary); background: var(--surface-2); padding: 3px 9px; border-radius: var(--radius-pill); }
+.tile-cat { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-caption); font-weight: 600; color: var(--accent); background: var(--accent-dim); padding: 3px 9px; border-radius: var(--radius-pill); text-transform: capitalize; }
 .tile-low { position: absolute; top: 8px; right: 8px; z-index: 1; width: 9px; height: 9px; border-radius: var(--radius-pill); background: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 30%, transparent); }
 
 /* ---- Inventory / review editable rows --------------------- */
@@ -898,10 +898,12 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 }
 
 .cook-slide-area {
-  flex: 1; display: flex; align-items: center; justify-content: center;
+  flex: 1; display: flex; align-items: flex-start; justify-content: center;
   overflow-y: auto; padding: clamp(20px, 4vw, 48px); touch-action: pan-y;
 }
 .cook-slide {
+  /* Auto margins centre short slides but keep the top of long ones scrollable. */
+  margin: auto;
   position: relative; width: 100%; max-width: var(--container-narrow);
   display: flex; flex-direction: column; align-items: center; text-align: center;
   animation-duration: var(--dur-3); animation-timing-function: var(--ease-out);
