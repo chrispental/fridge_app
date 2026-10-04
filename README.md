@@ -79,7 +79,9 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
    **Cook Mode** saves your step, ingredient checklist, and timer deadlines in this
    browser, so closing or reloading it does not reset your progress.
 4. **Plan** — generate a week of distinct meals, swap any day, and turn it into one
-   consolidated shopping list. Planning runs in the background with visible progress;
+   consolidated shopping list for meals still to cook; cooked meals and delivery
+   nights are excluded. Ordinary cooking water never needs a grocery purchase.
+   Planning runs in the background with visible progress;
    interrupted jobs keep completed meals and can resume.
 5. **Shopping** — a standalone list you can add to by hand, from a plan, or from a
    single meal; check things off and move them straight into inventory. Repeating

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Sparkles, Dices, Truck } from 'lucide-react'
 import MealCard from '../components/MealCard.jsx'
-import { useDeliveryStatus, useMeals, useSuggestMeals, usePreferences } from '../api/queries.js'
+import { useDeliveryStatus, useMeals, useMealBatch, useSuggestMeals, usePreferences } from '../api/queries.js'
 import ServingPicker from '../components/ServingPicker.jsx'
 import QueryError from '../components/QueryError.jsx'
 import { PageHeader, HeroPanel, EmptyState, Skeleton } from '../components/ui.jsx'
@@ -20,6 +20,7 @@ export default function SuggestMeal() {
   const deliveryQ = useDeliveryStatus()
   const recentQ = useMeals('suggested')
   const suggestMutation = useSuggestMeals()
+  const batchQ = useMealBatch(suggestMutation.data)
   const mutateSuggestions = suggestMutation.mutate
 
   // When arriving from Home with { run: true }, skip showing stale suggestions —
@@ -50,7 +51,7 @@ export default function SuggestMeal() {
   const error = suggestMutation.error?.message
   const delivery = deliveryQ.data
   const meals =
-    suggestMutation.data ??
+    batchQ.data ??
     (willAutoRun ? null : recentQ.data?.slice(0, 6) ?? null)
 
   const deliveryAvailable = delivery ? !delivery.used : true
@@ -114,6 +115,8 @@ export default function SuggestMeal() {
       {busy && (
         <p className="hint" style={{ marginTop: 18 }}>Asking the chef — this can take up to a minute.</p>
       )}
+
+      {batchQ.isError && <QueryError query={batchQ} title="Couldn't refresh ingredient amounts" />}
 
       <div className="meal-results">
         {busy &&

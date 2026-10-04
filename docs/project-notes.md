@@ -20,6 +20,10 @@ code and PR state before acting; update or remove notes as decisions change.
 - **Inventory:** Use conservative ingredient identity. Pantry pepper must not make
   bell pepper appear available; butter must not cover peanut butter. Unknown
   quantities or incompatible units require checking, not an “in stock” claim.
+- **Shopping:** Plan shopping covers only meals still to cook, excluding cooked
+  meals and delivery nights. An individual recipe can still be imported for an
+  intentional repeat. Ordinary cooking water needs no purchase; specialty waters
+  such as coconut, bottled, and sparkling water remain inventory items.
 
 ## Previously recorded environment context
 

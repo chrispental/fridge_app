@@ -13,6 +13,7 @@ vi.mock('../src/api/queries.js', () => ({
   usePreferences: () => ({ data: { household_size: 2 } }),
   useDeliveryStatus: () => ({ data: { used: false } }),
   useMeals: () => ({ data: [] }),
+  useMealBatch: () => ({}),
   useSuggestMeals: () => ({ mutate: vi.fn() }),
   useCookMeal: () => ({}), useSubmitFeedback: () => ({}),
   useOrderDelivery: () => ({ mutate: order }), useImportMealToList: () => ({}),

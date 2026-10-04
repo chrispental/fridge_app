@@ -14,6 +14,7 @@ import {
   SectionHeader, MealPreviewCard, PlanStrip, EmptyState, Skeleton,
 } from '../components/ui.jsx'
 import { expiryInfo } from '../utils/dates.js'
+import { isLowStock } from '../utils/quantity.js'
 import ServingPicker from '../components/ServingPicker.jsx'
 import QueryError from '../components/QueryError.jsx'
 
@@ -61,7 +62,7 @@ export default function Home() {
     ...s,
     count: items.filter((it) => (it.storage || 'unsorted') === s.value).length,
   })).filter((s) => s.count > 0)
-  const lowItems = items.filter((it) => it.quantity != null && it.quantity <= 1).slice(0, 3)
+  const lowItems = items.filter(isLowStock).slice(0, 3)
   const expiringItems = items
     .map((it) => ({ ...it, _expiry: expiryInfo(it.expires_at) }))
     .filter((it) => it._expiry)

@@ -30,6 +30,13 @@ def is_staple(name: str, staples: list[str]) -> bool:
     ingredient = _staple_words(name)
     if not ingredient:
         return False
+    # Ordinary cooking water is available without a grocery purchase. Keep this
+    # exact: coconut, sparkling, bottled, and other specialty waters remain items.
+    if " ".join(ingredient) in {
+        "water", "tap water", "cold water", "warm water", "hot water",
+        "boiling water", "room temperature water",
+    }:
+        return True
     for s in staples or []:
         staple = _staple_words(s)
         if ingredient == staple:

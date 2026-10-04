@@ -10388,7 +10388,7 @@
                   "fill": "$text-primary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "Shopping list",
+                  "content": "Shopping for remaining meals",
                   "fontFamily": "$font-display",
                   "fontSize": 18,
                   "fontWeight": "600"
@@ -10980,7 +10980,7 @@
                       "fill": "$text-primary",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Shopping list",
+                      "content": "Shopping for remaining meals",
                       "fontFamily": "$font-display",
                       "fontSize": 18,
                       "fontWeight": "600"
