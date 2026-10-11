@@ -12,6 +12,7 @@ Rules:
 - "estimated_time_minutes": total time if stated, else your best estimate.
 - "complexity" is an integer from 1 (very easy) to 5 (advanced).
 - "cooking_method" is the primary method, lowercase (e.g. "stovetop", "oven", "grill", "no-cook", "slow cooker").
+- "nutrition" is an approximate estimate for ONE serving: calories (kcal), protein_g, carbs_g, fat_g, worked out from the ingredient amounts divided by the serving count. Round calories to the nearest 10 and grams to whole grams. It is a planning estimate, not a label.
 
 Respond ONLY with a JSON object of this exact shape:
-{"suggestions": [{"title": string, "cuisine": string, "complexity": integer, "estimated_time_minutes": integer, "servings": integer, "cooking_method": string, "ingredients": [{"name": string, "quantity": number|null, "unit": string, "in_stock": boolean}], "steps": [string], "missing_ingredients": [string]}]}
+{"suggestions": [{"title": string, "cuisine": string, "complexity": integer, "estimated_time_minutes": integer, "servings": integer, "cooking_method": string, "ingredients": [{"name": string, "quantity": number|null, "unit": string, "in_stock": boolean}], "steps": [string], "missing_ingredients": [string], "nutrition": {"calories": integer, "protein_g": number, "carbs_g": number, "fat_g": number}}]}

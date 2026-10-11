@@ -15,6 +15,7 @@ from .. import models
 from ..config import settings
 from ..models import utcnow
 from ..schemas import MealSuggestion, RecipeIngredient, RecipeSource
+from .nutrition import NUTRITION_FIELDS, parse_nutrition
 from . import brave_search
 from .ai_client import call_structured
 from .allergens import violates_allergies
@@ -71,6 +72,7 @@ SUGGESTION_SCHEMA = {
                         "type": "array",
                         "items": {"type": "string"},
                     },
+                    "nutrition": NUTRITION_FIELDS,
                 },
                 "required": [
                     "title",
@@ -82,6 +84,7 @@ SUGGESTION_SCHEMA = {
                     "ingredients",
                     "steps",
                     "missing_ingredients",
+                    "nutrition",
                 ],
                 "additionalProperties": False,
             },
@@ -301,6 +304,7 @@ def _parse_suggestions(raw: dict) -> list[MealSuggestion]:
                 missing_ingredients=[
                     str(x) for x in s.get("missing_ingredients", []) if str(x).strip()
                 ],
+                nutrition=parse_nutrition(s.get("nutrition")),
             )
         )
     return out

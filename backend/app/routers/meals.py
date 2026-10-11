@@ -11,6 +11,7 @@ from ..database import get_db
 from ..models import utcnow
 from ..services import brave_search
 from ..services.expiry import estimate_expiry
+from ..services.nutrition import estimate_nutrition
 from ..services.recipe_import import ImportError_, import_recipe
 from ..services.meal_engine import AdjustmentRejected, adjust_meal, most_recent_delivery, normalize_title, suggest_meals
 from ..services.meal_stats import compute_stats
@@ -278,6 +279,23 @@ def adjust(
         raise HTTPException(422, str(exc))
     except RuntimeError as exc:
         raise HTTPException(502, str(exc))
+    return _annotated(db, user.id, meal)
+
+
+@router.post("/{meal_id}/nutrition", response_model=schemas.MealOut)
+def estimate_meal_nutrition(meal_id: int, user: CurrentUser, db: Session = Depends(get_db)):
+    """Fill in an approximate per-serving estimate for a recipe that has none."""
+    meal = _owned_meal(db, meal_id, user.id)
+    recipe = meal.recipe_json if isinstance(meal.recipe_json, dict) else {}
+    if not recipe.get("ingredients"):
+        raise HTTPException(422, "This recipe has no ingredient list to estimate from.")
+    try:
+        nutrition = estimate_nutrition(recipe)
+    except RuntimeError as exc:
+        raise HTTPException(502, str(exc))
+    meal.recipe_json = {**recipe, "nutrition": nutrition.model_dump()}
+    db.commit()
+    db.refresh(meal)
     return _annotated(db, user.id, meal)
 
 

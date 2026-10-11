@@ -150,6 +150,14 @@ Meal copy with `recipe_json["saved_from"]` so the book entry never changes state
 cook receipt stores the copy's id for replays. Favourites outside the no-repeat window are
 offered to the suggestion prompt as a hint by exact title.
 
+**Nutrition — `backend/app/services/nutrition.py`.** `recipe_json["nutrition"]` holds
+approximate per-serving `{calories, protein_g, carbs_g, fat_g, source}`. Suggestion,
+adjustment and AI import ask for it in the same model call (`NUTRITION_FIELDS` is part of
+`SUGGESTION_SCHEMA`; `parse_nutrition` clamps and tolerates missing values). schema.org
+imports read `nutrition` with `source="recipe"`. `POST /meals/{id}/nutrition` backfills a
+recipe that has none (one extra model call). `compute_stats` averages cooked meals that
+carry an estimate. The UI always labels the figures approximate.
+
 **Data export — `backend/app/routers/export.py`.** `GET /api/export` returns the user's
 whole kitchen as one versioned JSON attachment (`fridge-chef-export/1`): preferences,
 inventory, every Meal row (including the recipe book, ratings, and adjustments), the

@@ -660,6 +660,38 @@
               ]
             },
             {
+              "type": "frame",
+              "id": "rJqax",
+              "name": "nutritionLine",
+              "width": "fill_container",
+              "gap": 5,
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "jpybV",
+                  "name": "flame",
+                  "width": 13,
+                  "height": 13,
+                  "icon": "flame",
+                  "library": "lucide",
+                  "fill": "$text-secondary"
+                },
+                {
+                  "type": "text",
+                  "id": "HkTPI",
+                  "name": "figures",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "≈ 420 kcal · 24 g protein · 31 g carbs · 22 g fat  ·  per serving, estimate",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
               "type": "text",
               "id": "bVyhe",
               "name": "ing-label",
@@ -17492,6 +17524,104 @@
             },
             {
               "type": "frame",
+              "id": "bBXyR",
+              "name": "stat-nutrition",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": "$radius-lg",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#0000008C",
+                "offset": {
+                  "x": 0,
+                  "y": 8
+                },
+                "blur": 20
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uwdLN",
+                  "name": "head",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "zRe4Q",
+                      "name": "ico",
+                      "width": 34,
+                      "height": 34,
+                      "fill": "$surface-2",
+                      "cornerRadius": 10,
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "DpGdO",
+                          "name": "icon",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "flame",
+                          "library": "lucide",
+                          "fill": "$success"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "JSQ6R",
+                      "name": "title",
+                      "fill": "$text-secondary",
+                      "content": "Per serving",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Z4KndW",
+                  "name": "numRow",
+                  "gap": 8,
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "oaem8",
+                      "name": "num",
+                      "fill": "$text-primary",
+                      "content": "500",
+                      "fontFamily": "$font-display",
+                      "fontSize": 32,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VlIc4",
+                      "name": "cap",
+                      "fill": "$text-tertiary",
+                      "content": "avg kcal · estimates",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
               "id": "iyW8r",
               "name": "gridRow1",
               "width": "fill_container",
@@ -20132,6 +20262,52 @@
                       ]
                     }
                   ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "cJopZ",
+              "name": "stat-nutrition",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": "$radius-md",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "t8QKw",
+                  "name": "icon",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "flame",
+                  "library": "lucide",
+                  "fill": "$success"
+                },
+                {
+                  "type": "text",
+                  "id": "KjysF",
+                  "name": "num",
+                  "fill": "$text-primary",
+                  "content": "500",
+                  "fontFamily": "$font-display",
+                  "fontSize": 24,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "UWLN6",
+                  "name": "cap",
+                  "fill": "$text-tertiary",
+                  "content": "avg kcal · estimates",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 }
               ]
             },

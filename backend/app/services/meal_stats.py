@@ -60,6 +60,25 @@ def compute_stats(meals, staples=None, now=None) -> dict:
             if name and not is_staple(name, staples):
                 ingredient_counts[name] += 1
 
+    # Average per-serving nutrition over cooked meals that carry an estimate.
+    nutrition = None
+    rows = []
+    for m in cooked_meals:
+        rj = getattr(m, "recipe_json", None)
+        n = rj.get("nutrition") if isinstance(rj, dict) else None
+        if isinstance(n, dict) and isinstance(n.get("calories"), (int, float)):
+            rows.append(n)
+    if rows:
+        def avg(key, digits):
+            vals = [r[key] for r in rows if isinstance(r.get(key), (int, float))]
+            return round(sum(vals) / len(vals), digits) if vals else None
+        calories = avg("calories", 0)
+        nutrition = {
+            "meals": len(rows),
+            "calories": int(calories) if calories is not None else None,
+            "protein_g": avg("protein_g", 1), "carbs_g": avg("carbs_g", 1), "fat_g": avg("fat_g", 1),
+        }
+
     # Feedback tag frequencies across all meals.
     tag_counts: Counter = Counter()
     for m in meals:
@@ -75,6 +94,7 @@ def compute_stats(meals, staples=None, now=None) -> dict:
             "cooked": totals.get("cooked", 0),
             "ordered": totals.get("ordered", 0),
         },
+        "nutrition": nutrition,
         "top_rated": [
             {"id": m.id, "title": m.title, "cooked_at": m.cooked_at} for m in top_rated
         ],

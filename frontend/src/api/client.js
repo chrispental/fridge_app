@@ -114,6 +114,7 @@ export const api = {
     })),
   adjustMeal: (id, instruction) => request(`/meals/${id}/adjust`, json('POST', { instruction })),
   setFavorite: (id, favorite) => request(`/meals/${id}/favorite`, json('POST', { favorite })),
+  estimateNutrition: (id) => request(`/meals/${id}/nutrition`, { method: 'POST' }),
 
   // Data portability: the whole kitchen as a JSON file (Blob)
   exportData: () => request('/export', { binary: true }),

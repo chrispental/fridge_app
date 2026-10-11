@@ -118,6 +118,17 @@ class RecipeSource(BaseModel):
     url: str
 
 
+class Nutrition(BaseModel):
+    """Per-serving figures. `source` is "estimate" (the chef) or "recipe" (schema.org
+    data on an imported page); the UI labels both as approximate."""
+    calories: int | None = None
+    protein_g: float | None = None
+    carbs_g: float | None = None
+    fat_g: float | None = None
+    per_serving: bool = True
+    source: str = "estimate"
+
+
 class MealSuggestion(BaseModel):
     title: str
     cuisine: str | None = None
@@ -130,6 +141,7 @@ class MealSuggestion(BaseModel):
     missing_ingredients: list[str] = []
     image_url: str | None = None  # Brave Image Search result (may be absent)
     source: RecipeSource | None = None  # Brave web result: "view full recipe" link
+    nutrition: Nutrition | None = None  # approximate, per serving
 
 
 class MealOut(BaseModel):
@@ -306,8 +318,17 @@ class TagCount(BaseModel):
     count: int
 
 
+class NutritionAverages(BaseModel):
+    meals: int  # cooked meals that had an estimate
+    calories: int | None = None
+    protein_g: float | None = None
+    carbs_g: float | None = None
+    fat_g: float | None = None
+
+
 class MealStatsOut(BaseModel):
     totals: StatsTotals
+    nutrition: NutritionAverages | None = None
     top_rated: list[TopRatedMeal]
     cuisines: list[CuisineCount]
     cooks_per_week: list[WeekCount]

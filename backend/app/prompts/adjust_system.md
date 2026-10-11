@@ -20,8 +20,9 @@ ADJUSTING:
 - "estimated_time_minutes" is the total hands-on + cooking time.
 - "cooking_method" is the primary method, lowercase (e.g. "stovetop", "oven", "grill", "no-cook", "slow cooker").
 - Express ingredient quantities in US customary units (tsp, tbsp, cup, fl oz, oz, lb) or counts (piece). Do not use metric units.
+- "nutrition" is an approximate estimate for ONE serving: calories (kcal), protein_g, carbs_g, fat_g, worked out from the ingredient amounts divided by the serving count. Round calories to the nearest 10 and grams to whole grams. It is a planning estimate, not a label.
 
 Return exactly one adjusted recipe.
 
 Respond ONLY with a JSON object of this exact shape:
-{"suggestions": [{"title": string, "cuisine": string, "complexity": integer, "estimated_time_minutes": integer, "servings": integer, "cooking_method": string, "ingredients": [{"name": string, "quantity": number|null, "unit": string, "in_stock": boolean}], "steps": [string], "missing_ingredients": [string]}]}
+{"suggestions": [{"title": string, "cuisine": string, "complexity": integer, "estimated_time_minutes": integer, "servings": integer, "cooking_method": string, "ingredients": [{"name": string, "quantity": number|null, "unit": string, "in_stock": boolean}], "steps": [string], "missing_ingredients": [string], "nutrition": {"calories": integer, "protein_g": number, "carbs_g": number, "fat_g": number}}]}

@@ -324,6 +324,14 @@ export function useSetFavorite() {
   })
 }
 
+export function useEstimateNutrition() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => api.estimateNutrition(id),
+    onSuccess: (updated) => patchMealCaches(queryClient, updated.id, updated),
+  })
+}
+
 export function useImportRecipe() {
   const queryClient = useQueryClient()
   return useMutation({

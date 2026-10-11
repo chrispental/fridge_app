@@ -683,6 +683,8 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .adjust-form { display: flex; flex-wrap: wrap; gap: 8px; }
 .adjust-input { flex: 1 1 220px; min-width: 0; }
 .adjusted-note { font-size: var(--fs-small); color: var(--accent); margin: 0 0 12px; }
+.nutrition-line { font-size: var(--fs-small); color: var(--text-secondary); margin: 0 0 12px; }
+.nutrition-line .sub { color: var(--text-tertiary); }
 .ingredients { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
 .chip {
   font-size: var(--fs-caption); font-weight: 600;

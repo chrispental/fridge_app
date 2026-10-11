@@ -82,6 +82,9 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
    it defaults to household size. Recipes are generated for that count, and a mismatched
    serving count triggers a retry. Weekly plans use the household default unless you
    pick a different count when creating the plan.
+   Every recipe shows an approximate per-serving nutrition line (calories, protein,
+   carbs, fat), estimated by the chef or read from an imported page; older recipes
+   get an **Estimate nutrition** link. It is a planning aid, not a label.
    **Adjust recipe** rewrites a suggestion in place from a short instruction
    ("vegetarian", "faster", "swap the chicken for tofu"); allergies, equipment, and
    the weather gate still apply, and the card shows which adjustments were made.

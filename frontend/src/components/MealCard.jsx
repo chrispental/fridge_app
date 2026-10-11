@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
 import {
   Clock, Star, Users, Check, Truck, RefreshCw, ChevronDown, ChevronUp,
-  ThumbsUp, ThumbsDown, ExternalLink, Play, ShoppingCart, Wand2, Heart, CalendarPlus,
+  ThumbsUp, ThumbsDown, ExternalLink, Play, ShoppingCart, Wand2, Heart, CalendarPlus, Flame,
 } from 'lucide-react'
 import {
   useCookMeal, useSubmitFeedback, useOrderDelivery, useImportMealToList, useAdjustMeal,
-  useSetFavorite, useAddMealToPlan,
+  useSetFavorite, useAddMealToPlan, useEstimateNutrition,
 } from '../api/queries.js'
 import { toast } from './toast.js'
 import CookMode from './CookMode.jsx'
@@ -24,6 +24,37 @@ const FEEDBACK_TAGS = [
 const ADJUST_CHIPS = [
   'Vegetarian', 'Faster', 'Spicier', 'Milder', 'Only what I have', 'Fewer dishes',
 ]
+
+const grams = (v) => (v == null ? null : `${Math.round(v)} g`)
+
+// Approximate per-serving figures. Older meals and structured imports without
+// nutrition data get a one-tap estimate instead of a blank.
+function NutritionLine({ nutrition, canEstimate, onEstimate, busy }) {
+  if (!nutrition) {
+    if (!canEstimate) return null
+    return (
+      <p className="nutrition-line">
+        <button type="button" className="link-btn" onClick={onEstimate} disabled={busy}>
+          <Flame size={13} strokeWidth={2.2} style={{ verticalAlign: '-2px' }} />{' '}
+          {busy ? 'Estimating…' : 'Estimate nutrition'}
+        </button>
+      </p>
+    )
+  }
+  const parts = [
+    nutrition.calories != null && `${nutrition.calories} kcal`,
+    grams(nutrition.protein_g) && `${grams(nutrition.protein_g)} protein`,
+    grams(nutrition.carbs_g) && `${grams(nutrition.carbs_g)} carbs`,
+    grams(nutrition.fat_g) && `${grams(nutrition.fat_g)} fat`,
+  ].filter(Boolean)
+  if (parts.length === 0) return null
+  return (
+    <p className="nutrition-line" title="Approximate figures for planning, not a nutrition label.">
+      <Flame size={13} strokeWidth={2.2} style={{ verticalAlign: '-2px' }} /> ≈ {parts.join(' · ')}
+      <span className="sub"> per serving · {nutrition.source === 'recipe' ? 'from the recipe' : 'estimate'}</span>
+    </p>
+  )
+}
 
 export default function MealCard({
   meal,
@@ -47,6 +78,7 @@ export default function MealCard({
   const adjustMutation = useAdjustMeal()
   const favoriteMutation = useSetFavorite()
   const addToPlanMutation = useAddMealToPlan()
+  const nutritionMutation = useEstimateNutrition()
   // A recipe from the book: cooking logs a separate copy, so this card never flips to "cooked".
   const saved = meal.status === 'saved'
   const favorite = Boolean(meal.favorite)
@@ -248,6 +280,13 @@ export default function MealCard({
             {adjustMutation.error && <div className="banner error" role="alert">{adjustMutation.error.message}</div>}
           </div>
         )}
+
+        <NutritionLine
+          nutrition={recipe.nutrition}
+          canEstimate={ingredients.length > 0}
+          onEstimate={() => nutritionMutation.mutate(meal.id)}
+          busy={nutritionMutation.isPending}
+        />
 
         {adjustments.length > 0 && (
           <p className="adjusted-note">

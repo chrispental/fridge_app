@@ -22,6 +22,10 @@ code and PR state before acting; update or remove notes as decisions change.
   logs a copy so the book entry is permanent. Favourites are a hint to the chef, not a
   rotation; a favourite inside the no-repeat window is not offered. Imports read
   schema.org data first and use AI only when a page or pasted text has none.
+- **Nutrition:** Figures are approximate per-serving estimates from the chef (or the
+  imported page's own data, labelled "from the recipe"). They are always shown with an
+  "estimate"/"approximate" label and never presented as a nutrition label or used to
+  enforce any dietary rule. Missing values stay blank rather than being guessed as zero.
 - **Expiry estimates:** Manual entry prefills an expiry from category and storage
   (same table as photo scans) until the user picks a date. It is a visible suggestion,
   never a silent fact; pantry goods with no basis for an estimate stay blank.
