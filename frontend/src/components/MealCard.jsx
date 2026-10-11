@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react'
 import {
   Clock, Star, Users, Check, Truck, RefreshCw, ChevronDown, ChevronUp,
-  ThumbsUp, ThumbsDown, ExternalLink, Play, ShoppingCart, Wand2,
+  ThumbsUp, ThumbsDown, ExternalLink, Play, ShoppingCart, Wand2, Heart, CalendarPlus,
 } from 'lucide-react'
 import {
   useCookMeal, useSubmitFeedback, useOrderDelivery, useImportMealToList, useAdjustMeal,
+  useSetFavorite, useAddMealToPlan,
 } from '../api/queries.js'
 import { toast } from './toast.js'
 import CookMode from './CookMode.jsx'
@@ -44,6 +45,11 @@ export default function MealCard({
 
   const cookMutation = useCookMeal()
   const adjustMutation = useAdjustMeal()
+  const favoriteMutation = useSetFavorite()
+  const addToPlanMutation = useAddMealToPlan()
+  // A recipe from the book: cooking logs a separate copy, so this card never flips to "cooked".
+  const saved = meal.status === 'saved'
+  const favorite = Boolean(meal.favorite)
   const cookRequestId = useRef(crypto.randomUUID())
   const feedbackMutation = useSubmitFeedback()
   const orderMutation = useOrderDelivery()
@@ -51,7 +57,7 @@ export default function MealCard({
 
   // Status is derived from the cached meal (kept fresh by optimistic updates) or,
   // for meals rendered from a static mutation result, from this card's mutations.
-  const cooked = meal.status === 'cooked' || cookMutation.isSuccess
+  const cooked = meal.status === 'cooked' || (cookMutation.isSuccess && !saved)
   const ordered = meal.status === 'ordered' || orderMutation.isSuccess
   const deliveryOptions =
     orderMutation.data?.recipe_json?.delivery_options ||
@@ -116,6 +122,12 @@ export default function MealCard({
   const missing = recipe.missing_ingredients || []
   const adjustments = recipe.adjustments || []
   const canAdjust = !cooked && !ordered
+
+  function addToWeek() {
+    addToPlanMutation.mutate(meal.id, {
+      onSuccess: (plan) => toast.success(`Added to your week as day ${plan.entries.length}`),
+    })
+  }
   const outOfStock = ingredients.some((i) => ['missing', 'partial'].includes(i.stock_status) || (!i.stock_status && !i.in_stock)) || missing.length > 0
   const checkAmounts = ingredients.some((i) => i.stock_status === 'check')
 
@@ -165,8 +177,17 @@ export default function MealCard({
       </div>
 
       <div className="meal-body">
-        {(onSwap || canAdjust) && (
-          <div className="swap-row">
+        <div className="swap-row">
+            <button
+              type="button"
+              className={`btn ghost heart-btn${favorite ? ' on' : ''}`}
+              aria-pressed={favorite}
+              onClick={() => favoriteMutation.mutate({ id: meal.id, favorite: !favorite })}
+              disabled={favoriteMutation.isPending}
+              title={favorite ? 'Remove from favourites' : 'Add to favourites'}
+            >
+              <Heart size={15} strokeWidth={2.2} /> {favorite ? 'Favourite' : 'Add to favourites'}
+            </button>
             {canAdjust && (
               <button
                 className="btn ghost"
@@ -182,8 +203,7 @@ export default function MealCard({
                 <RefreshCw size={15} strokeWidth={2.2} /> {swapBusy ? 'Swapping…' : 'Swap this meal'}
               </button>
             )}
-          </div>
-        )}
+        </div>
 
         {adjusting && canAdjust && (
           <div className="adjust-panel" role="group" aria-label="Adjust this recipe">
@@ -415,23 +435,29 @@ export default function MealCard({
               </label>
             </div>
             <div className="cook-actions">
+              {saved ? (
+                <button className="btn" onClick={addToWeek} disabled={addToPlanMutation.isPending}>
+                  <CalendarPlus size={15} strokeWidth={2.2} /> {addToPlanMutation.isPending ? 'Adding…' : 'Add to this week'}
+                </button>
+              ) : (
+                <button
+                  className="btn"
+                  onClick={() => setConfirmingDelivery(true)}
+                  disabled={!deliveryAvailable}
+                  title={
+                    deliveryAvailable
+                      ? 'Use this week\'s delivery night on this meal'
+                      : nextDeliveryDate
+                        ? `Weekly delivery used — next available ${nextDeliveryDate}`
+                        : 'Set your location in Settings to order delivery'
+                  }
+                >
+                  <Truck size={15} strokeWidth={2.2} /> Order delivery
+                </button>
+              )}
               <button
                 className="btn"
-                onClick={() => setConfirmingDelivery(true)}
-                disabled={!deliveryAvailable}
-                title={
-                  deliveryAvailable
-                    ? 'Use this week\'s delivery night on this meal'
-                    : nextDeliveryDate
-                      ? `Weekly delivery used — next available ${nextDeliveryDate}`
-                      : 'Set your location in Settings to order delivery'
-                }
-              >
-                <Truck size={15} strokeWidth={2.2} /> Order delivery
-              </button>
-              <button
-                className="btn"
-                onClick={() => cookMutation.mutate({ id: meal.id, decrement, leftovers, requestId: cookRequestId.current })}
+                onClick={() => cookMutation.mutate({ id: meal.id, decrement, leftovers, saved, requestId: cookRequestId.current })}
                 disabled={cookMutation.isPending}
               >
                 <Check size={15} strokeWidth={2.4} /> {cookMutation.isPending ? 'Saving…' : 'I cooked this'}
@@ -449,7 +475,7 @@ export default function MealCard({
         <CookMode
           meal={meal}
           onClose={() => setCooking(false)}
-          onCook={(dec, requestId, left) => cookMutation.mutateAsync({ id: meal.id, decrement: dec, requestId, leftovers: left })}
+          onCook={(dec, requestId, left) => cookMutation.mutateAsync({ id: meal.id, decrement: dec, requestId, leftovers: left, saved })}
         />
       )}
     </div>

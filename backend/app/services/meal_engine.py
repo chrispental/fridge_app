@@ -234,12 +234,37 @@ def _recent_titles(db: Session, user_id: str, no_repeat_days: int) -> list[str]:
         db.query(models.Meal)
         .filter(
             models.Meal.user_id == user_id,
+            models.Meal.status != "saved",  # a recipe in the book was never served
             (models.Meal.suggested_at >= cutoff)
             | (models.Meal.cooked_at >= cutoff)
         )
         .all()
     )
     return [r.title for r in rows]
+
+
+def _favorite_lines(db: Session, user_id: str, avoid_norm: list[str], limit: int = 8) -> list[str]:
+    """The user's favourite recipes as prompt lines (title + main ingredients),
+    skipping anything inside the no-repeat window. A hint, not a requirement."""
+    rows = (
+        db.query(models.Meal)
+        .filter(models.Meal.user_id == user_id, models.Meal.favorite.is_(True))
+        .order_by(models.Meal.suggested_at.desc())
+        .limit(40)
+        .all()
+    )
+    lines, seen = [], set()
+    for m in rows:
+        norm = normalize_title(m.title)
+        if not norm or norm in seen or _is_repeat(m.title, avoid_norm):
+            continue
+        seen.add(norm)
+        recipe = m.recipe_json if isinstance(m.recipe_json, dict) else {}
+        names = [str(i.get("name", "")) for i in recipe.get("ingredients", []) if isinstance(i, dict) and i.get("name")]
+        lines.append(f"- {m.title}" + (f" ({', '.join(names[:6])})" if names else ""))
+        if len(lines) >= limit:
+            break
+    return lines
 
 
 def _parse_suggestions(raw: dict) -> list[MealSuggestion]:
@@ -324,7 +349,7 @@ def _sort_key(suggestion: MealSuggestion, expiring_names: list[str]) -> tuple[in
     return (out_of_stock, missing, -_expiring_used(suggestion, expiring_names))
 
 
-def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None, feedback_lines=None, expiring=None, servings=None, closing: str = "Suggest meals I can make right now.") -> str:
+def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None, feedback_lines=None, expiring=None, servings=None, closing: str = "Suggest meals I can make right now.", favorite_lines=None) -> str:
     if inventory:
         inv_lines = []
         for i in inventory:
@@ -359,6 +384,15 @@ def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None,
         + "\n".join(feedback_lines)
         + "\n"
         if feedback_lines
+        else ""
+    )
+
+    favorites_block = (
+        "\nTHE USER'S FAVOURITE RECIPES (when one fits the inventory and the request, suggest it "
+        "using its exact title; otherwise ignore this list):\n"
+        + "\n".join(favorite_lines)
+        + "\n"
+        if favorite_lines
         else ""
     )
 
@@ -398,14 +432,14 @@ CURRENT INVENTORY
 {expiring_block}
 DO NOT SUGGEST THESE RECENT MEALS
 {dnr}
-{feedback_block}{request_block}
+{feedback_block}{favorites_block}{request_block}
 {closing}"""
 
 
-def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None, feedback_lines=None, expiring=None, servings=None) -> list[MealSuggestion]:
+def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None, feedback_lines=None, expiring=None, servings=None, favorite_lines=None) -> list[MealSuggestion]:
     system_prompt = load_prompt("suggestion_system.md").replace("{count}", str(count))
     target = servings if servings is not None else prefs.household_size
-    prompt = _build_user_prompt(prefs, inventory, do_not_repeat, weather, idea, feedback_lines, expiring, target)
+    prompt = _build_user_prompt(prefs, inventory, do_not_repeat, weather, idea, feedback_lines, expiring, target, favorite_lines=favorite_lines)
     return _request_suggestions(system_prompt, prompt, target)
 
 
@@ -453,8 +487,9 @@ def suggest_meals(
 
     # Items about to go bad get a "use these first" block and a sort preference.
     expiring = expiring_soon(inventory, within_days=3)
+    favorite_lines = _favorite_lines(db, user_id, avoid_norm)
 
-    suggestions = _generate(db, prefs, inventory, avoid, count, weather, idea, feedback_lines, expiring, servings)
+    suggestions = _generate(db, prefs, inventory, avoid, count, weather, idea, feedback_lines, expiring, servings, favorite_lines)
 
     def keep(s: MealSuggestion) -> bool:
         return (
@@ -477,7 +512,7 @@ def suggest_meals(
     # If everything was filtered out, retry once with the rejects also excluded.
     if not safe and suggestions:
         rejected = [s.title for s in suggestions]
-        retry = _generate(db, prefs, inventory, avoid + rejected, count, weather, idea, feedback_lines, expiring, servings)
+        retry = _generate(db, prefs, inventory, avoid + rejected, count, weather, idea, feedback_lines, expiring, servings, favorite_lines)
         safe = filter_distinct(retry)
 
     # Recompute in-stock from real inventory, then order makeable-now meals first

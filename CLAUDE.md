@@ -138,6 +138,18 @@ are kept; the UI asks for confirmation first and states that nothing was actuall
 `{used, remaining, next_available_at}` — declared **before** the dynamic `/{meal_id}`
 route so the path isn't captured as an id.
 
+**Recipe book — `backend/app/services/recipe_import.py`.** `POST /meals/import` takes a
+URL or pasted text. URLs are fetched with a public-host check (private/loopback addresses
+are refused), schema.org `Recipe` JSON-LD is parsed deterministically (ingredient lines
+via `parse_ingredient_line`, metric amounts stay unknown), and only pages without it fall
+back to the meal model with `prompts/import_system.md`. Imported meals have
+`status="saved"`; `Meal.favorite` pins any meal. `GET /meals/recipes` lists saved or
+favourite meals; `GET /meals` (no status) and `/meals/stats` exclude saved rows, as does
+the no-repeat window. Cooking a saved recipe (and `POST /plans/add-meal`) creates a fresh
+Meal copy with `recipe_json["saved_from"]` so the book entry never changes state; the
+cook receipt stores the copy's id for replays. Favourites outside the no-repeat window are
+offered to the suggestion prompt as a hint by exact title.
+
 **Leftovers.** `POST /meals/{id}/cook` with `save_leftovers=true` adds an inventory
 row `leftover <title>` (category/source `leftover`, fridge, unknown amount, expiry from
 `services/expiry.py`) inside the same idempotent cook action. Ingredient identity is

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, ChefHat, CalendarDays, Refrigerator, History,
-  Settings, Sparkles, MoreHorizontal, ShoppingCart, BarChart3, LogOut,
+  Settings, Sparkles, MoreHorizontal, ShoppingCart, BarChart3, LogOut, BookOpen,
 } from 'lucide-react'
 import { usePreferences } from '../api/queries.js'
 import { useAuth } from '../auth/useAuth.js'
@@ -12,6 +12,7 @@ import { useAuth } from '../auth/useAuth.js'
 const MAIN = [
   { to: '/', label: 'Home', icon: LayoutDashboard, end: true },
   { to: '/cook', label: 'Cook', icon: ChefHat },
+  { to: '/recipes', label: 'Recipes', icon: BookOpen },
   { to: '/plan', label: 'Plan', icon: CalendarDays },
   { to: '/inventory', label: 'Fridge', icon: Refrigerator },
   { to: '/shopping', label: 'Shopping', icon: ShoppingCart },
@@ -28,6 +29,7 @@ const MOBILE_RIGHT = [
   { to: '/inventory', label: 'Fridge', icon: Refrigerator },
 ]
 const MORE = [
+  { to: '/recipes', label: 'Recipes', icon: BookOpen },
   { to: '/shopping', label: 'Shopping', icon: ShoppingCart },
   { to: '/history', label: 'History', icon: History },
   { to: '/insights', label: 'Insights', icon: BarChart3 },

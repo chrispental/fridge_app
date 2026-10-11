@@ -91,19 +91,24 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
    **Cook Mode** saves your step, ingredient checklist, and timer deadlines in this
    browser, so closing or reloading it does not reset your progress. A **Resume
    cooking** reminder takes you straight back to your latest unfinished recipe.
-4. **Plan** — generate a week of distinct meals, swap any day, and turn it into one
+4. **Recipes** — save recipes from a web address (schema.org recipe data is read
+   directly; other pages and pasted text are transcribed by the chef) into your recipe
+   book, and tap the heart on any meal to keep it as a favourite. The chef can pick a
+   favourite when it fits the fridge, and **Add to this week** drops a saved recipe into
+   your plan. Cooking a saved recipe logs a copy to history; the book entry stays put.
+5. **Plan** — generate a week of distinct meals, swap any day, and turn it into one
    consolidated shopping list for meals still to cook; cooked meals and delivery
    nights are excluded. Ordinary cooking water never needs a grocery purchase.
    Choose a start date and a serving count when you create the plan; each slot is
    labelled with its day.
    Planning runs in the background with visible progress;
    interrupted jobs keep completed meals and can resume.
-5. **Shopping** — a standalone list you can add to by hand, from a plan, or from a
+6. **Shopping** — a standalone list you can add to by hand, from a plan, or from a
    single meal; check things off and move them straight into inventory. Repeating
    an import is safe; use **Add again** for an intentional second copy.
    Edit an item's quantity and unit to match the package you actually buy before
    moving it into inventory. Leave the quantity blank when it is unknown.
-6. **History & Insights** — every suggestion is logged so meals don't repeat; mark
+7. **History & Insights** — every suggestion is logged so meals don't repeat; mark
    meals cooked (optionally decrementing inventory and saving the leftovers to your
    fridge with a short expiry), rate them, and feedback shapes future suggestions.
    One meal a week can be marked "order delivery instead"; History can filter to
