@@ -19,6 +19,7 @@ import httpx
 from ..config import settings
 from ..schemas import MealSuggestion, RecipeIngredient, RecipeSource
 from .ai_client import call_structured
+from .nutrition import parse_nutrition
 from .prompts import load_prompt
 from .units import normalize_unit
 
@@ -228,6 +229,7 @@ def recipe_from_json_ld(data: dict, url: str | None = None) -> MealSuggestion:
         steps=_steps(data.get("recipeInstructions")),
         missing_ingredients=[],
         source=RecipeSource(title=title, url=url) if url else None,
+        nutrition=parse_nutrition(data.get("nutrition"), source="recipe"),
     )
 
 

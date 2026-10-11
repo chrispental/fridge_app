@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ChefHat, Sparkles, Truck, ThumbsUp } from 'lucide-react'
+import { ChefHat, Sparkles, Truck, ThumbsUp, Flame } from 'lucide-react'
 import { useMealStats } from '../api/queries.js'
 import {
   PageHeader, Bento, BentoItem, StatCard, SectionHeader, EmptyState, PageSkeleton,
@@ -93,6 +93,25 @@ export default function InsightsPage() {
             </div>
           </StatCard>
         </BentoItem>
+
+        {stats.nutrition && (
+          <BentoItem span={12}>
+            <StatCard icon={<Flame size={20} strokeWidth={2} />} iconTone="warn" title="Per serving, on average">
+              <div className="stat-row">
+                <span className="stat-big">{stats.nutrition.calories ?? '—'}</span>
+                <span className="caption">kcal across {stats.nutrition.meals} cooked meal{stats.nutrition.meals === 1 ? '' : 's'} with estimates</span>
+              </div>
+              <p className="nutrition-line">
+                ≈ {[
+                  stats.nutrition.protein_g != null && `${Math.round(stats.nutrition.protein_g)} g protein`,
+                  stats.nutrition.carbs_g != null && `${Math.round(stats.nutrition.carbs_g)} g carbs`,
+                  stats.nutrition.fat_g != null && `${Math.round(stats.nutrition.fat_g)} g fat`,
+                ].filter(Boolean).join(' · ')}
+                <span className="sub"> · approximate, for planning only</span>
+              </p>
+            </StatCard>
+          </BentoItem>
+        )}
 
         <BentoItem span={6}>
           <div className="card" style={{ padding: 20 }}>
