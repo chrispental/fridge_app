@@ -41,15 +41,6 @@ code and PR state before acting; update or remove notes as decisions change.
 - **Cooking recovery:** Surface the latest unfinished cooking session throughout
   the app. Dismissing its reminder keeps the recipe's saved steps and timers.
 
-## Deferred work
-
-- **design.pen sync (October 11, 2026):** The Pencil app was not available in the
-  session that added the adjust-recipe panel, the leftovers checkbox, the plan
-  start-date/serving picker and slot date labels, the History “Delivery” filter,
-  and the inventory expiry hint. Update the MealCard component and the Cook, Week
-  Plan, Inventory (Add item), and History screens (mobile + desktop) in `design.pen`
-  when the connector is next available, then remove this note.
-
 ## Previously recorded environment context
 
 - A September 1, 2026 project memory records Supabase's free plan and an accepted
