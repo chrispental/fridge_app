@@ -54,6 +54,7 @@ export default function CookMode({ meal, onClose, onCook }) {
   const [direction, setDirection] = useState(1)
 
   const [decrement, setDecrement] = useState(true)
+  const [leftovers, setLeftovers] = useState(false)
   const [cooked, setCooked] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -133,7 +134,7 @@ export default function CookMode({ meal, onClose, onCook }) {
     setBusy(true)
     setError(null)
     try {
-      await onCook(decrement, requestId.current)
+      await onCook(decrement, requestId.current, leftovers)
       setCooked(true)
       clear()
     } catch (e) {
@@ -275,6 +276,14 @@ export default function CookMode({ meal, onClose, onCook }) {
                       onChange={(e) => setDecrement(e.target.checked)}
                     />
                     Subtract used ingredients from inventory
+                  </label>
+                  <label className="cook-decrement">
+                    <input
+                      type="checkbox"
+                      checked={leftovers}
+                      onChange={(e) => setLeftovers(e.target.checked)}
+                    />
+                    Save leftovers to my fridge
                   </label>
                   <button
                     className="btn primary cook-cta"

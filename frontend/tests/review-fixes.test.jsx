@@ -16,7 +16,7 @@ vi.mock('../src/api/queries.js', () => ({
   useMealBatch: () => ({}),
   useSuggestMeals: () => ({ mutate: vi.fn() }),
   useCookMeal: () => ({}), useSubmitFeedback: () => ({}),
-  useOrderDelivery: () => ({ mutate: order }), useImportMealToList: () => ({}),
+  useOrderDelivery: () => ({ mutate: order }), useImportMealToList: () => ({}), useAdjustMeal: () => ({}),
 }))
 
 const meal = { id: 41, title: 'Rice bowl', recipe_json: { ingredients: [], steps: ['Simmer for 1 minute.'] } }

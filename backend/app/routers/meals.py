@@ -10,7 +10,8 @@ from ..auth import CurrentUser
 from ..database import get_db
 from ..models import utcnow
 from ..services import brave_search
-from ..services.meal_engine import most_recent_delivery, normalize_title, suggest_meals
+from ..services.expiry import estimate_expiry
+from ..services.meal_engine import AdjustmentRejected, adjust_meal, most_recent_delivery, normalize_title, suggest_meals
 from ..services.meal_stats import compute_stats
 from ..services.scope import get_owned, get_prefs, inventory_for
 from ..services.ingredients import StockPool
@@ -174,11 +175,35 @@ def cook_meal(
     meal.status = "cooked"
     meal.cooked_at = utcnow()
     not_subtracted = _decrement_inventory(db, meal) if payload.decrement_inventory else []
+    if payload.save_leftovers:
+        _save_leftovers(db, meal)
     db.commit()
     db.refresh(meal)
     # Response-only: tells the client which stocked ingredients it must adjust by hand.
     meal.not_subtracted = not_subtracted
     return meal
+
+
+@router.post("/{meal_id}/adjust", response_model=schemas.MealOut)
+def adjust(
+    meal_id: int,
+    payload: schemas.AdjustRequest,
+    user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    """Rewrite a suggested recipe from a short instruction ("make it vegetarian")."""
+    meal = _owned_meal(db, meal_id, user.id)
+    if meal.status != "suggested":
+        raise HTTPException(409, "This meal is already cooked or ordered. Ask for a new suggestion instead.")
+    try:
+        adjust_meal(db, user.id, meal, payload.instruction)
+    except AdjustmentRejected as exc:
+        raise HTTPException(422, str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(502, str(exc))
+    return schemas.MealOut.model_validate(meal).model_copy(update={
+        "recipe_json": annotate_recipe(meal.recipe_json, inventory_for(db, user.id), get_prefs(db, user.id).pantry_staples or [])
+    })
 
 
 @router.post("/{meal_id}/feedback", response_model=schemas.MealOut)
@@ -207,6 +232,23 @@ def delete_meal(meal_id: int, user: CurrentUser, db: Session = Depends(get_db)):
         raise HTTPException(409, "Remove this meal's plan before deleting the recipe.")
     db.delete(meal)
     db.commit()
+
+
+def _save_leftovers(db: Session, meal: models.Meal) -> models.InventoryItem:
+    """Put tonight's leftovers in the fridge as an inventory item with a short expiry,
+    so "use these first" and the meal engine see them. The amount is unknown by design."""
+    item = models.InventoryItem(
+        user_id=meal.user_id,
+        name=f"leftover {meal.title}".strip().lower(),
+        quantity=None,
+        unit="unknown",
+        category="leftover",
+        storage="fridge",
+        expires_at=estimate_expiry("leftover", "fridge"),
+        source="leftover",
+    )
+    db.add(item)
+    return item
 
 
 def _decrement_inventory(db: Session, meal: models.Meal) -> list[str]:

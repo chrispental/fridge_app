@@ -181,7 +181,7 @@ export default function Home() {
             {loading ? (
               <Skeleton height={124} radius={14} />
             ) : plan?.entries?.length > 0 ? (
-              <PlanStrip entries={plan.entries} toBuyCount={toBuy} />
+              <PlanStrip entries={plan.entries} toBuyCount={toBuy} startDate={plan.start_date} />
             ) : (
               <EmptyState
                 icon={<CalendarDays size={22} strokeWidth={2} />}

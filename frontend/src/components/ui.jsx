@@ -4,6 +4,7 @@
 // this module decoupled from lucide-react.
 import { Link } from 'react-router-dom'
 import MealIcon from './MealIcon.jsx'
+import { addDays, fmtWeekday } from '../utils/dates.js'
 
 export function PageHeader({ eyebrow, title, subtitle, children }) {
   return (
@@ -180,18 +181,19 @@ export function MealPreviewCard({ meal, to = '/cook' }) {
 }
 
 // Horizontal scroll of day chips for the current week plan.
-export function PlanStrip({ entries = [], toBuyCount = null }) {
+export function PlanStrip({ entries = [], toBuyCount = null, startDate = null }) {
   return (
     <div className="plan-strip">
       {entries.map((e) => {
         const r = e.meal.recipe_json || {}
+        const date = startDate ? fmtWeekday(addDays(startDate, e.slot_index)) : ''
         return (
           <Link key={e.meal.id} to="/plan" className="plan-chip">
             <div className="plan-chip-thumb">
               <MealIcon method={r.cooking_method} size={24} />
             </div>
             <div className="plan-chip-body">
-              <span className="plan-chip-day">Day {e.slot_index + 1}</span>
+              <span className="plan-chip-day">{date || `Day ${e.slot_index + 1}`}</span>
               <span className="plan-chip-title">{e.meal.title}</span>
             </div>
           </Link>

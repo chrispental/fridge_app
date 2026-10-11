@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
 import {
   Clock, Star, Users, Check, Truck, RefreshCw, ChevronDown, ChevronUp,
-  ThumbsUp, ThumbsDown, ExternalLink, Play, ShoppingCart,
+  ThumbsUp, ThumbsDown, ExternalLink, Play, ShoppingCart, Wand2,
 } from 'lucide-react'
 import {
-  useCookMeal, useSubmitFeedback, useOrderDelivery, useImportMealToList,
+  useCookMeal, useSubmitFeedback, useOrderDelivery, useImportMealToList, useAdjustMeal,
 } from '../api/queries.js'
 import { toast } from './toast.js'
 import CookMode from './CookMode.jsx'
@@ -19,6 +19,11 @@ const FEEDBACK_TAGS = [
   'Too dry', 'Too greasy', 'Too slow', 'Loved it',
 ]
 
+// One-tap rewrites; anything else goes in the free-text box.
+const ADJUST_CHIPS = [
+  'Vegetarian', 'Faster', 'Spicier', 'Milder', 'Only what I have', 'Fewer dishes',
+]
+
 export default function MealCard({
   meal,
   onSwap = null,
@@ -31,10 +36,14 @@ export default function MealCard({
   const [expanded, setExpanded] = useState(false)
   const [cooking, setCooking] = useState(false)
   const [decrement, setDecrement] = useState(true)
+  const [leftovers, setLeftovers] = useState(false)
   const [swapBusy, setSwapBusy] = useState(false)
   const [confirmingDelivery, setConfirmingDelivery] = useState(false)
+  const [adjusting, setAdjusting] = useState(false)
+  const [instruction, setInstruction] = useState('')
 
   const cookMutation = useCookMeal()
+  const adjustMutation = useAdjustMeal()
   const cookRequestId = useRef(crypto.randomUUID())
   const feedbackMutation = useSubmitFeedback()
   const orderMutation = useOrderDelivery()
@@ -75,6 +84,23 @@ export default function MealCard({
     )
   }
 
+  // Rewrites the recipe in place (same meal id); the cache patch re-renders this card.
+  function applyAdjustment(text) {
+    const value = (text ?? instruction).trim()
+    if (!value || adjustMutation.isPending) return
+    adjustMutation.mutate(
+      { id: meal.id, instruction: value },
+      {
+        onSuccess: () => {
+          setAdjusting(false)
+          setInstruction('')
+          setExpanded(true)
+          toast.success('Recipe adjusted')
+        },
+      },
+    )
+  }
+
   async function handleSwap() {
     if (!onSwap) return
     setSwapBusy(true)
@@ -88,6 +114,8 @@ export default function MealCard({
   const ingredients = recipe.ingredients || []
   const steps = recipe.steps || []
   const missing = recipe.missing_ingredients || []
+  const adjustments = recipe.adjustments || []
+  const canAdjust = !cooked && !ordered
   const outOfStock = ingredients.some((i) => ['missing', 'partial'].includes(i.stock_status) || (!i.stock_status && !i.in_stock)) || missing.length > 0
   const checkAmounts = ingredients.some((i) => i.stock_status === 'check')
 
@@ -137,12 +165,74 @@ export default function MealCard({
       </div>
 
       <div className="meal-body">
-        {onSwap && (
+        {(onSwap || canAdjust) && (
           <div className="swap-row">
-            <button className="btn ghost" onClick={handleSwap} disabled={swapBusy}>
-              <RefreshCw size={15} strokeWidth={2.2} /> {swapBusy ? 'Swapping…' : 'Swap this meal'}
-            </button>
+            {canAdjust && (
+              <button
+                className="btn ghost"
+                onClick={() => setAdjusting((v) => !v)}
+                aria-expanded={adjusting}
+                disabled={adjustMutation.isPending}
+              >
+                <Wand2 size={15} strokeWidth={2.2} /> {adjustMutation.isPending ? 'Adjusting…' : 'Adjust recipe'}
+              </button>
+            )}
+            {onSwap && (
+              <button className="btn ghost" onClick={handleSwap} disabled={swapBusy}>
+                <RefreshCw size={15} strokeWidth={2.2} /> {swapBusy ? 'Swapping…' : 'Swap this meal'}
+              </button>
+            )}
           </div>
+        )}
+
+        {adjusting && canAdjust && (
+          <div className="adjust-panel" role="group" aria-label="Adjust this recipe">
+            <p className="hint">How should this recipe change? Your allergies and the weather still apply.</p>
+            <div className="feedback-tags">
+              {ADJUST_CHIPS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className="chip-toggle"
+                  onClick={() => applyAdjustment(c)}
+                  disabled={adjustMutation.isPending}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <form
+              className="adjust-form"
+              onSubmit={(e) => {
+                e.preventDefault()
+                applyAdjustment()
+              }}
+            >
+              <input
+                className="adjust-input"
+                aria-label="Describe the change"
+                placeholder="e.g. swap the chicken for tofu, halve the garlic…"
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                maxLength={500}
+                disabled={adjustMutation.isPending}
+              />
+              <button type="submit" className="btn primary" disabled={adjustMutation.isPending || !instruction.trim()}>
+                {adjustMutation.isPending ? 'Adjusting…' : 'Apply'}
+              </button>
+              <button type="button" className="btn ghost" onClick={() => setAdjusting(false)} disabled={adjustMutation.isPending}>
+                Cancel
+              </button>
+            </form>
+            {adjustMutation.isPending && <p className="hint">Rewriting the recipe — this takes a few seconds.</p>}
+            {adjustMutation.error && <div className="banner error" role="alert">{adjustMutation.error.message}</div>}
+          </div>
+        )}
+
+        {adjustments.length > 0 && (
+          <p className="adjusted-note">
+            <Wand2 size={13} strokeWidth={2.2} style={{ verticalAlign: '-2px' }} /> Adjusted: {adjustments.join(' · ')}
+          </p>
         )}
 
         {ingredients.length > 0 && (
@@ -306,14 +396,24 @@ export default function MealCard({
           </div>
         ) : (
           <div className="cook-row">
-            <label>
-              <input
-                type="checkbox"
-                checked={decrement}
-                onChange={(e) => setDecrement(e.target.checked)}
-              />
-              Subtract used ingredients from inventory
-            </label>
+            <div className="cook-options">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={decrement}
+                  onChange={(e) => setDecrement(e.target.checked)}
+                />
+                Subtract used ingredients from inventory
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={leftovers}
+                  onChange={(e) => setLeftovers(e.target.checked)}
+                />
+                Save leftovers to my fridge
+              </label>
+            </div>
             <div className="cook-actions">
               <button
                 className="btn"
@@ -331,7 +431,7 @@ export default function MealCard({
               </button>
               <button
                 className="btn"
-                onClick={() => cookMutation.mutate({ id: meal.id, decrement, requestId: cookRequestId.current })}
+                onClick={() => cookMutation.mutate({ id: meal.id, decrement, leftovers, requestId: cookRequestId.current })}
                 disabled={cookMutation.isPending}
               >
                 <Check size={15} strokeWidth={2.4} /> {cookMutation.isPending ? 'Saving…' : 'I cooked this'}
@@ -349,7 +449,7 @@ export default function MealCard({
         <CookMode
           meal={meal}
           onClose={() => setCooking(false)}
-          onCook={(dec, requestId) => cookMutation.mutateAsync({ id: meal.id, decrement: dec, requestId })}
+          onCook={(dec, requestId, left) => cookMutation.mutateAsync({ id: meal.id, decrement: dec, requestId, leftovers: left })}
         />
       )}
     </div>

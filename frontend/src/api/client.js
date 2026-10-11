@@ -108,8 +108,11 @@ export const api = {
     const qs = params.toString()
     return request(`/meals${qs ? `?${qs}` : ''}`)
   },
-  cookMeal: (id, decrementInventory, requestId) =>
-    request(`/meals/${id}/cook`, json('POST', { decrement_inventory: decrementInventory, request_id: requestId })),
+  cookMeal: (id, decrementInventory, requestId, saveLeftovers = false) =>
+    request(`/meals/${id}/cook`, json('POST', {
+      decrement_inventory: decrementInventory, request_id: requestId, save_leftovers: saveLeftovers,
+    })),
+  adjustMeal: (id, instruction) => request(`/meals/${id}/adjust`, json('POST', { instruction })),
   submitFeedback: (id, { rating = null, tags = [], notes = null } = {}) =>
     request(`/meals/${id}/feedback`, json('POST', { rating, tags, notes })),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
@@ -120,7 +123,8 @@ export const api = {
   orderDelivery: (id) => request(`/meals/${id}/order-delivery`, { method: 'POST' }),
 
   // Weekly meal plan
-  createPlan: ({ count, requestId }) => request('/plans', json('POST', { count, request_id: requestId })),
+  createPlan: ({ count, servings = null, startDate = null, requestId }) =>
+    request('/plans', json('POST', { count, servings, start_date: startDate, request_id: requestId })),
   resumePlan: (planId) => request(`/plans/${planId}/resume`, { method: 'POST' }),
   getCurrentPlan: () => request('/plans/current'),
   getShoppingList: (planId) => request(`/plans/${planId}/shopping-list`),

@@ -164,7 +164,12 @@ class SuggestRequest(BaseModel):
 
 class CookRequest(BaseModel):
     decrement_inventory: bool = False
+    save_leftovers: bool = False  # add "leftover <title>" to the fridge with a short expiry
     request_id: UUID | None = None
+
+
+class AdjustRequest(BaseModel):
+    instruction: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=500)]
 
 
 class DeliveryStatusOut(BaseModel):
@@ -178,6 +183,8 @@ class DeliveryStatusOut(BaseModel):
 # --------------------------------------------------------------------------- #
 class CreatePlanRequest(BaseModel):
     count: int = Field(default=7, ge=1, le=14)
+    servings: int | None = Field(default=None, ge=1, le=20)  # None = household size
+    start_date: date | None = None  # None = undated "Day N" slots
     request_id: UUID | None = None
 
 
@@ -193,6 +200,8 @@ class MealPlanOut(BaseModel):
     entries: list[MealPlanEntryOut]
     status: str = "ready"
     requested_count: int | None = None
+    servings: int | None = None
+    start_date: date | None = None
     error: str | None = None
     model_config = ConfigDict(from_attributes=True)
 
