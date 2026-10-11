@@ -110,7 +110,10 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
    searchable; bought items keep their aisle as the category in your fridge.
    Edit an item's quantity and unit to match the package you actually buy before
    moving it into inventory. Leave the quantity blank when it is unknown.
-7. **History & Insights** — every suggestion is logged so meals don't repeat; mark
+7. **Your data** — Settings has a **Download my data** button that saves everything
+   (preferences, inventory, meal history and recipe book, shopping list, plans) as one
+   JSON file, so your kitchen is never locked in.
+8. **History & Insights** — every suggestion is logged so meals don't repeat; mark
    meals cooked (optionally decrementing inventory and saving the leftovers to your
    fridge with a short expiry), rate them, and feedback shapes future suggestions.
    One meal a week can be marked "order delivery instead"; History can filter to

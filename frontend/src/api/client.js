@@ -115,6 +115,9 @@ export const api = {
   adjustMeal: (id, instruction) => request(`/meals/${id}/adjust`, json('POST', { instruction })),
   setFavorite: (id, favorite) => request(`/meals/${id}/favorite`, json('POST', { favorite })),
 
+  // Data portability: the whole kitchen as a JSON file (Blob)
+  exportData: () => request('/export', { binary: true }),
+
   // Recipe book: imported recipes + favourites
   importRecipe: ({ url = null, text = null }) => request('/meals/import', json('POST', { url, text })),
   getRecipes: (q) => request(`/meals/recipes${q ? `?q=${encodeURIComponent(q)}` : ''}`),

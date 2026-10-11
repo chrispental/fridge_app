@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .database import engine
 from .migrations import run_migrations
-from .routers import health, inventory, meals, plans, preferences, shopping
+from .routers import export, health, inventory, meals, plans, preferences, shopping
 from .services.blob_storage import get_blob_storage
 from .services.plan_jobs import start_worker
 
@@ -56,3 +56,4 @@ app.include_router(inventory.router)
 app.include_router(meals.router)
 app.include_router(plans.router)
 app.include_router(shopping.router)
+app.include_router(export.router)

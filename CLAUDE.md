@@ -150,6 +150,12 @@ Meal copy with `recipe_json["saved_from"]` so the book entry never changes state
 cook receipt stores the copy's id for replays. Favourites outside the no-repeat window are
 offered to the suggestion prompt as a hint by exact title.
 
+**Data export — `backend/app/routers/export.py`.** `GET /api/export` returns the user's
+whole kitchen as one versioned JSON attachment (`fridge-chef-export/1`): preferences,
+inventory, every Meal row (including the recipe book, ratings, and adjustments), the
+shopping list, plans with their meal ids, and scan metadata (no photos). Everything is
+scoped by `user_id`; the frontend downloads the blob from Settings.
+
 **Shopping aisles — `backend/app/services/aisles.py`.** `ShoppingListItem.category` is
 a store section from the inventory category vocabulary (`AISLES`, mirrored by
 `frontend/src/utils/aisles.js`). `guess_category(name)` is a whole-word keyword table,
