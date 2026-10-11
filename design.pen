@@ -616,22 +616,46 @@
               "name": "toolsRow",
               "width": "fill_container",
               "gap": 8,
-              "justifyContent": "end",
+              "justifyContent": "space_between",
               "alignItems": "center",
               "children": [
                 {
-                  "id": "q7QvW",
+                  "id": "lDfR9",
                   "type": "ref",
                   "ref": "CCrQi",
-                  "name": "adjustBtn",
+                  "name": "favoriteBtn",
                   "descendants": {
                     "j2jFf6": {
-                      "icon": "wand-sparkles"
+                      "icon": "heart"
                     },
                     "t0Rs2": {
-                      "content": "Adjust recipe"
+                      "content": "Add to favourites",
+                      "enabled": false
                     }
                   }
+                },
+                {
+                  "type": "frame",
+                  "id": "C00rw",
+                  "name": "toolsRight",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "q7QvW",
+                      "type": "ref",
+                      "ref": "CCrQi",
+                      "name": "adjustBtn",
+                      "descendants": {
+                        "j2jFf6": {
+                          "icon": "wand-sparkles"
+                        },
+                        "t0Rs2": {
+                          "content": "Adjust recipe"
+                        }
+                      }
+                    }
+                  ]
                 }
               ]
             },
@@ -1504,6 +1528,41 @@
                       "name": "label",
                       "fill": "$text-secondary",
                       "content": "Cook",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "c0Oqx",
+                  "name": "nav-recipes",
+                  "width": "fill_container",
+                  "cornerRadius": 12,
+                  "gap": 12,
+                  "padding": [
+                    12,
+                    11
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "k280U6",
+                      "name": "icon",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "book-open",
+                      "library": "lucide",
+                      "fill": "$text-secondary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "yp6lO",
+                      "name": "label",
+                      "fill": "$text-secondary",
+                      "content": "Recipes",
                       "fontFamily": "Inter",
                       "fontSize": 14,
                       "fontWeight": "600"
@@ -36752,6 +36811,861 @@
                   "fontFamily": "Inter",
                   "fontSize": 11,
                   "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "qN6nh",
+      "x": 18046,
+      "y": 0,
+      "name": "Recipes · Mobile",
+      "theme": {
+        "mode": "light"
+      },
+      "width": 390,
+      "fill": "$bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "c9Ndq",
+          "type": "ref",
+          "ref": "q4uCDj",
+          "name": "histSb"
+        },
+        {
+          "type": "frame",
+          "id": "oBlp8",
+          "name": "Content",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 18,
+          "padding": [
+            14,
+            20,
+            24,
+            20
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "VfYe9",
+              "name": "PageHeader",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "AGSOI",
+                  "name": "eyebrow",
+                  "fill": "$accent",
+                  "content": "RECIPE BOOK",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "700",
+                  "letterSpacing": 1.3
+                },
+                {
+                  "type": "text",
+                  "id": "J0SPPK",
+                  "name": "title",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "My recipes",
+                  "fontFamily": "$font-display",
+                  "fontSize": 24,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "XbMg1",
+                  "name": "subtitle",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Recipes you've saved from the web or pasted in, plus your favourites. The chef can pick from your favourites when they fit what's in the fridge.",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pyyQh",
+              "name": "ImportBox",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": "$radius-lg",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "hHfxq",
+                  "name": "SourceSegmented",
+                  "width": "fill_container",
+                  "fill": "$surface-1",
+                  "cornerRadius": 100,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 4,
+                  "padding": 4,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "r6Ob5",
+                      "name": "seg-All",
+                      "width": "fill_container",
+                      "fill": "$accent",
+                      "cornerRadius": 100,
+                      "padding": [
+                        16,
+                        8
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "E9Xw8G",
+                          "name": "label",
+                          "fill": "$accent-fg",
+                          "content": "From a web address",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "w1S9PK",
+                      "name": "seg-Cooked",
+                      "width": "fill_container",
+                      "cornerRadius": 100,
+                      "padding": [
+                        16,
+                        8
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "o2xVYz",
+                          "name": "label",
+                          "fill": "$text-secondary",
+                          "content": "Paste a recipe",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "YjxuJ",
+                  "name": "urlInput",
+                  "width": "fill_container",
+                  "fill": "$surface-2",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$border-strong",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    13,
+                    14
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "m2jCX",
+                      "name": "placeholder",
+                      "fill": "$text-tertiary",
+                      "content": "https://example.com/best-lemon-chicken",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "H3fYq",
+                  "name": "importActions",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "DPDDw",
+                      "type": "ref",
+                      "ref": "RTWdT",
+                      "name": "saveBtn",
+                      "descendants": {
+                        "wgc0e": {
+                          "icon": "link-2"
+                        },
+                        "o4QqwP": {
+                          "content": "Save recipe"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "djnj5",
+                      "name": "hint",
+                      "fill": "$text-tertiary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Most recipe pages are read directly; the rest are transcribed by the chef.",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "QbFsJ",
+              "name": "searchBox",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 100,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "gap": 8,
+              "padding": [
+                14,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "r1LY1B",
+                  "name": "icon",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "search",
+                  "library": "lucide",
+                  "fill": "$text-tertiary"
+                },
+                {
+                  "type": "text",
+                  "id": "KFkuf",
+                  "name": "placeholder",
+                  "fill": "$text-tertiary",
+                  "content": "Search your recipes…",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ewvLY",
+              "name": "Segmented",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 100,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "gap": 4,
+              "padding": 4,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "V6FsCi",
+                  "name": "seg-All",
+                  "width": "fill_container",
+                  "fill": "$accent",
+                  "cornerRadius": 100,
+                  "padding": [
+                    16,
+                    8
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "g5bi95",
+                      "name": "label",
+                      "fill": "$accent-fg",
+                      "content": "All",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Z5ScZ",
+                  "name": "seg-Cooked",
+                  "width": "fill_container",
+                  "cornerRadius": 100,
+                  "padding": [
+                    16,
+                    8
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "u1qEy",
+                      "name": "label",
+                      "fill": "$text-secondary",
+                      "content": "Imported",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "oL8hR",
+                  "name": "seg-Suggested",
+                  "width": "fill_container",
+                  "cornerRadius": 100,
+                  "padding": [
+                    16,
+                    8
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qzJR4",
+                      "name": "label",
+                      "fill": "$text-secondary",
+                      "content": "Favourites",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gFdkr",
+              "name": "HistoryColumn",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 18,
+              "children": [
+                {
+                  "id": "RuYdw",
+                  "type": "ref",
+                  "ref": "xRnJC",
+                  "name": "card-Lemon & Garlic Chicken",
+                  "width": "fill_container",
+                  "descendants": {
+                    "X8lqXk": {
+                      "content": "Lemon & Garlic Chicken"
+                    },
+                    "kHjqo": {
+                      "content": "Saved from example.com ↗"
+                    },
+                    "Mtcib/j2jFf6": {
+                      "icon": "calendar-plus"
+                    },
+                    "Mtcib/t0Rs2": {
+                      "content": "Add to this week"
+                    }
+                  }
+                },
+                {
+                  "id": "JmpDy",
+                  "type": "ref",
+                  "ref": "xRnJC",
+                  "name": "card-Nan's Beef Stew",
+                  "width": "fill_container",
+                  "descendants": {
+                    "X8lqXk": {
+                      "content": "Nan's Beef Stew"
+                    },
+                    "lDfR9/j2jFf6": {
+                      "fill": "$danger"
+                    },
+                    "kHjqo": {
+                      "content": "Saved from example.com ↗"
+                    },
+                    "Mtcib/j2jFf6": {
+                      "icon": "calendar-plus"
+                    },
+                    "Mtcib/t0Rs2": {
+                      "content": "Add to this week"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "S33Th",
+          "type": "ref",
+          "ref": "KFblT",
+          "name": "histNav",
+          "descendants": {
+            "UGOxn": {
+              "fill": "$accent-dim-2"
+            },
+            "qEKXa": {
+              "fill": "$accent"
+            },
+            "J9Y87": {
+              "fill": "$accent"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "u4R3A",
+      "x": 18516,
+      "y": 1400,
+      "name": "Recipes · Desktop",
+      "theme": {
+        "mode": "light"
+      },
+      "clip": true,
+      "width": 1440,
+      "height": 2560,
+      "fill": "$bg",
+      "children": [
+        {
+          "id": "eiKxx",
+          "type": "ref",
+          "ref": "MmEGn",
+          "height": "fill_container",
+          "name": "hdNav",
+          "descendants": {
+            "R8jPP": {
+              "fill": "$accent-dim"
+            },
+            "t2iec": {
+              "fill": "$accent"
+            },
+            "lSiFf": {
+              "fill": "$accent"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "XFNS1",
+          "name": "Content",
+          "clip": true,
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 24,
+          "padding": 40,
+          "children": [
+            {
+              "type": "frame",
+              "id": "o8cuev",
+              "name": "PageHeader",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Q5nvCJ",
+                  "name": "eyebrow",
+                  "fill": "$accent",
+                  "content": "RECIPE BOOK",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "700",
+                  "letterSpacing": 1.3
+                },
+                {
+                  "type": "text",
+                  "id": "BYWHf",
+                  "name": "title",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "My recipes",
+                  "fontFamily": "$font-display",
+                  "fontSize": 30,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "FVqpE",
+                  "name": "subtitle",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Recipes you've saved from the web or pasted in, plus your favourites. The chef can pick from your favourites when they fit what's in the fridge.",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "qHWtX",
+              "name": "ImportBox",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": "$radius-lg",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "UkOVP",
+                  "name": "SourceSegmented",
+                  "fill": "$surface-1",
+                  "cornerRadius": 100,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 4,
+                  "padding": 4,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "zh9ml",
+                      "name": "seg-All",
+                      "fill": "$accent",
+                      "cornerRadius": 100,
+                      "padding": [
+                        16,
+                        8
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QacLc",
+                          "name": "label",
+                          "fill": "$accent-fg",
+                          "content": "From a web address",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fwkw0",
+                      "name": "seg-Cooked",
+                      "cornerRadius": 100,
+                      "padding": [
+                        16,
+                        8
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Sa4Cv",
+                          "name": "label",
+                          "fill": "$text-secondary",
+                          "content": "Paste a recipe",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pb1UL",
+                  "name": "urlInput",
+                  "width": "fill_container",
+                  "fill": "$surface-2",
+                  "cornerRadius": "$radius-md",
+                  "stroke": "$border-strong",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "padding": [
+                    13,
+                    14
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "sxQu8",
+                      "name": "placeholder",
+                      "fill": "$text-tertiary",
+                      "content": "https://example.com/best-lemon-chicken",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "bcIbO",
+                  "name": "importActions",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "dzAWm",
+                      "type": "ref",
+                      "ref": "RTWdT",
+                      "name": "saveBtn",
+                      "descendants": {
+                        "wgc0e": {
+                          "icon": "link-2"
+                        },
+                        "o4QqwP": {
+                          "content": "Save recipe"
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "UXqcR",
+                      "name": "hint",
+                      "fill": "$text-tertiary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Most recipe pages are read directly; the rest are transcribed by the chef.",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "pfYUD",
+              "name": "histToolbar",
+              "width": "fill_container",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "VGziX",
+                  "name": "searchBox",
+                  "width": 300,
+                  "fill": "$surface-1",
+                  "cornerRadius": 100,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 8,
+                  "padding": [
+                    14,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "q4zcqd",
+                      "name": "icon",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "$text-tertiary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "yxtdc",
+                      "name": "placeholder",
+                      "fill": "$text-tertiary",
+                      "content": "Search your recipes…",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cCLWM",
+                  "name": "Segmented",
+                  "fill": "$surface-1",
+                  "cornerRadius": 100,
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "gap": 4,
+                  "padding": 4,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "T4jbvk",
+                      "name": "seg-All",
+                      "fill": "$accent",
+                      "cornerRadius": 100,
+                      "padding": [
+                        16,
+                        8
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iM988",
+                          "name": "label",
+                          "fill": "$accent-fg",
+                          "content": "All",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JUbg3",
+                      "name": "seg-Cooked",
+                      "cornerRadius": 100,
+                      "padding": [
+                        16,
+                        8
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "X5ulON",
+                          "name": "label",
+                          "fill": "$text-secondary",
+                          "content": "Imported",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vieRR",
+                      "name": "seg-Suggested",
+                      "cornerRadius": 100,
+                      "padding": [
+                        16,
+                        8
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "MkQ9O",
+                          "name": "label",
+                          "fill": "$text-secondary",
+                          "content": "Favourites",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "l7TjK",
+              "name": "HistoryColumn",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 18,
+              "children": [
+                {
+                  "id": "L4MsA",
+                  "type": "ref",
+                  "ref": "xRnJC",
+                  "name": "card-Lemon & Garlic Chicken",
+                  "width": "fill_container",
+                  "descendants": {
+                    "X8lqXk": {
+                      "content": "Lemon & Garlic Chicken"
+                    },
+                    "kHjqo": {
+                      "content": "Saved from example.com ↗"
+                    },
+                    "Mtcib/j2jFf6": {
+                      "icon": "calendar-plus"
+                    },
+                    "Mtcib/t0Rs2": {
+                      "content": "Add to this week"
+                    }
+                  }
+                },
+                {
+                  "id": "x0G7Mk",
+                  "type": "ref",
+                  "ref": "xRnJC",
+                  "name": "card-Nan's Beef Stew",
+                  "width": "fill_container",
+                  "descendants": {
+                    "X8lqXk": {
+                      "content": "Nan's Beef Stew"
+                    },
+                    "lDfR9/j2jFf6": {
+                      "fill": "$danger"
+                    },
+                    "kHjqo": {
+                      "content": "Saved from example.com ↗"
+                    },
+                    "Mtcib/j2jFf6": {
+                      "icon": "calendar-plus"
+                    },
+                    "Mtcib/t0Rs2": {
+                      "content": "Add to this week"
+                    }
+                  }
                 }
               ]
             }
