@@ -16416,7 +16416,7 @@
       },
       "clip": true,
       "width": 1440,
-      "height": 760,
+      "height": 960,
       "fill": "$bg",
       "children": [
         {
@@ -16616,18 +16616,57 @@
             },
             {
               "type": "frame",
-              "id": "g1pTBl",
-              "name": "group-TO BUY (3)",
+              "id": "awT2J",
+              "name": "searchBox",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 100,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "gap": 8,
+              "padding": [
+                14,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "v0pNQ",
+                  "name": "icon",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "search",
+                  "library": "lucide",
+                  "fill": "$text-tertiary"
+                },
+                {
+                  "type": "text",
+                  "id": "AZ6gz",
+                  "name": "placeholder",
+                  "fill": "$text-tertiary",
+                  "content": "Search your list…",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "c7zvVf",
+              "name": "aisle-PRODUCE · 1",
               "width": "fill_container",
               "layout": "vertical",
               "gap": 10,
               "children": [
                 {
                   "type": "text",
-                  "id": "lxeov",
+                  "id": "FAmks",
                   "name": "label",
                   "fill": "$text-secondary",
-                  "content": "TO BUY (3)",
+                  "content": "PRODUCE · 1",
                   "fontFamily": "Inter",
                   "fontSize": 12,
                   "fontWeight": "600",
@@ -16635,7 +16674,60 @@
                 },
                 {
                   "type": "frame",
-                  "id": "SQ67Z",
+                  "id": "HIVVf",
+                  "name": "rows",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "id": "P4uWGy",
+                      "type": "ref",
+                      "ref": "xht6l",
+                      "name": "row-Bell pepper",
+                      "width": "fill_container",
+                      "descendants": {
+                        "ewx4u": {
+                          "content": "Bell pepper"
+                        },
+                        "fM9gf": {
+                          "content": "2 piece",
+                          "enabled": true
+                        },
+                        "ibxnK": {
+                          "enabled": true
+                        },
+                        "hPTrr": {
+                          "content": "from plan"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Jrvjk",
+              "name": "aisle-DAIRY · 1",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "x5nMwf",
+                  "name": "label",
+                  "fill": "$text-secondary",
+                  "content": "DAIRY · 1",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "frame",
+                  "id": "wtgUJ",
                   "name": "rows",
                   "width": "fill_container",
                   "layout": "vertical",
@@ -16662,29 +16754,38 @@
                           "content": "from plan"
                         }
                       }
-                    },
-                    {
-                      "id": "P4uWGy",
-                      "type": "ref",
-                      "ref": "xht6l",
-                      "name": "row-Bell pepper",
-                      "width": "fill_container",
-                      "descendants": {
-                        "ewx4u": {
-                          "content": "Bell pepper"
-                        },
-                        "fM9gf": {
-                          "content": "2 piece",
-                          "enabled": true
-                        },
-                        "ibxnK": {
-                          "enabled": true
-                        },
-                        "hPTrr": {
-                          "content": "from plan"
-                        }
-                      }
-                    },
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "lYTqx",
+              "name": "aisle-CONDIMENTS · 1",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "uUd7c",
+                  "name": "label",
+                  "fill": "$text-secondary",
+                  "content": "CONDIMENTS · 1",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "type": "frame",
+                  "id": "njB7y",
+                  "name": "rows",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
                     {
                       "id": "olWnE",
                       "type": "ref",
@@ -19032,18 +19133,100 @@
             },
             {
               "type": "frame",
-              "id": "tyWj5",
-              "name": "group-TO BUY (3)",
+              "id": "G66BW7",
+              "name": "searchBox",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": 100,
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "gap": 8,
+              "padding": [
+                14,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "o5RbB",
+                  "name": "icon",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "search",
+                  "library": "lucide",
+                  "fill": "$text-tertiary"
+                },
+                {
+                  "type": "text",
+                  "id": "C410jh",
+                  "name": "placeholder",
+                  "fill": "$text-tertiary",
+                  "content": "Search your list…",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rzWBt",
+              "name": "aisle-PRODUCE · 1",
               "width": "fill_container",
               "layout": "vertical",
               "gap": 8,
               "children": [
                 {
                   "type": "text",
-                  "id": "S5Jsr",
+                  "id": "Hs9X7",
                   "name": "label",
                   "fill": "$text-secondary",
-                  "content": "TO BUY (3)",
+                  "content": "PRODUCE · 1",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.8
+                },
+                {
+                  "id": "D7Y31u",
+                  "type": "ref",
+                  "ref": "xht6l",
+                  "name": "row-Bell pepper",
+                  "width": "fill_container",
+                  "descendants": {
+                    "ewx4u": {
+                      "content": "Bell pepper"
+                    },
+                    "fM9gf": {
+                      "content": "2 piece",
+                      "enabled": true
+                    },
+                    "ibxnK": {
+                      "enabled": true
+                    },
+                    "hPTrr": {
+                      "content": "from plan"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "g8L7K0",
+              "name": "aisle-DAIRY · 1",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "osCz6",
+                  "name": "label",
+                  "fill": "$text-secondary",
+                  "content": "DAIRY · 1",
                   "fontFamily": "Inter",
                   "fontSize": 12,
                   "fontWeight": "600",
@@ -19070,28 +19253,27 @@
                       "content": "from plan"
                     }
                   }
-                },
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "qedfD",
+              "name": "aisle-CONDIMENTS · 1",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
                 {
-                  "id": "D7Y31u",
-                  "type": "ref",
-                  "ref": "xht6l",
-                  "name": "row-Bell pepper",
-                  "width": "fill_container",
-                  "descendants": {
-                    "ewx4u": {
-                      "content": "Bell pepper"
-                    },
-                    "fM9gf": {
-                      "content": "2 piece",
-                      "enabled": true
-                    },
-                    "ibxnK": {
-                      "enabled": true
-                    },
-                    "hPTrr": {
-                      "content": "from plan"
-                    }
-                  }
+                  "type": "text",
+                  "id": "dT84U",
+                  "name": "label",
+                  "fill": "$text-secondary",
+                  "content": "CONDIMENTS · 1",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "letterSpacing": 0.8
                 },
                 {
                   "id": "U8xJap",
