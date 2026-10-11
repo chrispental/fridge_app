@@ -61,9 +61,10 @@ def test_export_downloads_as_a_dated_json_file(tmp_path):
             yield db
     app.dependency_overrides[get_db] = provide_db
     app.dependency_overrides[get_current_user] = lambda: LOCAL_USER
+    # No lifespan (like the other HTTP fixtures): the module-level engine is not ours.
+    client = TestClient(app)
     try:
-        with TestClient(app) as client:
-            res = client.get("/api/export")
+        res = client.get("/api/export")
         assert res.status_code == 200
         assert res.headers["content-disposition"].startswith('attachment; filename="fridge-chef-export-')
         body = res.json()
@@ -71,5 +72,6 @@ def test_export_downloads_as_a_dated_json_file(tmp_path):
         assert body["inventory"][0]["expires_at"] == "2026-10-20"
         assert body["meals"][0]["title"] == "Lemon Chicken"
     finally:
+        client.close()
         app.dependency_overrides.clear()
         engine.dispose()
