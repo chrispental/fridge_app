@@ -16,7 +16,7 @@ vi.mock('../src/api/queries.js', () => ({
   useMealBatch: () => ({}),
   useSuggestMeals: () => ({ mutate }),
   useCookMeal: () => ({}), useSubmitFeedback: () => ({}),
-  useOrderDelivery: () => ({}), useImportMealToList: () => ({}), useAdjustMeal: () => ({}),
+  useOrderDelivery: () => ({}), useImportMealToList: () => ({}), useAdjustMeal: () => ({}), useSetFavorite: () => ({}), useAddMealToPlan: () => ({}),
 }))
 
 const meal = { id: 72, title: 'Roasted carrots', recipe_json: {

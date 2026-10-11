@@ -77,6 +77,10 @@ export const useInfiniteMeals = ({ status, q }) =>
         : undefined,
   })
 
+// The recipe book (status "saved" or favourite), searchable by title.
+export const useRecipes = (q) =>
+  useQuery({ queryKey: ['meals', 'recipes', { q: q || '' }], queryFn: () => api.getRecipes(q) })
+
 export const useDeliveryStatus = () =>
   useQuery({ queryKey: ['meals', 'delivery-status'], queryFn: api.getDeliveryStatus })
 
@@ -238,10 +242,11 @@ export function useCookMeal() {
   return useMutation({
     mutationFn: ({ id, decrement, requestId, leftovers = false }) =>
       api.cookMeal(id, decrement, requestId, leftovers),
-    onMutate: async ({ id }) => {
+    onMutate: async ({ id, saved = false }) => {
       await queryClient.cancelQueries({ queryKey: ['meals'] })
       await queryClient.cancelQueries({ queryKey: ['plans'] })
-      const snapshots = patchMealCaches(queryClient, id, {
+      // Cooking a saved recipe logs a separate copy; the book entry itself never changes.
+      const snapshots = saved ? [] : patchMealCaches(queryClient, id, {
         status: 'cooked',
         cooked_at: utcNow(),
       })
@@ -251,7 +256,8 @@ export function useCookMeal() {
       restoreSnapshots(queryClient, ctx.snapshots)
       toast.error(e.message)
     },
-    onSuccess: (meal, { leftovers }) => {
+    onSuccess: (meal, { leftovers, saved = false }) => {
+      if (saved) toast.success(`Logged ${meal?.title || 'the meal'} to your history`)
       if (meal?.not_subtracted?.length) {
         toast.info(`Not subtracted — update in your fridge: ${meal.not_subtracted.join(', ')}`)
       }
@@ -298,6 +304,44 @@ export function useAdjustMeal() {
       queryClient.invalidateQueries({ queryKey: ['plans'] })
     },
     meta: { silent: true }, // MealCard shows the error inside the adjust panel
+  })
+}
+
+export function useSetFavorite() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, favorite }) => api.setFavorite(id, favorite),
+    onMutate: async ({ id, favorite }) => {
+      await queryClient.cancelQueries({ queryKey: ['meals'] })
+      return { snapshots: patchMealCaches(queryClient, id, { favorite }) }
+    },
+    onError: (e, _vars, ctx) => {
+      restoreSnapshots(queryClient, ctx.snapshots)
+      toast.error(e.message)
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['meals'] }),
+    meta: { silent: true },
+  })
+}
+
+export function useImportRecipe() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body) => api.importRecipe(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['meals', 'recipes'] }),
+    meta: { silent: true }, // RecipesPage shows the error inline
+  })
+}
+
+export function useAddMealToPlan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: api.addMealToPlan,
+    onSuccess: (plan) => {
+      queryClient.setQueryData(['plans', 'current'], plan)
+      queryClient.invalidateQueries({ queryKey: ['plans'] })
+      queryClient.invalidateQueries({ queryKey: ['meals'] })
+    },
   })
 }
 

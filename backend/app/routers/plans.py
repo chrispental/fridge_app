@@ -8,6 +8,7 @@ from uuid import uuid4
 from .. import models, schemas
 from ..auth import CurrentUser
 from ..database import get_db
+from ..models import utcnow
 from ..services.meal_engine import swap_slot
 from ..services.actions import claim_action
 from ..services.scope import get_owned, inventory_for, staples_for
@@ -77,6 +78,39 @@ def resume(plan_id: int, user: CurrentUser, db: Session = Depends(get_db)):
         except IntegrityError:
             db.rollback()
             raise HTTPException(409, "Another plan is already being generated.")
+    return _serialize_plan(db, user.id, plan)
+
+
+@router.post("/add-meal", response_model=schemas.MealPlanOut)
+def add_meal(payload: schemas.AddMealToPlanRequest, user: CurrentUser, db: Session = Depends(get_db)):
+    """Append a recipe from the book to the current plan (creating a plan when there is none).
+
+    The plan slot points at a fresh copy of the recipe, so the book entry is untouched
+    and the week's cooking is logged like any generated meal."""
+    source = get_owned(db, models.Meal, payload.meal_id, user.id, label="Meal")
+    plan = (
+        db.query(models.MealPlan)
+        .filter(models.MealPlan.user_id == user.id)
+        .order_by(models.MealPlan.created_at.desc())
+        .first()
+    )
+    if plan is not None and plan.status in ("queued", "generating"):
+        raise HTTPException(409, "Wait for planning to finish before adding a recipe.")
+    if plan is None:
+        plan = models.MealPlan(user_id=user.id, status="ready", requested_count=0, start_date=utcnow().date())
+        db.add(plan)
+        db.flush()
+    recipe = {k: v for k, v in (source.recipe_json or {}).items() if k != "delivery_options"}
+    meal = models.Meal(
+        user_id=user.id, title=source.title, title_normalized=source.title_normalized, cuisine=source.cuisine,
+        recipe_json={**recipe, "saved_from": source.id}, status="suggested", suggested_at=utcnow(),
+    )
+    db.add(meal)
+    db.flush()
+    db.add(models.MealPlanEntry(plan_id=plan.id, slot_index=len(plan.entries), meal_id=meal.id))
+    plan.requested_count = (plan.requested_count or len(plan.entries)) + 1
+    db.commit()
+    db.refresh(plan)
     return _serialize_plan(db, user.id, plan)
 
 

@@ -11,9 +11,10 @@ from ..database import get_db
 from ..models import utcnow
 from ..services import brave_search
 from ..services.expiry import estimate_expiry
+from ..services.recipe_import import ImportError_, import_recipe
 from ..services.meal_engine import AdjustmentRejected, adjust_meal, most_recent_delivery, normalize_title, suggest_meals
 from ..services.meal_stats import compute_stats
-from ..services.scope import get_owned, get_prefs, inventory_for
+from ..services.scope import get_owned, get_prefs, inventory_for, staples_for
 from ..services.ingredients import StockPool
 from ..services.shopping_list import annotate_recipe
 from ..services.actions import claim_action
@@ -23,6 +24,27 @@ router = APIRouter(prefix="/api/meals", tags=["meals"])
 
 def _owned_meal(db: Session, meal_id: int, user_id: str) -> models.Meal:
     return get_owned(db, models.Meal, meal_id, user_id, label="Meal")
+
+
+def _annotated(db: Session, user_id: str, meal: models.Meal) -> schemas.MealOut:
+    return schemas.MealOut.model_validate(meal).model_copy(update={
+        "recipe_json": annotate_recipe(meal.recipe_json, inventory_for(db, user_id), staples_for(db, user_id))
+    })
+
+
+def _recipe_copy(meal: models.Meal, *, status: str) -> models.Meal:
+    """A fresh Meal row carrying a saved recipe's content, so cooking or planning a
+    recipe from the book is logged like any other meal while the book entry stays put."""
+    recipe = {k: v for k, v in (meal.recipe_json or {}).items() if k != "delivery_options"}
+    return models.Meal(
+        user_id=meal.user_id,
+        title=meal.title,
+        title_normalized=meal.title_normalized,
+        cuisine=meal.cuisine,
+        recipe_json={**recipe, "saved_from": meal.id},
+        status=status,
+        suggested_at=utcnow(),
+    )
 
 
 # A dish-name search mostly returns recipe pages; only links on a delivery service
@@ -76,6 +98,32 @@ def suggest(
     return meals
 
 
+@router.post("/import", response_model=schemas.MealOut, status_code=201)
+def import_saved_recipe(
+    payload: schemas.ImportRecipeRequest, user: CurrentUser, db: Session = Depends(get_db)
+):
+    """Save a recipe from a web address or pasted text into the user's recipe book."""
+    try:
+        recipe = import_recipe(url=payload.url, text=payload.text)
+    except ImportError_ as exc:
+        raise HTTPException(422, str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(502, str(exc))
+    meal = models.Meal(
+        user_id=user.id,
+        title=recipe.title,
+        title_normalized=normalize_title(recipe.title),
+        cuisine=recipe.cuisine,
+        recipe_json=recipe.model_dump(),
+        status="saved",
+        suggested_at=utcnow(),
+    )
+    db.add(meal)
+    db.commit()
+    db.refresh(meal)
+    return _annotated(db, user.id, meal)
+
+
 @router.get("", response_model=list[schemas.MealOut])
 def list_meals(
     user: CurrentUser,
@@ -88,6 +136,9 @@ def list_meals(
     query = db.query(models.Meal).filter(models.Meal.user_id == user.id)
     if status:
         query = query.filter(models.Meal.status == status)
+    else:
+        # The recipe book is its own list (see /recipes); history is what was served.
+        query = query.filter(models.Meal.status != "saved")
     if q and q.strip():
         # Both sides are lowercased by normalize_title, so LIKE is effectively
         # case-insensitive on Postgres too.
@@ -117,8 +168,25 @@ def delivery_status(user: CurrentUser, db: Session = Depends(get_db)):
 @router.get("/stats", response_model=schemas.MealStatsOut)
 def meal_stats(user: CurrentUser, db: Session = Depends(get_db)):
     staples = get_prefs(db, user.id).pantry_staples or []
-    meals = db.query(models.Meal).filter(models.Meal.user_id == user.id).all()
+    meals = db.query(models.Meal).filter(models.Meal.user_id == user.id, models.Meal.status != "saved").all()
     return compute_stats(meals, staples=staples, now=utcnow())
+
+
+# The recipe book: imported recipes plus anything marked favourite, newest first.
+@router.get("/recipes", response_model=list[schemas.MealOut])
+def list_recipes(user: CurrentUser, q: str | None = None, db: Session = Depends(get_db)):
+    query = db.query(models.Meal).filter(
+        models.Meal.user_id == user.id,
+        (models.Meal.status == "saved") | (models.Meal.favorite.is_(True)),
+    )
+    if q and q.strip():
+        query = query.filter(models.Meal.title_normalized.contains(normalize_title(q)))
+    rows = query.order_by(models.Meal.suggested_at.desc()).limit(200).all()
+    inventory = inventory_for(db, user.id)
+    staples = staples_for(db, user.id)
+    return [schemas.MealOut.model_validate(m).model_copy(update={
+        "recipe_json": annotate_recipe(m.recipe_json, inventory, staples)
+    }) for m in rows]
 
 
 @router.get("/{meal_id}", response_model=schemas.MealOut)
@@ -166,12 +234,21 @@ def cook_meal(
 ):
     meal = _owned_meal(db, meal_id, user.id)
     if payload.request_id:
-        _, claimed = claim_action(db, user.id, f"cook:{meal_id}:{payload.request_id}")
+        receipt, claimed = claim_action(db, user.id, f"cook:{meal_id}:{payload.request_id}")
         if not claimed:
-            return meal
+            logged = receipt.result_json and receipt.result_json.get("meal_id")
+            return db.get(models.Meal, logged) if logged else meal
     elif meal.status == "cooked":
         # Older clients can safely retry; a deliberate new cook sends a new id.
         return meal
+    if meal.status == "saved":
+        # The book entry stays; the cook is logged on a fresh row (returned to the client).
+        source = meal
+        meal = _recipe_copy(source, status="cooked")
+        db.add(meal)
+        db.flush()
+        if payload.request_id:
+            receipt.result_json = {"meal_id": meal.id}
     meal.status = "cooked"
     meal.cooked_at = utcnow()
     not_subtracted = _decrement_inventory(db, meal) if payload.decrement_inventory else []
@@ -193,7 +270,7 @@ def adjust(
 ):
     """Rewrite a suggested recipe from a short instruction ("make it vegetarian")."""
     meal = _owned_meal(db, meal_id, user.id)
-    if meal.status != "suggested":
+    if meal.status not in ("suggested", "saved"):
         raise HTTPException(409, "This meal is already cooked or ordered. Ask for a new suggestion instead.")
     try:
         adjust_meal(db, user.id, meal, payload.instruction)
@@ -201,9 +278,22 @@ def adjust(
         raise HTTPException(422, str(exc))
     except RuntimeError as exc:
         raise HTTPException(502, str(exc))
-    return schemas.MealOut.model_validate(meal).model_copy(update={
-        "recipe_json": annotate_recipe(meal.recipe_json, inventory_for(db, user.id), get_prefs(db, user.id).pantry_staples or [])
-    })
+    return _annotated(db, user.id, meal)
+
+
+@router.post("/{meal_id}/favorite", response_model=schemas.MealOut)
+def set_favorite(
+    meal_id: int,
+    payload: schemas.FavoriteRequest,
+    user: CurrentUser,
+    db: Session = Depends(get_db),
+):
+    """Pin (or unpin) a meal in the recipe book; favourites are hinted to the planner."""
+    meal = _owned_meal(db, meal_id, user.id)
+    meal.favorite = payload.favorite
+    db.commit()
+    db.refresh(meal)
+    return _annotated(db, user.id, meal)
 
 
 @router.post("/{meal_id}/feedback", response_model=schemas.MealOut)

@@ -17,6 +17,11 @@ code and PR state before acting; update or remove notes as decisions change.
 - **Leftovers:** Saving leftovers is an opt-in checkbox when marking a meal cooked.
   The item is “leftover <title>” with an unknown amount and a four-day fridge estimate,
   so it surfaces in “use these first” without ever counting as stock for an ingredient.
+- **Recipe book:** Imported recipes are `status="saved"` and never count as served:
+  they stay out of History, Insights and the no-repeat window. Cooking or planning one
+  logs a copy so the book entry is permanent. Favourites are a hint to the chef, not a
+  rotation; a favourite inside the no-repeat window is not offered. Imports read
+  schema.org data first and use AI only when a page or pasted text has none.
 - **Expiry estimates:** Manual entry prefills an expiry from category and storage
   (same table as photo scans) until the user picks a date. It is a visible suggestion,
   never a silent fact; pantry goods with no basis for an estimate stay blank.

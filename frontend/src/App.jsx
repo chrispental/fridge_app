@@ -15,6 +15,7 @@ import HistoryPage from './pages/HistoryPage.jsx'
 import PreferencesPage from './pages/PreferencesPage.jsx'
 import ShoppingListPage from './pages/ShoppingListPage.jsx'
 import InsightsPage from './pages/InsightsPage.jsx'
+import RecipesPage from './pages/RecipesPage.jsx'
 import QueryError from './components/QueryError.jsx'
 import CookingProvider from './components/CookingProvider.jsx'
 import ResumeCooking from './components/ResumeCooking.jsx'
@@ -76,6 +77,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/cook" element={<SuggestMeal />} />
+            <Route path="/recipes" element={<RecipesPage />} />
             <Route path="/plan" element={<WeekPlanPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/shopping" element={<ShoppingListPage />} />

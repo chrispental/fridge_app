@@ -113,6 +113,12 @@ export const api = {
       decrement_inventory: decrementInventory, request_id: requestId, save_leftovers: saveLeftovers,
     })),
   adjustMeal: (id, instruction) => request(`/meals/${id}/adjust`, json('POST', { instruction })),
+  setFavorite: (id, favorite) => request(`/meals/${id}/favorite`, json('POST', { favorite })),
+
+  // Recipe book: imported recipes + favourites
+  importRecipe: ({ url = null, text = null }) => request('/meals/import', json('POST', { url, text })),
+  getRecipes: (q) => request(`/meals/recipes${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+  addMealToPlan: (mealId) => request('/plans/add-meal', json('POST', { meal_id: mealId })),
   submitFeedback: (id, { rating = null, tags = [], notes = null } = {}) =>
     request(`/meals/${id}/feedback`, json('POST', { rating, tags, notes })),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),

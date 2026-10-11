@@ -663,6 +663,15 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .meal-body { padding: 18px; }
 .swap-row { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 
+.heart-btn { margin-right: auto; }
+.heart-btn.on { color: var(--danger); }
+.heart-btn.on svg { fill: currentColor; }
+
+/* recipe book import */
+.import-box { display: flex; flex-direction: column; gap: 12px; }
+.import-box textarea { min-height: 140px; }
+.import-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
 /* adjust-in-place panel */
 .adjust-panel {
   display: flex; flex-direction: column; gap: 10px;

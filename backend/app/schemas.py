@@ -138,6 +138,7 @@ class MealOut(BaseModel):
     cuisine: str | None = None
     recipe_json: dict
     status: str
+    favorite: bool = False
     suggested_at: datetime
     cooked_at: datetime | None = None
     delivery_ordered_at: datetime | None = None
@@ -166,6 +167,19 @@ class CookRequest(BaseModel):
     decrement_inventory: bool = False
     save_leftovers: bool = False  # add "leftover <title>" to the fridge with a short expiry
     request_id: UUID | None = None
+
+
+class ImportRecipeRequest(BaseModel):
+    url: Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] | None = None
+    text: Annotated[str, StringConstraints(strip_whitespace=True, max_length=40_000)] | None = None
+
+
+class FavoriteRequest(BaseModel):
+    favorite: bool
+
+
+class AddMealToPlanRequest(BaseModel):
+    meal_id: int
 
 
 class AdjustRequest(BaseModel):

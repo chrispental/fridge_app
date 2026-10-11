@@ -117,7 +117,10 @@ class Meal(Base):
     title_normalized = Column(String, index=True, nullable=False)
     cuisine = Column(String, nullable=True)
     recipe_json = Column(JSON, nullable=False)  # full MealSuggestion payload
-    status = Column(String, default="suggested", nullable=False)  # suggested | cooked | ordered
+    # suggested | cooked | ordered | saved (an imported recipe in the user's recipe book;
+    # cooking a saved recipe logs a separate cooked copy and leaves the original intact)
+    status = Column(String, default="suggested", nullable=False)
+    favorite = Column(Boolean, default=False, nullable=False)  # pinned in "My recipes"; hinted to the planner
     suggested_at = Column(DateTime, default=utcnow, nullable=False)
     cooked_at = Column(DateTime, nullable=True)
     delivery_ordered_at = Column(DateTime, nullable=True)  # set when ordered for delivery
