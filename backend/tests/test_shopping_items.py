@@ -121,7 +121,7 @@ def test_checked_to_inventory_converts_and_removes():
     by_name = {c.name: c for c in created}
     assert set(by_name) == {"lemons", "flour"}
     assert by_name["flour"].unit == "lb"          # normalized
-    assert by_name["lemons"].storage == "unsorted"
+    assert by_name["lemons"].storage == "fridge"  # aisle "produce" seeds the storage guess
     assert by_name["lemons"].source == "manual"
 
     remaining = db.query(models.ShoppingListItem).all()

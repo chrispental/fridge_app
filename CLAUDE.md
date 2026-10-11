@@ -150,6 +150,14 @@ Meal copy with `recipe_json["saved_from"]` so the book entry never changes state
 cook receipt stores the copy's id for replays. Favourites outside the no-repeat window are
 offered to the suggestion prompt as a hint by exact title.
 
+**Shopping aisles — `backend/app/services/aisles.py`.** `ShoppingListItem.category` is
+a store section from the inventory category vocabulary (`AISLES`, mirrored by
+`frontend/src/utils/aisles.js`). `guess_category(name)` is a whole-word keyword table,
+ordered so fresh items with pantry words ("bell pepper") resolve first; rows are stamped
+on create/import, legacy NULL rows are backfilled on first list, and the edit dialog can
+move a row. `checked-to-inventory` carries the aisle into `InventoryItem.category` and
+seeds storage via `storage_from_category`; expiry stays unset for the user to choose.
+
 **Leftovers.** `POST /meals/{id}/cook` with `save_leftovers=true` adds an inventory
 row `leftover <title>` (category/source `leftover`, fridge, unknown amount, expiry from
 `services/expiry.py`) inside the same idempotent cook action. Ingredient identity is

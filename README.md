@@ -105,7 +105,9 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
    interrupted jobs keep completed meals and can resume.
 6. **Shopping** — a standalone list you can add to by hand, from a plan, or from a
    single meal; check things off and move them straight into inventory. Repeating
-   an import is safe; use **Add again** for an intentional second copy.
+   an import is safe; use **Add again** for an intentional second copy. The list is
+   grouped by store aisle (guessed from each item's name, editable per row) and
+   searchable; bought items keep their aisle as the category in your fridge.
    Edit an item's quantity and unit to match the package you actually buy before
    moving it into inventory. Leave the quantity blank when it is unknown.
 7. **History & Insights** — every suggestion is logged so meals don't repeat; mark

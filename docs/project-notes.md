@@ -40,6 +40,10 @@ code and PR state before acting; update or remove notes as decisions change.
   meals and delivery nights. An individual recipe can still be imported for an
   intentional repeat. Ordinary cooking water needs no purchase; specialty waters
   such as coconut, bottled, and sparkling water remain inventory items.
+- **Shopping aisles:** "To buy" is grouped by store section guessed from the item
+  name; the guess is editable per row and never blocks adding an item. Moving the
+  cart into the fridge keeps the aisle as the category and the usual storage guess,
+  but does not stamp an estimated expiry (the user sets that in the fridge).
 - **Shopping edits:** Quantity/unit edits represent the amount purchased, which
   moves into inventory. A blank quantity stays unknown; editing preserves whether
   the item is checked and where it was imported from.
