@@ -240,6 +240,7 @@ class ShoppingItemCreate(BaseModel):
     name: FoodName
     quantity: Quantity | None = None
     unit: str = "unknown"
+    category: str | None = None  # None = guess the aisle from the name
 
 
 class ShoppingItemUpdate(BaseModel):
@@ -247,6 +248,7 @@ class ShoppingItemUpdate(BaseModel):
     quantity: Quantity | None = None
     unit: str | None = None
     checked: bool | None = None
+    category: str | None = None
 
 
 class ImportRequest(BaseModel):
@@ -262,6 +264,7 @@ class ShoppingItemOut(BaseModel):
     unit: str
     checked: bool
     source: str
+    category: str | None = None
     created_at: datetime
     checked_at: datetime | None = None
     model_config = ConfigDict(from_attributes=True)

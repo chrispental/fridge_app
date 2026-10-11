@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import { UNITS } from '../api/client.js'
 import { useUpdateShoppingItem } from '../api/queries.js'
 import { useDialog } from './useDialog.js'
+import { AISLES } from '../utils/aisles.js'
 
 export default function ShoppingItemModal({ item, onClose }) {
   const ref = useDialog(onClose)
@@ -9,6 +10,7 @@ export default function ShoppingItemModal({ item, onClose }) {
   const [name, setName] = useState(item.name)
   const [quantity, setQuantity] = useState(item.quantity ?? '')
   const [unit, setUnit] = useState(item.unit)
+  const [category, setCategory] = useState(item.category || 'other')
   const mutation = useUpdateShoppingItem()
 
   async function save(event) {
@@ -17,6 +19,8 @@ export default function ShoppingItemModal({ item, onClose }) {
     try {
       await mutation.mutateAsync({ id: item.id, body: {
         name: name.trim(), quantity: quantity === '' ? null : Number(quantity), unit,
+        // Only an explicit aisle change is sent; untouched rows keep the server's guess.
+        ...(category !== (item.category || 'other') ? { category } : {}),
       } })
       onClose()
     } catch { /* Keep edits available to retry. */ }
@@ -32,6 +36,7 @@ export default function ShoppingItemModal({ item, onClose }) {
           <label className="field"><span>Quantity</span><input type="number" min="0" step="any" value={quantity} placeholder="Unknown" onChange={(e) => setQuantity(e.target.value)} /></label>
           <label className="field"><span>Unit</span><select value={unit} onChange={(e) => setUnit(e.target.value)}>{UNITS.map((u) => <option key={u} value={u}>{u}</option>)}</select></label>
         </div>
+        <label className="field"><span>Aisle</span><select value={category} onChange={(e) => setCategory(e.target.value)}>{AISLES.map((a) => <option key={a.value} value={a.value}>{a.emoji} {a.label}</option>)}</select></label>
         {mutation.error && <p className="banner error" role="alert">{mutation.error.message}</p>}
         <div className="modal-actions">
           <div className="modal-actions-right">

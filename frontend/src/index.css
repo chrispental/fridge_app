@@ -1238,6 +1238,12 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .shop-add-qty { flex: 0 0 84px; }
 .shop-add select { flex: 0 0 110px; }
 .shop-group { margin-bottom: var(--sp-6); }
+.shop-search { margin-bottom: var(--sp-5); }
+.shop-aisle { margin-bottom: var(--sp-4); }
+.shop-aisle-head {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
+  font-size: var(--fs-small); font-weight: 650; color: var(--text-secondary);
+}
 .shop-group h3 {
   font-size: var(--fs-small); color: var(--text-secondary);
   text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px;

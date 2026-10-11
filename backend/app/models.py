@@ -145,6 +145,7 @@ class ShoppingListItem(Base):
     unit = Column(String, default="unknown", nullable=False)
     checked = Column(Boolean, default=False, nullable=False)
     source = Column(String, default="manual", nullable=False)  # manual | plan | meal
+    category = Column(String, nullable=True)  # store section (services/aisles.py); NULL on legacy rows
     created_at = Column(DateTime, default=utcnow, nullable=False)
     checked_at = Column(DateTime, nullable=True)
 

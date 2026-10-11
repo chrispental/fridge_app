@@ -7,7 +7,9 @@ from .. import models, schemas
 from ..auth import CurrentUser
 from ..database import get_db
 from ..models import utcnow
+from ..services.aisles import guess_category, normalize_category
 from ..services.scope import get_owned, inventory_for, staples_for
+from ..services.storage import storage_from_category
 from ..services.shopping_list import build_shopping_list, merge_into_list, missing_for_meal, remaining_plan_meals
 from ..services.units import normalize_unit
 from ..services.actions import claim_action
@@ -20,8 +22,9 @@ def _owned_row(db: Session, item_id: int, user_id: str) -> models.ShoppingListIt
 
 
 def _list_items(db: Session, user_id: str) -> list[models.ShoppingListItem]:
-    """Unchecked first, newest first within each group."""
-    return (
+    """Unchecked first, newest first within each group. Rows from before aisles
+    existed get their section guessed on first read."""
+    rows = (
         db.query(models.ShoppingListItem)
         .filter(models.ShoppingListItem.user_id == user_id)
         .order_by(
@@ -30,6 +33,14 @@ def _list_items(db: Session, user_id: str) -> list[models.ShoppingListItem]:
         )
         .all()
     )
+    backfilled = False
+    for row in rows:
+        if row.category is None:
+            row.category = guess_category(row.name)
+            backfilled = True
+    if backfilled:
+        db.commit()
+    return rows
 
 
 def _merge_and_save(
@@ -55,6 +66,7 @@ def _merge_and_save(
             quantity=c["quantity"],
             unit=normalize_unit(c["unit"]),
             source=source,
+            category=guess_category(c["name"]),
         )
         for c in creates
     ]
@@ -85,6 +97,7 @@ def add_shopping_item(
         quantity=payload.quantity,
         unit=normalize_unit(payload.unit),
         source="manual",
+        category=normalize_category(payload.category) or guess_category(payload.name),
     )
     db.add(item)
     db.commit()
@@ -105,8 +118,9 @@ def clear_checked(user: CurrentUser, db: Session = Depends(get_db)):
 
 @router.post("/checked-to-inventory", response_model=list[schemas.InventoryItemOut])
 def checked_to_inventory(user: CurrentUser, db: Session = Depends(get_db)):
-    """Convert every checked item into an inventory item (storage 'unsorted'),
-    then remove them from the list. The one-tap 'I got everything' flow."""
+    """Convert every checked item into an inventory item, then remove them from the
+    list. The one-tap 'I got everything' flow. The aisle becomes the item's category
+    (and seeds its storage); expiry is left for the user to set."""
     checked = (
         db.query(models.ShoppingListItem)
         .filter(
@@ -117,13 +131,15 @@ def checked_to_inventory(user: CurrentUser, db: Session = Depends(get_db)):
     )
     created: list[models.InventoryItem] = []
     for row in checked:
+        category = row.category or guess_category(row.name)
         created.append(
             models.InventoryItem(
                 user_id=user.id,
                 name=row.name.strip().lower(),
                 quantity=row.quantity,
                 unit=normalize_unit(row.unit),
-                storage="unsorted",
+                category=None if category == "other" else category,
+                storage=storage_from_category(category),
                 source="manual",
             )
         )
@@ -182,6 +198,8 @@ def update_shopping_item(
     if "checked" in data and data["checked"] is not None:
         item.checked = data["checked"]
         item.checked_at = utcnow() if data["checked"] else None
+    if data.get("category"):
+        item.category = normalize_category(data["category"]) or item.category
     db.commit()
     db.refresh(item)
     return item

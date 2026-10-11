@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, ShoppingCart, Trash2, PackageCheck, Eraser, Pencil } from 'lucide-react'
+import { Plus, ShoppingCart, Trash2, PackageCheck, Eraser, Pencil, Search } from 'lucide-react'
 import ShoppingItemModal from '../components/ShoppingItemModal.jsx'
 import { UNITS } from '../api/client.js'
 import {
@@ -12,6 +12,7 @@ import {
   PageHeader, EmptyState, Skeleton, StickyActionBar,
 } from '../components/ui.jsx'
 import { formatAmount } from '../utils/quantity.js'
+import { groupByAisle } from '../utils/aisles.js'
 
 function ShopRow({ item, onToggle, onDelete, onEdit }) {
   return (
@@ -54,6 +55,7 @@ export default function ShoppingListPage() {
   const [quantity, setQuantity] = useState('')
   const [unit, setUnit] = useState('piece')
   const [editing, setEditing] = useState(null)
+  const [search, setSearch] = useState('')
 
   function add(ev) {
     ev.preventDefault()
@@ -95,8 +97,13 @@ export default function ShoppingListPage() {
   if (listQ.isError) return <div className="banner error">{listQ.error.message}</div>
 
   const items = listQ.data || []
+  const needle = search.trim().toLowerCase()
+  const matches = (it) => !needle || it.name.toLowerCase().includes(needle)
   const toBuy = items.filter((it) => !it.checked)
   const checked = items.filter((it) => it.checked)
+  // "To buy" walks the store aisle by aisle; the cart stays a flat list.
+  const aisles = groupByAisle(toBuy.filter(matches))
+  const cartVisible = checked.filter(matches)
 
   return (
     <div>
@@ -145,27 +152,55 @@ export default function ShoppingListPage() {
         />
       ) : (
         <>
+          {items.length > 4 && (
+            <div className="search-box shop-search">
+              <Search size={15} strokeWidth={2.2} />
+              <input
+                type="search"
+                placeholder="Search your list…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search shopping list"
+              />
+            </div>
+          )}
+
           <div className="shop-group">
             <h3>To buy ({toBuy.length})</h3>
             {toBuy.length === 0 ? (
               <p className="hint">All checked off — nice work. 🎉</p>
+            ) : aisles.length === 0 ? (
+              <p className="hint">Nothing to buy matches “{search.trim()}”.</p>
             ) : (
-              <div className="stack" style={{ gap: 8 }}>
-                {toBuy.map((it) => (
-                  <ShopRow key={it.id} item={it} onToggle={toggle} onDelete={remove} onEdit={setEditing} />
-                ))}
-              </div>
+              aisles.map((aisle) => (
+                <section key={aisle.value} className="shop-aisle" aria-label={aisle.label}>
+                  <h4 className="shop-aisle-head">
+                    <span className="storage-emoji">{aisle.emoji}</span>
+                    {aisle.label}
+                    <span className="storage-count">{aisle.items.length}</span>
+                  </h4>
+                  <div className="stack" style={{ gap: 8 }}>
+                    {aisle.items.map((it) => (
+                      <ShopRow key={it.id} item={it} onToggle={toggle} onDelete={remove} onEdit={setEditing} />
+                    ))}
+                  </div>
+                </section>
+              ))
             )}
           </div>
 
           {checked.length > 0 && (
             <div className="shop-group">
               <h3>In your cart ({checked.length})</h3>
-              <div className="stack" style={{ gap: 8 }}>
-                {checked.map((it) => (
-                  <ShopRow key={it.id} item={it} onToggle={toggle} onDelete={remove} onEdit={setEditing} />
-                ))}
-              </div>
+              {cartVisible.length === 0 ? (
+                <p className="hint">Nothing in your cart matches “{search.trim()}”.</p>
+              ) : (
+                <div className="stack" style={{ gap: 8 }}>
+                  {cartVisible.map((it) => (
+                    <ShopRow key={it.id} item={it} onToggle={toggle} onDelete={remove} onEdit={setEditing} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
