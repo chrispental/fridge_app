@@ -5561,6 +5561,70 @@
               ]
             },
             {
+              "type": "frame",
+              "id": "C7U8IL",
+              "name": "Card-YOUR DATA",
+              "width": "fill_container",
+              "fill": "$surface-1",
+              "cornerRadius": "$radius-lg",
+              "stroke": "$border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#0000008C",
+                "offset": {
+                  "x": 0,
+                  "y": 8
+                },
+                "blur": 20
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ERCR3",
+                  "name": "SectionEyebrow",
+                  "fill": "$accent",
+                  "content": "YOUR DATA",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "700",
+                  "letterSpacing": 1.3
+                },
+                {
+                  "type": "text",
+                  "id": "E7BbMF",
+                  "name": "copy",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Download everything in your kitchen as one JSON file: preferences, inventory, meal history, your recipe book, shopping list, and plans. Photos aren't included.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "id": "BeGgx",
+                  "type": "ref",
+                  "ref": "CCrQi",
+                  "name": "downloadBtn",
+                  "descendants": {
+                    "j2jFf6": {
+                      "icon": "download"
+                    },
+                    "t0Rs2": {
+                      "content": "Download my data"
+                    }
+                  }
+                }
+              ]
+            },
+            {
               "id": "OVvxh",
               "type": "ref",
               "ref": "RTWdT",
@@ -7835,7 +7899,7 @@
       },
       "clip": true,
       "width": 1440,
-      "height": 900,
+      "height": 1120,
       "fill": "$bg",
       "children": [
         {
@@ -8641,6 +8705,70 @@
                           ]
                         }
                       ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CUQEj",
+                  "name": "Card-YOUR DATA",
+                  "width": "fill_container",
+                  "fill": "$surface-1",
+                  "cornerRadius": "$radius-lg",
+                  "stroke": "$border",
+                  "strokeWidth": 1,
+                  "strokeAlignment": "inner",
+                  "effect": {
+                    "type": "shadow",
+                    "shadowType": "outer",
+                    "color": "#0000008C",
+                    "offset": {
+                      "x": 0,
+                      "y": 8
+                    },
+                    "blur": 20
+                  },
+                  "layout": "vertical",
+                  "gap": 18,
+                  "padding": 20,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "djUH3",
+                      "name": "SectionEyebrow",
+                      "fill": "$accent",
+                      "content": "YOUR DATA",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "700",
+                      "letterSpacing": 1.3
+                    },
+                    {
+                      "type": "text",
+                      "id": "rYqug",
+                      "name": "copy",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Download everything in your kitchen as one JSON file: preferences, inventory, meal history, your recipe book, shopping list, and plans. Photos aren't included.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "id": "MnS1G",
+                      "type": "ref",
+                      "ref": "CCrQi",
+                      "name": "downloadBtn",
+                      "descendants": {
+                        "j2jFf6": {
+                          "icon": "download"
+                        },
+                        "t0Rs2": {
+                          "content": "Download my data"
+                        }
+                      }
                     }
                   ]
                 }
