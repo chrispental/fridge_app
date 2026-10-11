@@ -4,12 +4,14 @@ import { CalendarDays, RefreshCw, AlertCircle, ShoppingCart } from 'lucide-react
 import MealCard from '../components/MealCard.jsx'
 import {
   useCreatePlan, useCurrentPlan, useDeletePlan, useDeliveryStatus,
-  useImportPlanToList, usePlanShoppingList, useSwapPlanSlot, useResumePlan,
+  useImportPlanToList, usePlanShoppingList, useSwapPlanSlot, useResumePlan, usePreferences,
 } from '../api/queries.js'
 import QueryError from '../components/QueryError.jsx'
+import ServingPicker from '../components/ServingPicker.jsx'
 import { toast } from '../components/toast.js'
 import { PageHeader, HeroPanel, Bento, BentoItem, PageSkeleton } from '../components/ui.jsx'
 import { formatAmount } from '../utils/quantity.js'
+import { fmtWeekday, localDatePlus, planSlotLabel } from '../utils/dates.js'
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)
 
@@ -79,9 +81,13 @@ function ShoppingList({ data, onAddAll, adding, added, planning }) {
 
 export default function WeekPlanPage() {
   const [count, setCount] = useState(7)
+  const [startDate, setStartDate] = useState(() => localDatePlus(0))
+  const [servingsOverride, setServingsOverride] = useState(null)
   const [importedPlanId, setImportedPlanId] = useState(null)
   const requestId = useRef(crypto.randomUUID())
 
+  const prefsQ = usePreferences()
+  const servings = servingsOverride ?? prefsQ.data?.household_size ?? 1
   const planQ = useCurrentPlan()
   const plan = planQ.data
   const shoppingQ = usePlanShoppingList(plan)
@@ -144,10 +150,27 @@ export default function WeekPlanPage() {
               onChange={(e) => setCount(e.target.value)}
             />
           </div>
+          <div className="field">
+            <label htmlFor="plan-start">Starting</label>
+            <input
+              id="plan-start"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+        </div>
+        <ServingPicker value={servings} onChange={setServingsOverride} disabled={busy || !prefsQ.data} />
+        <div className="plan-toolbar">
           <button
             className="btn primary big"
-            onClick={() => createMutation.mutate({ count: Number(count) || 7, requestId: requestId.current })}
-            disabled={busy}
+            onClick={() => createMutation.mutate({
+              count: Number(count) || 7,
+              servings,
+              startDate: startDate || null,
+              requestId: requestId.current,
+            })}
+            disabled={busy || !prefsQ.data}
           >
             <CalendarDays size={18} strokeWidth={2.2} />
             {busy ? 'Planning…' : 'Plan my week'}
@@ -179,7 +202,11 @@ export default function WeekPlanPage() {
       <PageHeader
         eyebrow="Weekly plan"
         title="Your week"
-        subtitle={`${plan.entries.length} meal${plan.entries.length === 1 ? '' : 's'} planned`}
+        subtitle={[
+          `${plan.entries.length} meal${plan.entries.length === 1 ? '' : 's'} planned`,
+          plan.start_date && `from ${fmtWeekday(plan.start_date)}`,
+          plan.servings && `serves ${plan.servings}`,
+        ].filter(Boolean).join(' · ')}
       >
         <button
           className="btn ghost"
@@ -204,13 +231,15 @@ export default function WeekPlanPage() {
         <BentoItem span={8}>
           <div className="stack">
             {plan.entries.map((entry) => (
-              <MealCard
-                key={entry.meal.id}
-                meal={entry.meal}
-                onSwap={planning ? null : () => swap(entry.slot_index)}
-                deliveryAvailable={deliveryAvailable}
-                nextDeliveryDate={nextDeliveryDate}
-              />
+              <div key={entry.meal.id} className="plan-slot">
+                <span className="plan-day">{planSlotLabel(plan.start_date, entry.slot_index)}</span>
+                <MealCard
+                  meal={entry.meal}
+                  onSwap={planning ? null : () => swap(entry.slot_index)}
+                  deliveryAvailable={deliveryAvailable}
+                  nextDeliveryDate={nextDeliveryDate}
+                />
+              </div>
             ))}
           </div>
         </BentoItem>

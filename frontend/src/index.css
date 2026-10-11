@@ -661,7 +661,18 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .meal-media-body .method-chip { background: var(--accent); color: var(--accent-fg); }
 
 .meal-body { padding: 18px; }
-.swap-row { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.swap-row { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+
+/* adjust-in-place panel */
+.adjust-panel {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 14px; margin-bottom: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-2);
+}
+.adjust-panel .hint { margin: 0; }
+.adjust-form { display: flex; flex-wrap: wrap; gap: 8px; }
+.adjust-input { flex: 1 1 220px; min-width: 0; }
+.adjusted-note { font-size: var(--fs-small); color: var(--accent); margin: 0 0 12px; }
 .ingredients { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
 .chip {
   font-size: var(--fs-caption); font-weight: 600;
@@ -682,6 +693,7 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
   border-top: 1px solid var(--border); padding-top: 14px;
 }
 .cook-row label { font-size: var(--fs-small); color: var(--text-secondary); display: flex; align-items: center; gap: 7px; }
+.cook-options { display: flex; flex-direction: column; gap: 6px; }
 .cook-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .cooked-badge { color: var(--success); font-weight: 600; font-size: var(--fs-small); display: flex; align-items: center; gap: 6px; }
 
@@ -764,6 +776,11 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .plan-toolbar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin: 14px 0; }
 .plan-toolbar .field { margin: 0; }
 .plan-toolbar input[type='number'] { width: 90px; }
+.plan-slot { display: flex; flex-direction: column; gap: 8px; }
+.plan-day {
+  font-size: var(--fs-caption); font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--accent);
+}
 
 /* ---- Item add/edit modal ---------------------------------- */
 .modal-overlay {
@@ -1149,6 +1166,11 @@ a.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); b
 .toast.success { background: var(--success-dim); color: var(--success); border-color: var(--success-line); }
 .toast.error { background: var(--danger-dim); color: var(--danger); border-color: var(--danger-line); }
 .toast.info { background: var(--info-dim); color: var(--info); border-color: var(--info-line); }
+.toast-action {
+  margin-left: 6px; padding: 4px 10px; border-radius: var(--radius-pill);
+  border: 1px solid currentColor; background: transparent; color: inherit;
+  font: inherit; font-weight: 700; font-size: var(--fs-caption);
+}
 
 /* ---- Error boundary ---- */
 .error-boundary {

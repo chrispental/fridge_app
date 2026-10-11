@@ -1,9 +1,12 @@
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Trash2, Check } from 'lucide-react'
-import { UNITS, STORAGE } from '../api/client.js'
+import { api, UNITS, STORAGE } from '../api/client.js'
 import { useAddItem, useDeleteItem, useUpdateItem } from '../api/queries.js'
 import { useDialog } from './useDialog.js'
+import { toast } from './toast.js'
 import { localDatePlus } from '../utils/dates.js'
+import { CATEGORIES, estimateExpiry } from '../utils/expiry.js'
 
 const EXPIRY_CHIPS = [
   { label: '+3 days', days: 3 },
@@ -17,6 +20,8 @@ const EXPIRY_CHIPS = [
 export default function ItemModal({ item, onClose }) {
   const dialogRef = useDialog(onClose)
   const titleId = useId()
+  const categoryListId = useId()
+  const queryClient = useQueryClient()
   const isEdit = Boolean(item?.id)
   const [name, setName] = useState(item?.name || '')
   const [quantity, setQuantity] = useState(item?.quantity ?? '')
@@ -24,6 +29,22 @@ export default function ItemModal({ item, onClose }) {
   const [storage, setStorage] = useState(item?.storage || 'fridge')
   const [category, setCategory] = useState(item?.category || '')
   const [expires, setExpires] = useState(item?.expires_at || '')
+  // New items get a shelf-life estimate from category + storage until the user
+  // sets a date themselves; the hint below the field says it is an estimate.
+  const [expiryAuto, setExpiryAuto] = useState(false)
+  const expiryTouched = useRef(false)
+
+  function suggestExpiry(nextCategory, nextStorage) {
+    if (isEdit || expiryTouched.current) return
+    const estimate = estimateExpiry(nextCategory, nextStorage)
+    setExpires(estimate || '')
+    setExpiryAuto(Boolean(estimate))
+  }
+  function setExpiresManually(value) {
+    expiryTouched.current = true
+    setExpiryAuto(false)
+    setExpires(value)
+  }
 
   const addMutation = useAddItem()
   const updateMutation = useUpdateItem()
@@ -48,8 +69,26 @@ export default function ItemModal({ item, onClose }) {
   }
 
   async function remove() {
-    try { await deleteMutation.mutateAsync(item.id); onClose() }
-    catch { /* Error is rendered below. */ }
+    // Snapshot first: an undo re-creates the item (new id, same details).
+    const snapshot = {
+      name: item.name, quantity: item.quantity ?? null, unit: item.unit,
+      storage: item.storage, category: item.category || null, expires_at: item.expires_at || null,
+    }
+    try {
+      await deleteMutation.mutateAsync(item.id)
+      onClose()
+      toast.success(`Removed ${item.name}`, {
+        duration: 8000,
+        action: {
+          label: 'Undo',
+          onClick: () =>
+            api.addItem(snapshot)
+              .then(() => queryClient.invalidateQueries({ queryKey: ['inventory'] }))
+              .then(() => toast.success(`${snapshot.name} is back in your fridge`))
+              .catch((e) => toast.error(e.message)),
+        },
+      })
+    } catch { /* Error is rendered below. */ }
   }
   const busy = addMutation.isPending || updateMutation.isPending || deleteMutation.isPending
   const error = addMutation.error || updateMutation.error || deleteMutation.error
@@ -94,7 +133,13 @@ export default function ItemModal({ item, onClose }) {
         <div className="modal-row">
           <label className="field">
             <span>Storage</span>
-            <select value={storage} onChange={(e) => setStorage(e.target.value)}>
+            <select
+              value={storage}
+              onChange={(e) => {
+                setStorage(e.target.value)
+                suggestExpiry(category, e.target.value)
+              }}
+            >
               {STORAGE.map((s) => (
                 <option key={s.value} value={s.value}>{s.emoji} {s.label}</option>
               ))}
@@ -104,9 +149,16 @@ export default function ItemModal({ item, onClose }) {
             <span>Category</span>
             <input
               value={category}
+              list={categoryListId}
               placeholder="e.g. dairy"
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                setCategory(e.target.value)
+                suggestExpiry(e.target.value, storage)
+              }}
             />
+            <datalist id={categoryListId}>
+              {CATEGORIES.map((c) => <option key={c} value={c} />)}
+            </datalist>
           </label>
         </div>
 
@@ -115,7 +167,7 @@ export default function ItemModal({ item, onClose }) {
           <input
             type="date"
             value={expires}
-            onChange={(e) => setExpires(e.target.value)}
+            onChange={(e) => setExpiresManually(e.target.value)}
           />
           <div className="expiry-chips">
             {EXPIRY_CHIPS.map((c) => (
@@ -123,17 +175,20 @@ export default function ItemModal({ item, onClose }) {
                 key={c.days}
                 type="button"
                 className="chip-toggle"
-                onClick={() => setExpires(localDatePlus(c.days))}
+                onClick={() => setExpiresManually(localDatePlus(c.days))}
               >
                 {c.label}
               </button>
             ))}
             {expires && (
-              <button type="button" className="chip-toggle" onClick={() => setExpires('')}>
+              <button type="button" className="chip-toggle" onClick={() => setExpiresManually('')}>
                 Clear
               </button>
             )}
           </div>
+          {expiryAuto && expires && (
+            <span className="hint">Estimated from the category — change it if the label says otherwise.</span>
+          )}
         </label>
 
         {error && <p className="banner error" role="alert">{error.message}</p>}

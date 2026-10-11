@@ -29,7 +29,8 @@ def fill_plan(plan_id, sessions=None, stop=None):
                     db.commit()
                     return
                 meals = suggest_meals(db, plan.user_id, count=1, commit=False,
-                                      exclude_titles=[e.meal.title for e in existing])
+                                      exclude_titles=[e.meal.title for e in existing],
+                                      servings=plan.servings)
                 if not meals:
                     raise RuntimeError("No distinct meal fits the current preferences.")
                 db.add(models.MealPlanEntry(plan_id=plan.id, meal_id=meals[0].id, slot_index=len(existing)))

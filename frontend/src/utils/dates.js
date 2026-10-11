@@ -38,3 +38,28 @@ export function localDatePlus(days = 0) {
   const pad = (n) => String(n).padStart(2, '0')
   return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`
 }
+
+// Add whole days to a YYYY-MM-DD string, staying in local-date space.
+export function addDays(dateStr, days) {
+  const [y, m, d] = (dateStr || '').slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return null
+  const t = new Date(y, m - 1, d + days)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`
+}
+
+// "Sat, Oct 11" for a YYYY-MM-DD string; '' when the string is not a date.
+export function fmtWeekday(dateStr) {
+  const [y, m, d] = (dateStr || '').slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return ''
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+    weekday: 'short', month: 'short', day: 'numeric',
+  })
+}
+
+// "Day 3 · Mon, Oct 13" when the plan has a start date, else just "Day 3".
+export function planSlotLabel(startDate, slotIndex) {
+  const day = `Day ${slotIndex + 1}`
+  const date = startDate ? fmtWeekday(addDays(startDate, slotIndex)) : ''
+  return date ? `${day} · ${date}` : day
+}

@@ -8,6 +8,7 @@ const FILTERS = [
   { value: '', label: 'All' },
   { value: 'cooked', label: 'Cooked' },
   { value: 'suggested', label: 'Suggested' },
+  { value: 'ordered', label: 'Delivery' },
 ]
 
 const fmtDate = (iso) => (iso ? new Date(iso + 'Z').toLocaleDateString() : null)

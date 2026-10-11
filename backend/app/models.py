@@ -97,7 +97,7 @@ class InventoryItem(Base):
     category = Column(String, nullable=True)
     storage = Column(String, default="unsorted", nullable=False)  # fridge|freezer|pantry|counter|unsorted
     image_url = Column(String, nullable=True)  # NULL=not fetched, ""=tried/none, else Brave thumbnail
-    source = Column(String, default="manual", nullable=False)  # manual | photo
+    source = Column(String, default="manual", nullable=False)  # manual | photo | leftover
     expires_at = Column(Date, nullable=True)  # best-before; NULL = unknown/not tracked
     extraction_batch_id = Column(
         Integer, ForeignKey("extraction_batches.id"), nullable=True
@@ -163,6 +163,9 @@ class MealPlan(Base):
     status = Column(String, default="ready", nullable=False)
     requested_count = Column(Integer, nullable=True)
     error = Column(String, nullable=True)
+    # Per-plan overrides chosen at creation; NULL = household size / undated slots.
+    servings = Column(Integer, nullable=True)
+    start_date = Column(Date, nullable=True)  # slot N is cooked on start_date + N days
 
     entries = relationship(
         "MealPlanEntry",

@@ -44,7 +44,8 @@ def _serialize_plan(db: Session, user_id: str, plan: models.MealPlan) -> schemas
         )
         entries.append(schemas.MealPlanEntryOut(slot_index=e.slot_index, meal=meal_out))
     return schemas.MealPlanOut(id=plan.id, created_at=plan.created_at, entries=entries,
-                               status=plan.status, requested_count=plan.requested_count, error=plan.error)
+                               status=plan.status, requested_count=plan.requested_count,
+                               servings=plan.servings, start_date=plan.start_date, error=plan.error)
 
 
 @router.post("", response_model=schemas.MealPlanOut, status_code=202)
@@ -53,7 +54,8 @@ def create(payload: schemas.CreatePlanRequest, user: CurrentUser, db: Session = 
     if not claimed:
         plan = _owned_plan(db, receipt.result_json["plan_id"], user.id)
         return _serialize_plan(db, user.id, plan)
-    plan = models.MealPlan(user_id=user.id, status="queued", requested_count=payload.count)
+    plan = models.MealPlan(user_id=user.id, status="queued", requested_count=payload.count,
+                           servings=payload.servings, start_date=payload.start_date)
     db.add(plan)
     try:
         db.flush()

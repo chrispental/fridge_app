@@ -236,7 +236,8 @@ export function useBackfillImages() {
 export function useCookMeal() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, decrement, requestId }) => api.cookMeal(id, decrement, requestId),
+    mutationFn: ({ id, decrement, requestId, leftovers = false }) =>
+      api.cookMeal(id, decrement, requestId, leftovers),
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: ['meals'] })
       await queryClient.cancelQueries({ queryKey: ['plans'] })
@@ -250,10 +251,11 @@ export function useCookMeal() {
       restoreSnapshots(queryClient, ctx.snapshots)
       toast.error(e.message)
     },
-    onSuccess: (meal) => {
+    onSuccess: (meal, { leftovers }) => {
       if (meal?.not_subtracted?.length) {
         toast.info(`Not subtracted — update in your fridge: ${meal.not_subtracted.join(', ')}`)
       }
+      if (leftovers) toast.success('Leftovers added to your fridge — use within 4 days')
     },
     onSettled: () => {
       invalidateStock(queryClient)
@@ -282,6 +284,20 @@ export function useSubmitFeedback() {
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['meals'] }),
     meta: { silent: true },
+  })
+}
+
+// The adjusted recipe keeps its meal id, so every cached copy (batch, home,
+// history, plan) is patched in place; stock-dependent views refetch.
+export function useAdjustMeal() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, instruction }) => api.adjustMeal(id, instruction),
+    onSuccess: (updated) => {
+      patchMealCaches(queryClient, updated.id, updated)
+      queryClient.invalidateQueries({ queryKey: ['plans'] })
+    },
+    meta: { silent: true }, // MealCard shows the error inside the adjust panel
   })
 }
 

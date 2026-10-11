@@ -4,6 +4,7 @@ The no-repeat rule and the allergy filter are enforced *server-side* after the
 AI responds — the LLM's cooperation is treated as a hint, never a guarantee.
 """
 import difflib
+import json
 import logging
 import re
 from urllib.parse import urlparse
@@ -323,7 +324,7 @@ def _sort_key(suggestion: MealSuggestion, expiring_names: list[str]) -> tuple[in
     return (out_of_stock, missing, -_expiring_used(suggestion, expiring_names))
 
 
-def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None, feedback_lines=None, expiring=None, servings=None) -> str:
+def _build_user_prompt(prefs, inventory, do_not_repeat: list[str], weather=None, idea=None, feedback_lines=None, expiring=None, servings=None, closing: str = "Suggest meals I can make right now.") -> str:
     if inventory:
         inv_lines = []
         for i in inventory:
@@ -398,13 +399,18 @@ CURRENT INVENTORY
 DO NOT SUGGEST THESE RECENT MEALS
 {dnr}
 {feedback_block}{request_block}
-Suggest meals I can make right now."""
+{closing}"""
 
 
 def _generate(db: Session, prefs, inventory, do_not_repeat, count: int, weather=None, idea=None, feedback_lines=None, expiring=None, servings=None) -> list[MealSuggestion]:
     system_prompt = load_prompt("suggestion_system.md").replace("{count}", str(count))
     target = servings if servings is not None else prefs.household_size
     prompt = _build_user_prompt(prefs, inventory, do_not_repeat, weather, idea, feedback_lines, expiring, target)
+    return _request_suggestions(system_prompt, prompt, target)
+
+
+def _request_suggestions(system_prompt: str, prompt: str, target: int) -> list[MealSuggestion]:
+    """Call the meal model and retry once when any recipe misses the serving count."""
     for _ in range(2):
         raw = call_structured(
             model=settings.openrouter_meal_model,
@@ -507,7 +513,82 @@ def suggest_meals(
     return meals
 
 
-def create_plan(db: Session, user_id: str, count: int) -> models.MealPlan:
+class AdjustmentRejected(ValueError):
+    """The adjusted recipe broke a server-enforced rule (allergy, grill gate)."""
+
+
+def _build_adjust_prompt(prefs, inventory, meal: models.Meal, instruction: str, weather=None, expiring=None, servings=None) -> str:
+    recipe = dict(meal.recipe_json or {})
+    previous = [a for a in recipe.get("adjustments", []) if isinstance(a, str) and a.strip()]
+    # Only the recipe content goes to the model; stock annotations and links are ours.
+    current = {k: recipe.get(k) for k in ("title", "cuisine", "complexity", "estimated_time_minutes",
+                                           "servings", "cooking_method", "steps", "missing_ingredients")}
+    current["ingredients"] = [
+        {k: ing.get(k) for k in ("name", "quantity", "unit")}
+        for ing in recipe.get("ingredients", []) if isinstance(ing, dict)
+    ]
+    history = (
+        "\nEARLIER ADJUSTMENTS ALREADY APPLIED (keep honoring them):\n"
+        + "\n".join(f"- {a}" for a in previous) + "\n"
+        if previous else ""
+    )
+    closing = (
+        f"CURRENT RECIPE (JSON)\n{json.dumps(current)}\n{history}\n"
+        f"ADJUSTMENT REQUESTED: {instruction.strip()}\n\n"
+        "Rewrite the current recipe to follow the adjustment."
+    )
+    return _build_user_prompt(prefs, inventory, [], weather, None, None, expiring, servings, closing=closing)
+
+
+def adjust_meal(db: Session, user_id: str, meal: models.Meal, instruction: str) -> models.Meal:
+    """Rewrite a suggested meal in place from a short instruction ("make it vegetarian").
+
+    The same server-side guards as `suggest_meals` apply: an adjustment can never
+    introduce an allergen or a grilled dish in bad weather. The meal keeps its id, so
+    plans and history stay attached; the instruction is recorded in
+    `recipe_json["adjustments"]` so later adjustments build on it.
+    """
+    prefs = get_prefs(db, user_id)
+    inventory = inventory_for(db, user_id)
+    weather = get_weather(prefs.location) if prefs.location else None
+    grill_blocked = weather is not None and not weather["grill_ok"]
+    expiring = expiring_soon(inventory, within_days=3)
+    recipe = dict(meal.recipe_json or {})
+    target = recipe.get("servings") if isinstance(recipe.get("servings"), int) and 1 <= recipe["servings"] <= 20 else prefs.household_size
+
+    prompt = _build_adjust_prompt(prefs, inventory, meal, instruction, weather, expiring, target)
+    suggestions = _request_suggestions(load_prompt("adjust_system.md"), prompt, target)
+    if not suggestions:
+        raise RuntimeError("The chef couldn't rewrite that recipe. Please try again.")
+    adjusted = suggestions[0]
+    if _allergen_violation(adjusted, prefs.allergies):
+        raise AdjustmentRejected("That adjustment would add an ingredient you're allergic to, so it was not applied.")
+    if grill_blocked and _is_grill(adjusted):
+        raise AdjustmentRejected("Grilling is off the menu in today's weather, so that adjustment was not applied.")
+
+    _annotate_in_stock(adjusted, inventory, prefs.pantry_staples or [])
+    new_norm = normalize_title(adjusted.title)
+    if new_norm == meal.title_normalized and recipe.get("source"):
+        adjusted.source = RecipeSource(**recipe["source"])
+    else:
+        _enrich_with_brave(adjusted, (recipe.get("source") or {}).get("url"))
+
+    meal.title = adjusted.title
+    meal.title_normalized = new_norm
+    meal.cuisine = adjusted.cuisine
+    previous = [a for a in recipe.get("adjustments", []) if isinstance(a, str) and a.strip()]
+    meal.recipe_json = {
+        **adjusted.model_dump(),
+        "adjustments": previous + [instruction.strip()],
+        # Delivery links belong to the meal, not the recipe text.
+        **({"delivery_options": recipe["delivery_options"]} if recipe.get("delivery_options") else {}),
+    }
+    db.commit()
+    db.refresh(meal)
+    return meal
+
+
+def create_plan(db: Session, user_id: str, count: int, servings: int | None = None) -> models.MealPlan:
     """Generate a `count`-meal plan, one slot at a time, reusing suggest_meals.
 
     Single-meal calls keep each recipe well under the output-token cap and re-read the
@@ -519,11 +600,11 @@ def create_plan(db: Session, user_id: str, count: int) -> models.MealPlan:
         generated = []
         for _ in range(count):
             meals = suggest_meals(db, user_id, count=1, commit=False,
-                                  exclude_titles=[m.title for m in generated])
+                                  exclude_titles=[m.title for m in generated], servings=servings)
             if not meals:
                 raise RuntimeError("Could not find enough distinct meals.")
             generated.extend(meals)
-        plan = models.MealPlan(user_id=user_id, status="ready", requested_count=count)
+        plan = models.MealPlan(user_id=user_id, status="ready", requested_count=count, servings=servings)
         db.add(plan)
         db.flush()
         for slot, meal in enumerate(generated):
@@ -539,7 +620,8 @@ def create_plan(db: Session, user_id: str, count: int) -> models.MealPlan:
 def swap_slot(db: Session, user_id: str, entry: models.MealPlanEntry) -> models.Meal | None:
     """Re-roll one plan slot with a fresh suggestion; returns the new Meal (or None)."""
     meals = suggest_meals(db, user_id, count=1, commit=False,
-                          exclude_titles=[e.meal.title for e in entry.plan.entries])
+                          exclude_titles=[e.meal.title for e in entry.plan.entries],
+                          servings=entry.plan.servings)
     if not meals:
         return None
     entry.meal_id = meals[0].id

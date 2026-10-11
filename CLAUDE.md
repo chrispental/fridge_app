@@ -106,6 +106,13 @@ returned suggestion is logged as a `Meal` row immediately, so the no-repeat wind
 applies even to un-cooked suggestions. Each kept suggestion is then enriched with a
 related recipe link via `_enrich_with_brave()` before persistence. `_generate()`
 validates the requested serving count and retries the full recipe once if needed.
+`adjust_meal(db, user_id, meal, instruction)` (`POST /meals/{id}/adjust`, suggested
+meals only) rewrites a recipe **in place** from a short instruction using
+`prompts/adjust_system.md`; it keeps the meal id so plans and history stay attached,
+re-runs the allergy and grill guards (a violation raises `AdjustmentRejected` → 422),
+and appends the instruction to `recipe_json["adjustments"]` so later adjustments build
+on earlier ones. The frontend patches every cached copy of the meal via
+`useAdjustMeal`.
 
 **Brave Search — `backend/app/services/brave_search.py`.** Singleton `httpx` client,
 keyed by `BRAVE_API_KEY`. `search_web()` and `search_image()` are **fail-soft by
@@ -131,11 +138,22 @@ are kept; the UI asks for confirmation first and states that nothing was actuall
 `{used, remaining, next_available_at}` — declared **before** the dynamic `/{meal_id}`
 route so the path isn't captured as an id.
 
+**Leftovers.** `POST /meals/{id}/cook` with `save_leftovers=true` adds an inventory
+row `leftover <title>` (category/source `leftover`, fridge, unknown amount, expiry from
+`services/expiry.py`) inside the same idempotent cook action. Ingredient identity is
+whole-key, so a leftover never counts as stock for its own ingredients.
+
+**Plans.** `MealPlan.servings` and `MealPlan.start_date` are optional per-plan overrides
+chosen at creation; `plan_jobs.fill_plan` and `swap_slot` pass the plan's servings to
+`suggest_meals`, and the UI derives each slot's date as `start_date + slot_index`.
+
 **Units — `backend/app/services/units.py`.** US customary, a fixed enum. `normalize_unit`
 maps free-text to the canonical set; metric units normalize to `"unknown"` rather than
 being relabeled (relabeling would lie about the amount). `try_subtract` does best-effort
 inventory decrement when a meal is marked cooked. **The `UNITS` array in
-`frontend/src/api/client.js` must stay in sync with this enum.**
+`frontend/src/api/client.js` must stay in sync with this enum.** Likewise the
+shelf-life table in `frontend/src/utils/expiry.js` mirrors `services/expiry.py` so the
+manual-add form can prefill the same estimate the photo flow gets server-side.
 
 **Prompts** are markdown files in `backend/app/prompts/`, loaded by
 `services/prompts.py` — edit those rather than embedding prompt text in code.

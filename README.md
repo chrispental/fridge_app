@@ -71,14 +71,20 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
    quantities, and rough expiry dates. Compare the original photo with the editable list, then confirm it once.
    Unfinished scans are available on the capture page; edits survive reloads in
    this browser.
-   You can also add items by hand.
+   You can also add items by hand; new items get a shelf-life estimate from their
+   category and storage that you can change before saving, and a deleted item can
+   be restored from the **Undo** toast.
 3. **Cook** — type a craving ("something with chicken & spinach") or hit *Surprise
    me* and get recipes you can make right now, with quantities checked against your inventory, consistent cooking-method icons, and a related recipe
    link. Unknown amounts or incompatible units are marked **Check amount**. Meals that use up expiring items
    float to the top; grilled dishes are skipped when the weather says no.
    Choose **Cooking for** on Home or Cook to set the number of people for a request;
    it defaults to household size. Recipes are generated for that count, and a mismatched
-   serving count triggers a retry. Weekly plans use the household default.
+   serving count triggers a retry. Weekly plans use the household default unless you
+   pick a different count when creating the plan.
+   **Adjust recipe** rewrites a suggestion in place from a short instruction
+   ("vegetarian", "faster", "swap the chicken for tofu"); allergies, equipment, and
+   the weather gate still apply, and the card shows which adjustments were made.
    Instructions and Cook Mode show contextual reminders for hot cookware, steam,
    boiling liquids, and hot oil, including older saved recipes. These common-hazard
    reminders are not a comprehensive safety check.
@@ -88,6 +94,8 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
 4. **Plan** — generate a week of distinct meals, swap any day, and turn it into one
    consolidated shopping list for meals still to cook; cooked meals and delivery
    nights are excluded. Ordinary cooking water never needs a grocery purchase.
+   Choose a start date and a serving count when you create the plan; each slot is
+   labelled with its day.
    Planning runs in the background with visible progress;
    interrupted jobs keep completed meals and can resume.
 5. **Shopping** — a standalone list you can add to by hand, from a plan, or from a
@@ -96,8 +104,10 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
    Edit an item's quantity and unit to match the package you actually buy before
    moving it into inventory. Leave the quantity blank when it is unknown.
 6. **History & Insights** — every suggestion is logged so meals don't repeat; mark
-   meals cooked (optionally decrementing inventory), rate them, and feedback shapes
-   future suggestions. One meal a week can be marked "order delivery instead".
+   meals cooked (optionally decrementing inventory and saving the leftovers to your
+   fridge with a short expiry), rate them, and feedback shapes future suggestions.
+   One meal a week can be marked "order delivery instead"; History can filter to
+   those delivery nights.
 
 ## Tech
 
