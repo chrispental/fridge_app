@@ -148,6 +148,7 @@ async def test_initialize_list_and_call_use_real_http_transport(client):
     for tool in tools:
         assert "user_id" not in tool["inputSchema"].get("properties", {})
         assert "client_id" not in tool["inputSchema"].get("properties", {})
+        assert tool["outputSchema"]["type"] == "object"
         assert tool["annotations"]["openWorldHint"] is False
         assert tool["annotations"]["destructiveHint"] is False
     by_name = {tool["name"]: tool for tool in tools}

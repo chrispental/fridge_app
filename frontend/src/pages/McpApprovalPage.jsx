@@ -5,6 +5,12 @@ import { api } from '../api/client.js'
 import { useAuth } from '../auth/useAuth.js'
 import { PageHeader, PageSkeleton } from '../components/ui.jsx'
 
+// Read the clock only in state initialization, timers, and event handlers. Render
+// and query scheduling use the state snapshot instead of reading the clock.
+function readClock() {
+  return Date.now()
+}
+
 // Approval quantities are the exact stored delta, not the rounded cooking display.
 function amount(quantity, unit) {
   if (quantity == null) return `Unknown amount${unit && unit !== 'unknown' ? ` (${unit})` : ''}`
@@ -28,15 +34,15 @@ function ApprovalReview({ approvalId }) {
   const { session } = useAuth()
   const queryClient = useQueryClient()
   const queryKey = ['mcp-approvals', session?.user?.id || 'local', approvalId]
+  const [now, setNow] = useState(readClock)
   const approval = useQuery({
     queryKey,
     queryFn: ({ signal }) => api.getMcpApproval(approvalId, signal),
     staleTime: 0,
     retry: false,
     refetchInterval: (query) => query.state.data?.status === 'approved'
-      && Date.parse(query.state.data.expires_at) > Date.now() ? 3000 : false,
+      && Date.parse(query.state.data.expires_at) > now ? 3000 : false,
   })
-  const [now, setNow] = useState(() => Date.now())
   const inFlight = useRef(false)
   const data = approval.data
   const active = data?.status === 'pending' || data?.status === 'approved'
@@ -45,7 +51,7 @@ function ApprovalReview({ approvalId }) {
 
   useEffect(() => {
     if (!active || expired) return undefined
-    const timer = window.setInterval(() => setNow(Date.now()), 1000)
+    const timer = window.setInterval(() => setNow(readClock()), 1000)
     return () => window.clearInterval(timer)
   }, [active, expired])
 
@@ -71,8 +77,9 @@ function ApprovalReview({ approvalId }) {
 
   async function decide(action) {
     if (inFlight.current || decision.isPending || decision.isError || approval.isFetching || approval.isError || !active) return
-    if (!Number.isFinite(deadline) || Date.now() >= deadline) {
-      setNow(Date.now())
+    const clickedAt = readClock()
+    if (!Number.isFinite(deadline) || clickedAt >= deadline) {
+      setNow(clickedAt)
       return
     }
     if (action === 'approve' && data.status !== 'pending') return
@@ -91,7 +98,7 @@ function ApprovalReview({ approvalId }) {
     if (inFlight.current || approval.isFetching) return
     const refreshed = await approval.refetch()
     if (!refreshed.isError) decision.reset()
-    setNow(Date.now())
+    setNow(readClock())
   }
 
   if (approval.isPending) return <PageSkeleton caption="Loading the shopping changes for your review…" />

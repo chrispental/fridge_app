@@ -146,6 +146,20 @@ it('expires an open preview before accepting another click', async () => {
   expect(api.approveMcpApproval).not.toHaveBeenCalled()
 })
 
+it('rejects a click after expiry even when the visible clock has not ticked yet', async () => {
+  const time = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-12T12:00:00Z'))
+  // Simulate a backgrounded tab whose display timer has not run again.
+  vi.spyOn(window, 'setInterval').mockReturnValue(123)
+  api.getMcpApproval.mockResolvedValue({ ...pending, expires_at: '2026-10-12T12:00:05Z' })
+  render(page().ui)
+  const approve = await screen.findByRole('button', { name: 'Approve these changes' })
+  expect(approve.disabled).toBe(false)
+  time.mockReturnValue(Date.parse('2026-10-12T12:00:06Z'))
+  fireEvent.click(approve)
+  expect(screen.getByRole('status').textContent).toContain('expired')
+  expect(api.approveMcpApproval).not.toHaveBeenCalled()
+})
+
 it('does not retry an uncertain decision until a successful explicit status reload', async () => {
   api.approveMcpApproval.mockRejectedValueOnce(new Error('Connection lost'))
   render(page().ui)

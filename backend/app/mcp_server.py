@@ -4,7 +4,7 @@ import logging
 from collections import deque
 from threading import Lock
 from time import monotonic
-from typing import Annotated
+from typing import Annotated, Any
 from urllib.parse import urlsplit
 
 from fastapi import HTTPException
@@ -99,24 +99,25 @@ def build_mcp_app():
 
     read = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True, openWorldHint=False)
 
-    @server.tool(annotations=read)
-    def read_inventory(query: Query = "", limit: Annotated[int, Field(ge=1, le=100)] = 50, offset: Offset = 0) -> dict:
+    @server.tool(annotations=read, structured_output=True)
+    def read_inventory(query: Query = "", limit: Annotated[int, Field(ge=1, le=100)] = 50, offset: Offset = 0) -> dict[str, Any]:
         """Read your inventory with quantities, storage and estimated expiry; paginated."""
         return invoke(mcp_tools.inventory, query=query, limit=limit, offset=offset)
 
-    @server.tool(annotations=read)
+    @server.tool(annotations=read, structured_output=True)
     def search_recipes(query: Query = "", favorites_only: bool = False,
-                       limit: Annotated[int, Field(ge=1, le=50)] = 20, offset: Offset = 0) -> dict:
+                       limit: Annotated[int, Field(ge=1, le=50)] = 20, offset: Offset = 0) -> dict[str, Any]:
         """Search your saved/favourite recipes and current ingredient stock. No AI calls."""
         return invoke(mcp_tools.search_recipes, query=query, favorites_only=favorites_only, limit=limit, offset=offset)
 
-    @server.tool(annotations=read)
-    def get_current_plan() -> dict:
+    @server.tool(annotations=read, structured_output=True)
+    def get_current_plan() -> dict[str, Any]:
         """Read your newest-created plan, dates and status (not necessarily this week)."""
         return invoke(mcp_tools.current_plan)
 
-    @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False))
-    def preview_plan_shopping(plan_id: PlanId | None = None) -> dict:
+    @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False),
+                 structured_output=True)
+    def preview_plan_shopping(plan_id: PlanId | None = None) -> dict[str, Any]:
         """Preview shortages and the exact shopping delta; create an expiring human approval link.
 
         Requires fridge:shopping. Does not change the shopping list. The human must
@@ -126,8 +127,9 @@ def build_mcp_app():
         return invoke(mcp_tools.preview_plan_shopping, write=True, client_id=token.client_id if token else "",
                       approval_base_url=origin, plan_id=plan_id)
 
-    @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False))
-    def import_plan_shopping(approval_id: ApprovalId) -> dict:
+    @server.tool(annotations=ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHint=True, openWorldHint=False),
+                 structured_output=True)
+    def import_plan_shopping(approval_id: ApprovalId) -> dict[str, Any]:
         """Apply the exact human-approved shopping preview. Same ID safely replays its result.
 
         Never auto-approve. Unapproved, expired, denied or changed previews fail;

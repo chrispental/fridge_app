@@ -3,6 +3,7 @@
 All signing keys, grants and users are synthetic. JWKS is stubbed, so these tests
 never call an identity provider or touch a real kitchen.
 """
+import secrets
 import time
 from types import SimpleNamespace
 
@@ -246,7 +247,7 @@ def test_invalid_signature_is_rejected(token_factory):
 
 def test_symmetric_unsigned_malformed_and_oversized_tokens_fail_closed(token_factory):
     verifier = mcp_auth.FridgeTokenVerifier()
-    secret = "synthetic-test-secret-with-at-least-32-bytes"
+    secret = secrets.token_bytes(32)
     symmetric = jwt.encode({"sub": SUBJECT}, secret, algorithm="HS256", headers={"typ": "at+jwt"})
     unsigned = jwt.encode({"sub": SUBJECT}, key="", algorithm="none", headers={"typ": "at+jwt"})
     for token in (symmetric, unsigned, "not.a.jwt", "", "x" * 16385):
