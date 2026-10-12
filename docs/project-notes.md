@@ -54,6 +54,23 @@ code and PR state before acting; update or remove notes as decisions change.
 - **Cooking recovery:** Surface the latest unfinished cooking session throughout
   the app. Dismissing its reminder keeps the recipe's saved steps and timers.
 
+- **HTTP MCP:** Optional, disabled by default, with five tools implemented using
+  standalone FastMCP. The simplest opt-in is `docker-compose.mcp-local.yml`: no
+  OAuth/login/API keys, fixed `127.0.0.1:18080` UI/MCP and `127.0.0.1:18000` API,
+  and an isolated empty SQLite named volume. No host `.env`, merged cloud profile,
+  public proxy, or tunnel. Local MCP rejects every browser `Origin`; CLI tools and
+  first-party browser review are separate paths. All local clients share one kitchen
+  and identity. No-login approval is an accident guard, not protection against other
+  programs on the host. Stopping preserves this kitchen; explicit volume deletion
+  destroys only that isolated test data.
+- **Remote MCP:** `MCP_MODE=remote` is the default and still requires cloud mode,
+  dedicated resource-bound OAuth tokens and explicit subject/client-to-app-user
+  grants. Invalid configuration fails closed with no local fallback. Ordinary
+  Supabase sessions and delegated OAuth tokens are not interchangeable. In both
+  modes, shopping imports require a persisted first-party review/approval of the
+  exact delta, unchanged source state and atomic replay protection.
+  See [MCP setup](mcp.md).
+
 ## Previously recorded environment context
 
 - A September 1, 2026 project memory records Supabase's free plan and an accepted
@@ -64,3 +81,10 @@ code and PR state before acting; update or remove notes as decisions change.
 - More extensive architecture context lives in `CLAUDE.md`. Machine-local Claude
   memories also exist, but important shared decisions should live in this repository
   so they remain available across tools and future checkouts.
+
+## Deferred UI validation
+
+- The MCP approval screen still needs manual visual QA at phone/desktop sizes in
+  light/dark themes and its matching `design.pen` screen. Preserve the existing
+  design file until Pen/Pencil tooling can open it. Automated React/browser tests
+  and CI builds do not substitute for manual visual review or design-file updates.

@@ -1,0 +1,44 @@
+# Standalone opt-in local MCP stack. Do not merge with a public/cloud compose file.
+# No env_file or host interpolation: cloud credentials and FRIDGE_BIND_HOST cannot
+# silently turn this no-login mode into a network service.
+services:
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: sqlite:////app/data/fridge.db
+      SUPABASE_URL: ""
+      SUPABASE_SECRET_KEY: ""
+      BLOB_BACKEND: local
+      UPLOAD_DIR: /app/data/uploads
+      OPENROUTER_API_KEY: ""
+      BRAVE_API_KEY: ""
+      MCP_ENABLED: "true"
+      MCP_MODE: local
+      MCP_RESOURCE_URL: http://127.0.0.1:18080/mcp
+      MCP_ISSUER_URL: ""
+      MCP_JWKS_URL: ""
+      MCP_GRANTS: "[]"
+      CORS_ORIGINS: http://127.0.0.1:18080
+    ports:
+      - "127.0.0.1:18000:8000"
+    volumes:
+      - local-kitchen:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8000/api/health', headers={'Host': '127.0.0.1:18000'}))"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_SUPABASE_URL: ""
+        VITE_SUPABASE_PUBLISHABLE_KEY: ""
+    ports:
+      - "127.0.0.1:18080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+volumes:
+  local-kitchen:

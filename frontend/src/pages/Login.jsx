@@ -1,10 +1,16 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../auth/supabase.js'
 
 // Email + password sign-in / sign-up with a magic-link alternative. Rendered only in
 // cloud mode (AuthProvider), before the onboarding gate. Reuses the onboarding shell
 // so it reads as the same welcome flow.
 export default function Login() {
+  const { pathname } = useLocation()
+  // Preserve only a first-party approval deep link, never a supplied redirect URL
+  // or query/hash that could contain auth tokens or a different destination.
+  const approvalPath = /^\/mcp-approvals\/[A-Za-z0-9_-]+\/?$/.test(pathname) ? pathname : ''
+  const emailRedirectTo = window.location.origin + approvalPath
   const [mode, setMode] = useState('signin') // signin | signup
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -33,7 +39,9 @@ export default function Login() {
     if (mode === 'signin') {
       await run(() => supabase.auth.signInWithPassword({ email, password }))
     } else {
-      const ok = await run(() => supabase.auth.signUp({ email, password }))
+      const ok = await run(() => supabase.auth.signUp({
+        email, password, ...(approvalPath ? { options: { emailRedirectTo } } : {}),
+      }))
       if (ok) setNotice('Account created. Check your email to confirm, then sign in.')
     }
   }
@@ -46,7 +54,7 @@ export default function Login() {
     const ok = await run(() =>
       supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo },
       }),
     )
     if (ok) setNotice('Magic link sent — check your email.')

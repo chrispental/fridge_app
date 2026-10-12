@@ -66,6 +66,10 @@ def verify_supabase_jwt(token: str) -> AuthUser:
         raise HTTPException(
             401, f"Invalid token: {exc.__class__.__name__}", headers=_UNAUTHENTICATED
         )
+    # Delegated OAuth clients must not bypass the narrow MCP surface via REST.
+    # First-party Supabase sessions have no OAuth client_id claim.
+    if "client_id" in claims or jwt.get_unverified_header(token).get("typ") in {"at+jwt", "application/at+jwt"}:
+        raise HTTPException(401, "Delegated tokens cannot access the app API", headers=_UNAUTHENTICATED)
     return AuthUser(id=str(claims["sub"]), email=claims.get("email"))
 
 

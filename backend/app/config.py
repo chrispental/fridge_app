@@ -1,9 +1,18 @@
 """Application configuration, loaded from environment variables / `.env`."""
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # The single user in local (no-auth) mode. UUID-shaped so `user_id` columns hold the
 # same kind of value in both modes. Changing it after first run orphans existing rows.
 DEFAULT_LOCAL_USER_ID = "00000000-0000-0000-0000-000000000001"
+
+# Fixed endpoints for the isolated, loopback-published local MCP Compose profile.
+# Never infer local trust from caller-controlled forwarding headers or URL hosts.
+LOCAL_MCP_ORIGIN = "http://127.0.0.1:18080"
+LOCAL_MCP_RESOURCE_URL = f"{LOCAL_MCP_ORIGIN}/mcp"
+LOCAL_MCP_HOST = "127.0.0.1:18080"
+LOCAL_MCP_API_HOST = "127.0.0.1:18000"
 
 
 class Settings(BaseSettings):
@@ -36,6 +45,15 @@ class Settings(BaseSettings):
     supabase_storage_bucket: str = "fridge-photos"
     blob_backend: str = "auto"  # auto | local | supabase
     local_user_id: str = DEFAULT_LOCAL_USER_ID
+
+    # MCP is opt-in. Remote OAuth remains the default; local is a separate,
+    # explicitly selected loopback-only deployment, never an auth fallback.
+    mcp_enabled: bool = False
+    mcp_mode: Literal["remote", "local"] = "remote"
+    mcp_resource_url: str = ""
+    mcp_issuer_url: str = ""
+    mcp_jwks_url: str = ""
+    mcp_grants: list[dict] = []  # Explicit issuer subject + client -> existing app user
 
     # Image handling
     max_image_dim: int = 1024
