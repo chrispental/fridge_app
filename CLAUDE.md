@@ -237,3 +237,14 @@ cooking requests, and plan submissions. `/api/plans` creates a durable queued jo
 `services/plan_jobs.py` processes it in the single shipped Uvicorn process. Preserve
 slot-level atomic commits and explicit resume after interruptions. Use the isolated
 `docker-compose.test.yml` stack for PostgreSQL tests; migration tests wipe their DB.
+
+## Optional MCP resource server
+
+`app/mcp_server.py` exposes five SDK Streamable HTTP tools only when `MCP_ENABLED`
+is true. `mcp_auth.py` enforces a separate issuer, exact resource audience, explicit
+subject/client grants and existing user mapping. Ordinary app sessions remain
+Supabase-authenticated and cannot be substituted with delegated MCP credentials.
+`services/mcp_tools.py` provides bounded, scoped reads and persisted exact-delta
+shopping approvals; `routers/mcp_approvals.py` and `McpApprovalPage.jsx` are the
+first-party human confirmation boundary. No tool can approve. See `docs/mcp.md`
+for prerequisites, locking, replay and deployment verification limits.

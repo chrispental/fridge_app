@@ -59,7 +59,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
-      - run: python -m pytest tests/test_migrations.py tests/test_app_smoke.py
+      - run: python -m pytest tests/test_migrations.py tests/test_app_smoke.py tests/test_mcp_tools.py
 
   frontend-lint:
     runs-on: ubuntu-latest

@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     blob_backend: str = "auto"  # auto | local | supabase
     local_user_id: str = DEFAULT_LOCAL_USER_ID
 
+    # Optional remote MCP. No local-user fallback; see docs/mcp.md.
+    mcp_enabled: bool = False
+    mcp_resource_url: str = ""
+    mcp_issuer_url: str = ""
+    mcp_jwks_url: str = ""
+    mcp_grants: list[dict] = []  # Explicit issuer subject + client -> existing app user
+
     # Image handling
     max_image_dim: int = 1024
 

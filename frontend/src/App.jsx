@@ -14,6 +14,7 @@ import ReviewExtraction from './pages/ReviewExtraction.jsx'
 import HistoryPage from './pages/HistoryPage.jsx'
 import PreferencesPage from './pages/PreferencesPage.jsx'
 import ShoppingListPage from './pages/ShoppingListPage.jsx'
+import McpApprovalPage from './pages/McpApprovalPage.jsx'
 import InsightsPage from './pages/InsightsPage.jsx'
 import RecipesPage from './pages/RecipesPage.jsx'
 import QueryError from './components/QueryError.jsx'
@@ -81,6 +82,7 @@ export default function App() {
             <Route path="/plan" element={<WeekPlanPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/shopping" element={<ShoppingListPage />} />
+            <Route path="/mcp-approvals/:approvalId" element={<McpApprovalPage />} />
             <Route path="/capture" element={<PhotoCapture />} />
             <Route path="/review/:batchId" element={<ReviewExtraction />} />
             <Route path="/history" element={<HistoryPage />} />

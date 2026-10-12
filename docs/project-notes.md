@@ -54,6 +54,12 @@ code and PR state before acting; update or remove notes as decisions change.
 - **Cooking recovery:** Surface the latest unfinished cooking session throughout
   the app. Dismissing its reminder keeps the recipe's saved steps and timers.
 
+- **Remote MCP:** Optional, disabled by default, cloud mode only. Five tools with
+  dedicated resource-bound OAuth tokens and explicit subject/client-to-app-user
+  grants. Ordinary Supabase sessions and delegated OAuth tokens are not interchangeable.
+  Shopping imports require a persisted first-party human approval of the exact delta,
+  unchanged source state and atomic replay protection. See [MCP setup](mcp.md).
+
 ## Previously recorded environment context
 
 - A September 1, 2026 project memory records Supabase's free plan and an accepted

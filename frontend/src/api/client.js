@@ -142,6 +142,11 @@ export const api = {
     request(`/plans/${planId}/slots/${slot}/swap`, { method: 'POST' }),
   deletePlan: (planId) => request(`/plans/${planId}`, { method: 'DELETE' }),
 
+  // Human-only MCP approval flow. Viewing never approves; each decision is explicit.
+  getMcpApproval: (id, signal) => request(`/mcp-approvals/${encodeURIComponent(id)}`, { signal }),
+  approveMcpApproval: (id) => request(`/mcp-approvals/${encodeURIComponent(id)}/approve`, { method: 'POST' }),
+  denyMcpApproval: (id) => request(`/mcp-approvals/${encodeURIComponent(id)}/deny`, { method: 'POST' }),
+
   // Shopping list
   getShoppingListItems: () => request('/shopping-list'),
   addShoppingItem: (body) => request('/shopping-list', json('POST', body)),

@@ -30,6 +30,14 @@ It runs in one of two modes:
 > everything, including burning through your API keys. If you want to reach the app
 > from elsewhere, use cloud mode behind HTTPS.
 
+## Optional remote MCP
+
+An opt-in HTTP MCP server exposes five narrow inventory, recipe, plan and shopping
+tools. Shopping imports require a human-reviewed approval in the app. It is disabled
+by default and refuses local/no-login mode. This first version requires a separately
+configured OAuth provider and explicit identity/client grants; it is not an automatic
+Supabase OAuth integration. See [MCP setup and security](docs/mcp.md).
+
 ## Screenshots
 
 The app includes **Light**, **Dark**, and **System** themes. Light is the default;
