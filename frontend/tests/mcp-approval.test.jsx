@@ -27,7 +27,7 @@ const clients = []
 function Navigation() {
   const navigate = useNavigate()
   const location = useLocation()
-  return <><output aria-label="Current path">{location.pathname}</output><button onClick={() => navigate(-1)}>Browser back</button></>
+  return <><span aria-label="Current path">{location.pathname}</span><button onClick={() => navigate(-1)}>Browser back</button></>
 }
 function page(initialEntries = ['/mcp-approvals/approval-one']) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })

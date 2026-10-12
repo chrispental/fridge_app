@@ -70,3 +70,10 @@ code and PR state before acting; update or remove notes as decisions change.
 - More extensive architecture context lives in `CLAUDE.md`. Machine-local Claude
   memories also exist, but important shared decisions should live in this repository
   so they remain available across tools and future checkouts.
+
+## Deferred UI validation
+
+- The MCP approval screen still needs phone/light/dark browser QA and its matching
+  `design.pen` screen. The implementation environment had no Docker runtime or
+  Pen/Pencil tooling; the existing design file was preserved unchanged. Automated
+  React tests and CI builds cover behavior, not visual layout.

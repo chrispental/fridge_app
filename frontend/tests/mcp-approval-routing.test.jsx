@@ -22,7 +22,7 @@ import Login from '../src/pages/Login.jsx'
 
 function Location() {
   const { pathname } = useLocation()
-  return <output aria-label="Current path">{pathname}</output>
+  return <span aria-label="Current path">{pathname}</span>
 }
 const path = '/mcp-approvals/approval-one'
 const page = () => <MemoryRouter initialEntries={[path]}><Location /><App /></MemoryRouter>
