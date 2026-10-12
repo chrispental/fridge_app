@@ -240,11 +240,19 @@ slot-level atomic commits and explicit resume after interruptions. Use the isola
 
 ## Optional MCP resource server
 
-`app/mcp_server.py` exposes five SDK Streamable HTTP tools only when `MCP_ENABLED`
-is true. `mcp_auth.py` enforces a separate issuer, exact resource audience, explicit
-subject/client grants and existing user mapping. Ordinary app sessions remain
-Supabase-authenticated and cannot be substituted with delegated MCP credentials.
+`app/mcp_server.py` uses the standalone `fastmcp` package, explicitly registering
+five tools over stateless Streamable HTTP only when `MCP_ENABLED` is true. It does
+not auto-export the REST API. Its lifespan is managed by the parent FastAPI app.
+`mcp_auth.py` enforces a separate issuer, exact resource audience, short-lived
+RFC 9068 access JWTs and an explicit `(subject, client_id)` allowlist in `MCP_GRANTS`
+mapped to existing app users. There is no grants table or automatic provisioning;
+grant changes/revocation require all backend replicas to reload configuration.
+Ordinary app sessions remain Supabase-authenticated and cannot be substituted
+with delegated MCP credentials.
+
 `services/mcp_tools.py` provides bounded, scoped reads and persisted exact-delta
 shopping approvals; `routers/mcp_approvals.py` and `McpApprovalPage.jsx` are the
-first-party human confirmation boundary. No tool can approve. See `docs/mcp.md`
-for prerequisites, locking, replay and deployment verification limits.
+first-party human confirmation boundary. No tool can approve. Both provider token
+and app grant need `fridge:shopping` for preview/import. See `docs/mcp.md` for
+operator/client setup, tool examples, locking, replay, revocation and the live
+provider/proxy/CLI verification that remains a deployment requirement.

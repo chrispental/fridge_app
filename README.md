@@ -32,11 +32,20 @@ It runs in one of two modes:
 
 ## Optional remote MCP
 
-An opt-in HTTP MCP server exposes five narrow inventory, recipe, plan and shopping
-tools. Shopping imports require a human-reviewed approval in the app. It is disabled
-by default and refuses local/no-login mode. This first version requires a separately
-configured OAuth provider and explicit identity/client grants; it is not an automatic
-Supabase OAuth integration. See [MCP setup and security](docs/mcp.md).
+The opt-in [FastMCP](https://gofastmcp.com/) HTTP server exposes five narrow tools
+for inventory, saved recipes, plans and shopping. Shopping imports require a human
+to review and approve the exact changes in the app. MCP is disabled by default and
+refuses local/no-login mode.
+
+To use it, first configure a dedicated OAuth provider (the guide uses Auth0),
+register your CLI client, verify its account-to-kitchen mapping, and set the
+backend's `MCP_GRANTS` allowlist. Ordinary Supabase login tokens do not work as
+MCP credentials. Nothing is provisioned or deployed automatically.
+
+See the [step-by-step MCP guide](docs/mcp.md) for provider settings, safe grant
+setup, Claude Code/Codex/OpenCode configuration, all five tool calls, shopping
+approval, revocation, and troubleshooting. Live provider/client verification is
+required before production use.
 
 ## Screenshots
 
