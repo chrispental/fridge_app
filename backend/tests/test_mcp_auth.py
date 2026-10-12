@@ -38,6 +38,7 @@ def anyio_backend():
 def mcp_config(monkeypatch):
     monkeypatch.setattr(settings, "supabase_url", "https://project.supabase.co")
     monkeypatch.setattr(settings, "mcp_enabled", True)
+    monkeypatch.setattr(settings, "mcp_mode", "remote")
     monkeypatch.setattr(settings, "mcp_resource_url", RESOURCE)
     monkeypatch.setattr(settings, "mcp_issuer_url", ISSUER)
     monkeypatch.setattr(settings, "mcp_jwks_url", "https://identity.example/jwks.json")

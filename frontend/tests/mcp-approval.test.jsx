@@ -74,6 +74,7 @@ it('shows the exact delta, account, client, expiry and escaped recipe text witho
   expect(view.container.querySelector('time').getAttribute('datetime')).toBe(pending.expires_at)
   expect(api.approveMcpApproval).not.toHaveBeenCalled()
   expect(api.denyMcpApproval).not.toHaveBeenCalled()
+  expect(screen.queryByLabelText('Local approval limits')).toBeNull()
 })
 
 it('approves only after an explicit click and blocks repeated decisions while the request is pending', async () => {
@@ -212,16 +213,25 @@ it('does not let completion of an older decision affect a newer approval route',
   expect(screen.getByLabelText('Current path').textContent).toBe('/mcp-approvals/approval-two')
 })
 
-it('does not fetch or offer approval in no-login local mode', () => {
+it('does not fetch or offer local approval outside the canonical loopback origin', () => {
   auth.authEnabled = false
   auth.session = null
   render(page().ui)
   expect(screen.getByRole('heading', { name: 'Shopping approval unavailable' })).toBeTruthy()
+  expect(screen.getByText(/Local client approvals are available only at http:\/\/127.0.0.1:18080/)).toBeTruthy()
   expect(api.getMcpApproval).not.toHaveBeenCalled()
 })
 
-describe('authenticated approval API calls', () => {
-  it('uses the app token, encodes the ID and sends no agent confirmation flag', async () => {
+it('does not fetch or offer cloud approval while signed out', () => {
+  auth.session = null
+  render(page().ui)
+  expect(screen.getByRole('heading', { name: 'Shopping approval unavailable' })).toBeTruthy()
+  expect(screen.getByText(/require a signed-in cloud kitchen/)).toBeTruthy()
+  expect(api.getMcpApproval).not.toHaveBeenCalled()
+})
+
+describe('approval API calls', () => {
+  it('uses the app token, encodes the ID and marks explicit first-party decisions', async () => {
     // Restore the real methods for this request-layer regression.
     api.getMcpApproval.mockRestore()
     api.approveMcpApproval.mockRestore()
@@ -236,8 +246,29 @@ describe('authenticated approval API calls', () => {
       '/api/mcp-approvals/id%2Fwith%3Fparts', '/api/mcp-approvals/approval-one/approve', '/api/mcp-approvals/approval-one/deny',
     ])
     for (const [, options] of fetch.mock.calls) expect(options.headers.get('Authorization')).toBe('Bearer test-app-session')
-    expect(fetch.mock.calls[1][1].method).toBe('POST')
-    expect(fetch.mock.calls[1][1].body).toBeUndefined()
-    expect(fetch.mock.calls[2][1].method).toBe('POST')
+    expect(fetch.mock.calls[0][1].headers.has('X-Fridge-MCP-Approval')).toBe(false)
+    for (const [, options] of fetch.mock.calls.slice(1)) {
+      expect(options.method).toBe('POST')
+      expect(options.headers.get('Content-Type')).toBe('application/json')
+      expect(options.headers.get('X-Fridge-MCP-Approval')).toBe('1')
+      expect(options.body).toBeUndefined()
+    }
+  })
+
+  it('sends local decisions without a token and leaves Origin to the browser', async () => {
+    api.approveMcpApproval.mockRestore()
+    api.denyMcpApproval.mockRestore()
+    configureAuth({ getToken: async () => null })
+    const fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify(pending) })
+    vi.stubGlobal('fetch', fetch)
+    await api.approveMcpApproval('approval-one')
+    await api.denyMcpApproval('approval-one')
+    for (const [, options] of fetch.mock.calls) {
+      expect(options.method).toBe('POST')
+      expect(options.headers.has('Authorization')).toBe(false)
+      expect(options.headers.has('Origin')).toBe(false)
+      expect(options.headers.get('Content-Type')).toBe('application/json')
+      expect(options.headers.get('X-Fridge-MCP-Approval')).toBe('1')
+    }
   })
 })

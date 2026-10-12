@@ -28,6 +28,11 @@ and test this app in containers, including backend tests and frontend lint/tests
 Use the isolated preview for test data; the normal `docker compose up --build`
 deployment uses `.env` and saved kitchen data (frontend :8080, API :8000).
 Run Alembic authoring commands inside a backend container with a disposable database.
+For keyless local MCP, use the standalone `docker-compose.mcp-local.yml` with project
+`fridge-mcp-local`: fixed loopback UI :18080, API :18000, a separate SQLite named
+volume, and no host `.env`/cloud credentials. Do not merge it with another Compose
+file or expose it through a tunnel/proxy. `down` preserves its kitchen; `down --volumes`
+explicitly deletes that isolated test data. See `docs/mcp.md`.
 
 The frontend has ESLint (flat config), Vitest/Testing Library regression tests, and
 Node theme tests (`npm test`). There is no Python linter.
@@ -243,16 +248,31 @@ slot-level atomic commits and explicit resume after interruptions. Use the isola
 `app/mcp_server.py` uses the standalone `fastmcp` package, explicitly registering
 five tools over stateless Streamable HTTP only when `MCP_ENABLED` is true. It does
 not auto-export the REST API. Its lifespan is managed by the parent FastAPI app.
-`mcp_auth.py` enforces a separate issuer, exact resource audience, short-lived
-RFC 9068 access JWTs and an explicit `(subject, client_id)` allowlist in `MCP_GRANTS`
-mapped to existing app users. There is no grants table or automatic provisioning;
-grant changes/revocation require all backend replicas to reload configuration.
-Ordinary app sessions remain Supabase-authenticated and cannot be substituted
-with delegated MCP credentials.
+`MCP_MODE=remote` remains the default, requiring cloud mode and the OAuth checks
+below; invalid remote configuration never falls back to local access.
+
+The standalone local stack explicitly selects `MCP_MODE=local`, empty Supabase and
+OAuth settings, and the exact resource `http://127.0.0.1:18080/mcp`. All local CLI
+connections resolve to the existing single local kitchen with one shared local
+client identity and both tool scopes. There is no auth provider or per-client
+identity isolation. Every MCP `Origin` header is rejected; normal browser REST and
+approval routes still work. Fixed Docker loopback bindings keep this no-login stack
+on a trusted local host. Host-header/IP checks are defense in depth, not proof of
+network isolation. Never tunnel, publicly proxy, rebind, or merge this stack into
+remote/cloud deployment.
+
+For remote mode, `mcp_auth.py` enforces a separate issuer, exact resource audience,
+short-lived RFC 9068 access JWTs and an explicit `(subject, client_id)` allowlist in
+`MCP_GRANTS` mapped to existing app users. There is no grants table or automatic
+provisioning; grant changes/revocation require all backend replicas to reload
+configuration. Ordinary cloud app sessions remain Supabase-authenticated and
+cannot be substituted with delegated MCP credentials.
 
 `services/mcp_tools.py` provides bounded, scoped reads and persisted exact-delta
-shopping approvals; `routers/mcp_approvals.py` and `McpApprovalPage.jsx` are the
-first-party human confirmation boundary. No tool can approve. Both provider token
-and app grant need `fridge:shopping` for preview/import. See `docs/mcp.md` for
-operator/client setup, tool examples, locking, replay, revocation and the live
-provider/proxy/CLI verification that remains a deployment requirement.
+shopping approvals; `routers/mcp_approvals.py` and `McpApprovalPage.jsx` provide the
+first-party human review flow. No MCP tool can approve. Preview, explicit approval,
+import, stale-state checks, and same-ID replay apply in both modes. In no-login local
+mode this is an accident guard: another local program can call the REST API, so it
+is not a security boundary against that program. Remote preview/import require
+`fridge:shopping` in both provider token and app grant. See `docs/mcp.md` for local
+quickstart, full remote setup, locking, replay, revocation and deployment validation.

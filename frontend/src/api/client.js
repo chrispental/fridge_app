@@ -142,10 +142,15 @@ export const api = {
     request(`/plans/${planId}/slots/${slot}/swap`, { method: 'POST' }),
   deletePlan: (planId) => request(`/plans/${planId}`, { method: 'DELETE' }),
 
-  // Human-only MCP approval flow. Viewing never approves; each decision is explicit.
+  // First-party MCP review. The custom header is a browser cross-origin guard,
+  // not authentication: trusted local programs can send it too. Viewing never approves.
   getMcpApproval: (id, signal) => request(`/mcp-approvals/${encodeURIComponent(id)}`, { signal }),
-  approveMcpApproval: (id) => request(`/mcp-approvals/${encodeURIComponent(id)}/approve`, { method: 'POST' }),
-  denyMcpApproval: (id) => request(`/mcp-approvals/${encodeURIComponent(id)}/deny`, { method: 'POST' }),
+  approveMcpApproval: (id) => request(`/mcp-approvals/${encodeURIComponent(id)}/approve`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Fridge-MCP-Approval': '1' },
+  }),
+  denyMcpApproval: (id) => request(`/mcp-approvals/${encodeURIComponent(id)}/deny`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Fridge-MCP-Approval': '1' },
+  }),
 
   // Shopping list
   getShoppingListItems: () => request('/shopping-list'),

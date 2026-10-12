@@ -54,6 +54,19 @@ it('keeps the approval URL through signed-out, password sign-in and onboarding g
   expect(screen.getByLabelText('Current path').textContent).toBe(path)
 })
 
+it('keeps the local approval URL through onboarding without requiring a cloud login', () => {
+  state.auth = { authEnabled: false, session: null, loading: false }
+  state.status = { isPending: false, data: { onboarded: false } }
+  const view = render(page())
+  expect(screen.getByRole('heading', { name: 'Set up your kitchen' })).toBeTruthy()
+  expect(screen.queryByRole('heading', { name: 'Welcome back' })).toBeNull()
+  expect(screen.getByLabelText('Current path').textContent).toBe(path)
+  state.status = { isPending: false, data: { onboarded: true } }
+  view.rerender(page())
+  expect(screen.getByRole('heading', { name: 'Shopping approval review' })).toBeTruthy()
+  expect(screen.getByLabelText('Current path').textContent).toBe(path)
+})
+
 it('keeps only the first-party approval path for magic links, stripping queries and hashes', async () => {
   render(<MemoryRouter initialEntries={[`${path}?redirect=https://untrusted.example#secret`]}><Login /></MemoryRouter>)
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'owner@example.test' } })

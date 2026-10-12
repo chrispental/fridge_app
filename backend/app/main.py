@@ -66,9 +66,12 @@ app.include_router(export.router)
 mcp_server = None
 mcp_app = None
 if settings.mcp_enabled:
-    from .mcp_server import build_mcp_app
+    from .mcp_server import LocalMcpAppGuard, build_mcp_app
     from .routers import mcp_approvals
 
     mcp_server, mcp_app = build_mcp_app()
+    if settings.mcp_mode == "local":
+        # Registered last so local origin checks also precede CORS preflights.
+        app.add_middleware(LocalMcpAppGuard)
     app.include_router(mcp_approvals.router)
     app.mount("/", mcp_app)

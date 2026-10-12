@@ -1,19 +1,153 @@
-# Remote MCP: setup and usage
+# MCP: local quickstart and remote setup
 
-Fridge Chef has an **optional, cloud-only MCP resource server** at `/mcp`, built
-with standalone [FastMCP 4.1.0](https://gofastmcp.com/) and its compatible MCP
-SDK 2.3.0 dependency, both pinned in `backend/requirements.txt`. It uses stateless Streamable HTTP and exposes exactly
-five tools. It is disabled by default; local SQLite/no-login mode cannot enable it.
+Fridge Chef has an **optional MCP resource server** at `/mcp`, built with standalone
+[FastMCP 4.1.0](https://gofastmcp.com/) and its compatible MCP SDK 2.3.0 dependency,
+both pinned in `backend/requirements.txt`. It uses stateless Streamable HTTP and
+exposes exactly five tools. MCP is disabled by default.
 
-This guide covers the operator setup, client login, tool calls, shopping approval,
-and revocation. **The repository does not provision an OAuth provider, register
-clients, create account mappings, or deploy anything.** The Auth0 recipe below is
-based on official documentation, not a completed live tenant/client acceptance test.
-Do the final checks with your intended client before exposing a real kitchen.
+- **Try it on your own computer:** the standalone local stack below has an isolated
+  SQLite kitchen, no login, and no OAuth or API keys to set up.
+- **Use a real cloud kitchen:** retain `MCP_MODE=remote` (the default) and follow the
+  [full authenticated setup](#remote-cloud-setup) below. Invalid remote settings fail
+  closed; they never fall back to unauthenticated local access.
+
+## Simplest local quickstart
+
+Use a trusted local Docker host and a CLI running on that same computer. From the
+repository root, with Docker and Docker Compose installed:
+
+```sh
+docker compose -f docker-compose.mcp-local.yml -p fridge-mcp-local up --build -d
+docker compose -f docker-compose.mcp-local.yml -p fridge-mcp-local ps
+```
+
+Open **http://127.0.0.1:18080** for the app. The MCP URL is exactly
+**http://127.0.0.1:18080/mcp**; the API is bound separately to
+`127.0.0.1:18000`. Wait for the backend to be healthy before connecting a client.
+If either port is occupied by another preview, stop that known preview first;
+do not change the local MCP address or ports.
+
+This is a standalone Compose file, not a profile or an override to merge with the
+normal/cloud stack. It does not pass a host `.env` file or interpolate credentials
+into the containers. It explicitly sets `MCP_ENABLED=true`, `MCP_MODE=local`,
+`SUPABASE_URL` empty, and `MCP_RESOURCE_URL=http://127.0.0.1:18080/mcp`. The frontend
+is built without Supabase settings. Auth0, client registration, credentials, and
+OAuth login are **not needed** for this quickstart.
+
+The project-scoped `local-kitchen` named volume starts empty on first use and is
+separate from `./data` and any cloud kitchen. Finish onboarding in the app and add
+inventory manually. You can use saved recipes where the existing UI supports them;
+recipe imports with structured recipe data can work without AI, but pasted text or
+unstructured pages need an AI key. This stack deliberately has no OpenRouter or
+Brave keys, so AI photo extraction, meal generation, and AI recipe transcription
+are unavailable. MCP itself never makes a paid AI call. Empty inventory/recipe
+results are expected initially; `get_current_plan` reports an error until a plan
+exists. No demo plan or kitchen data is created by startup.
+
+### Connect one local CLI
+
+Use one of these configurations. Do not add OAuth settings, bearer headers, client
+secrets, or an MCP login step. Local mode does not advertise OAuth metadata.
+Restart the client's session if it does not reload new servers automatically.
+
+**Claude Code:**
+
+```sh
+claude mcp add --transport http fridge-local http://127.0.0.1:18080/mcp
+claude mcp get fridge-local
+```
+
+**Codex CLI:**
+
+```sh
+codex mcp add fridge-local --url http://127.0.0.1:18080/mcp
+codex mcp get fridge-local
+```
+
+**OpenCode:** merge this entry into your existing `opencode.json` or `opencode.jsonc`,
+preserving other settings:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "fridge-local": {
+      "type": "remote",
+      "url": "http://127.0.0.1:18080/mcp",
+      "oauth": false,
+      "enabled": true
+    }
+  }
+}
+```
+
+Then run `opencode mcp list`. OpenCode's `remote` type means an HTTP connection,
+even when the server is on this computer; its `local` type is for stdio commands.
+These settings follow the official [Claude Code](https://code.claude.com/docs/en/mcp),
+[Codex](https://developers.openai.com/codex/mcp), and
+[OpenCode](https://opencode.ai/docs/mcp-servers/#disabling-oauth) docs, checked on
+2026-10-12. Configuration examples do not certify an untested client release.
+
+Ask the client: “Use fridge-local to list my inventory, then search my saved
+recipes.” It should discover the five tools in the next section. All local CLI
+connections share the same single kitchen and local client identity; there is no
+per-client OAuth scope or identity boundary in this mode.
+
+### Local shopping still needs review
+
+With a ready plan in this isolated kitchen:
+
+1. Ask the client to call `preview_plan_shopping` for that plan. Preview creates
+   an expiring approval record without changing the shopping list.
+2. Open the returned `approval_url` on **http://127.0.0.1:18080**. Finish onboarding
+   if needed, then review the exact before/add/after quantities in the app. Local
+   mode has no sign-in step.
+3. Click **Approve these changes** only when correct, or **Decline request**.
+4. Ask the client to call `import_plan_shopping` with the same `approval_id`.
+   Importing before approval fails; approval alone does not import anything.
+5. Check Shopping, then retry that same import once. It returns the saved result
+   without adding duplicate quantities. Kitchen changes make an unconsumed preview
+   stale; request a fresh preview and review it again.
+
+Only HTTP CLI MCP clients are supported locally. **Any `Origin` header is rejected
+at `/mcp`, including the app's own origin**; do not strip browser security headers
+or add a browser-MCP exception. The normal browser app and its approval page still
+work through the first-party REST routes.
+
+**Local mode is an accident guard, not a security boundary against other programs
+on the same host.** The approval screen encourages deliberate human review, but
+there is no login isolating it from a local program that can call the REST API.
+Other local clients also share the same MCP identity. Only run this on a computer
+and Docker host you trust. Loopback port bindings are the exposure boundary;
+a `Host` header or a proxy's claimed client IP does not prove that a caller is local.
+Never expose this stack through a tunnel, public reverse proxy, remote Docker host,
+changed bind address/ports, or a merged cloud Compose configuration. Use the
+separate authenticated remote setup for network access.
+
+### Stop or reset the isolated kitchen
+
+Stop the stack while preserving its local kitchen:
+
+```sh
+docker compose -f docker-compose.mcp-local.yml -p fridge-mcp-local down
+```
+
+To deliberately erase **this isolated kitchen**, add `--volumes`. This permanently
+deletes the named volume's inventory, recipes, plans, approvals, and uploaded files;
+use it only when that test data is no longer needed:
+
+```sh
+docker compose -f docker-compose.mcp-local.yml -p fridge-mcp-local down --volumes
+```
+
+Keep the same Compose file and project name in these commands. They do not target
+the normal stack's `./data` or cloud database. Removing a CLI entry stops that
+client's connection but does not revoke access for other local processes; stop
+the stack to turn local access off.
 
 ## What you can do
 
-| Tool | Required scopes | Inputs | Result / effect |
+| Tool | Required remote scopes | Inputs | Result / effect |
 | --- | --- | --- | --- |
 | `read_inventory` | `fridge:read` | `query`, `limit` (1–100), `offset` | Inventory quantities, storage and estimated expiry |
 | `search_recipes` | `fridge:read` | `query`, `favorites_only`, `limit` (1–50), `offset` | Saved/favourite recipes with current stock annotations; no AI call |
@@ -29,8 +163,18 @@ cooked meals and delivery nights do not.
 No tool accepts a user ID or creates an account. Photos, email, preferences and
 feedback have no MCP tools. Unknown quantities or incompatible units stay **check**,
 not “in stock”; expiry remains an estimate. Recipe and inventory text is untrusted
-data, never instructions. Tool availability in a client is not proof of permission:
-a read-only grant may discover all five tools, but cannot execute either shopping tool.
+data, never instructions. In remote mode, tool availability in a client is not proof
+of permission: a read-only grant may discover all five tools, but cannot execute
+either shopping tool. Local mode makes all five available to the one local kitchen;
+shopping import still requires the persisted approval.
+
+## Remote cloud setup
+
+The remaining numbered setup steps are for `MCP_MODE=remote`. The repository does
+not provision an OAuth provider, register clients, create account mappings, or deploy
+anything. The Auth0 recipe below is based on official documentation, not a completed
+live tenant/client acceptance test. Verify your intended client before exposing a
+real kitchen; the local quickstart is not a substitute for these checks.
 
 ## 1. Prepare the cloud app
 
@@ -174,6 +318,7 @@ example starts read-only and will not authenticate a real account:
 
 ```dotenv
 MCP_ENABLED=true
+MCP_MODE=remote
 MCP_RESOURCE_URL=https://fridge.example.com/mcp
 MCP_ISSUER_URL=https://example-tenant.us.auth0.com/
 MCP_JWKS_URL=https://example-tenant.us.auth0.com/.well-known/jwks.json
@@ -482,6 +627,9 @@ and revoked grants; do not destructively test those against someone's real kitch
 
 ## Revocation, limits and operations
 
+The grant, provider, and edge-revocation steps below apply to remote mode. For local
+mode, [stop the isolated stack](#stop-or-reset-the-isolated-kitchen).
+
 - **Revoke a client/person:** remove the corresponding `MCP_GRANTS` row and recreate
   all backend replicas. If it was the last row, set `MCP_ENABLED=false` too: enabled
   MCP with no grants fails startup. Keep remaining mappings unchanged. Recheck
@@ -518,10 +666,12 @@ and revoked grants; do not destructively test those against someone's real kitch
 
 | Symptom | Check / action |
 | --- | --- |
-| Backend refuses startup | Cloud `SUPABASE_URL`, HTTPS URLs, exact `/mcp` path, dedicated issuer, valid nonempty one-line grants JSON; read the configuration error privately |
+| Local stack will not start | Ports 18080/18000 must be free; use only the standalone Compose file and its fixed URL, empty Supabase/OAuth settings, and `MCP_MODE=local`; inspect backend logs privately |
+| Local client asks for OAuth | Confirm the exact loopback URL, `MCP_MODE=local`, and the new `fridge-local` entry without saved remote OAuth settings; do not create provider credentials for this quickstart |
+| Remote backend refuses startup | `MCP_MODE=remote`, cloud `SUPABASE_URL`, HTTPS URLs, exact `/mcp` path, dedicated issuer, valid nonempty one-line grants JSON; there is no unauthenticated fallback |
 | Metadata or `/mcp` returns HTML | Exact proxy locations are missing, an outer proxy rewrites to the SPA, or the client used `/mcp/` instead of `/mcp` |
 | 404 | MCP is disabled, the backend was not recreated with new env, or the request reached the wrong route |
-| Host/Origin rejection | Public Host must equal the configured resource host; preserve the browser Origin; do not “fix” this with `*` allowlists |
+| Host/Origin rejection | Local clients must use exact `http://127.0.0.1:18080/mcp` and send no `Origin`; every browser MCP Origin is rejected. Remotely, public Host must match the configured resource host; do not use `*` allowlists |
 | OAuth requests UserInfo / wrong audience | Resource compatibility is off, resource does not match API Identifier, or OIDC scopes introduced a second audience |
 | Redirect mismatch | Register the exact URI sent by this client/version, including hostname, port and any Codex suffix |
 | Login succeeds but MCP returns 401 | Check access-token type/profile, exact issuer/single audience, <=900-second lifetime, `client_id`, verified `sub`, grant and existing app-user row; check clock sync and JWKS reachability |
@@ -541,8 +691,17 @@ and revoked grants; do not destructively test those against someone's real kitch
 Run the Docker-only backend and frontend checks in [AGENTS.md](../AGENTS.md).
 Use the isolated [PostgreSQL test stack](../README.md#tests) for migration,
 smoke and MCP concurrency tests; those database tests are destructive. CI covers
-unit tests, disposable PostgreSQL migrations/smoke, frontend checks and builds.
-Generated test tokens/keys are synthetic, not live provider credentials.
+unit tests, disposable PostgreSQL migrations/smoke, frontend checks and builds. The
+`local-mcp-browser` CI job is configured to build the standalone local stack and
+run Chromium checks in Docker against a synthetic kitchen, including desktop/mobile
+and light/dark views, with screenshots uploaded for inspection. A configured job
+is not a passing result; inspect the checks on the exact PR commit.
+Generated test tokens/keys are synthetic, not live provider credentials. For local
+MCP, verify discovery and all five tools against the isolated Docker stack, denial
+of browser-origin MCP requests, and preview → human approval → import → same-ID
+replay. Keep automated browser coverage distinct from manual visual QA; the latter
+and the approval screen's `design.pen` update remain tracked in
+[project notes](project-notes.md#deferred-ui-validation).
 
 Before enabling production, record successful **live** tests of:
 

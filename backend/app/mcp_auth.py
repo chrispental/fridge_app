@@ -1,4 +1,4 @@
-"""Dedicated OAuth resource-server boundary; never accepts ordinary app tokens."""
+"""Explicit MCP deployment modes; remote OAuth never falls back to local access."""
 from dataclasses import dataclass
 from functools import lru_cache
 from urllib.parse import urlsplit
@@ -8,13 +8,14 @@ import anyio
 import jwt
 from fastmcp.server.auth import AccessToken, RemoteAuthProvider, TokenVerifier
 
-from .config import settings
+from .config import LOCAL_MCP_RESOURCE_URL, settings
 from .database import SessionLocal
 from .models import User
 
 READ_SCOPE = "fridge:read"
 WRITE_SCOPE = "fridge:shopping"
 SCOPES = {READ_SCOPE, WRITE_SCOPE}
+LOCAL_CLIENT_ID = "fridge-local-client"
 
 
 @dataclass(frozen=True)
@@ -52,8 +53,21 @@ def validated_grants() -> dict[tuple[str, str], Grant]:
 
 
 def validate_configuration() -> None:
+    if not settings.mcp_enabled:
+        raise ValueError("MCP must be explicitly enabled")
+    if settings.mcp_mode == "local":
+        if settings.auth_enabled:
+            raise ValueError("Local MCP requires SUPABASE_URL to be empty")
+        if settings.mcp_resource_url != LOCAL_MCP_RESOURCE_URL:
+            raise ValueError(f"Local MCP requires MCP_RESOURCE_URL={LOCAL_MCP_RESOURCE_URL}")
+        if settings.mcp_issuer_url or settings.mcp_jwks_url or settings.mcp_grants:
+            raise ValueError("Local MCP cannot configure OAuth issuer, JWKS, or grants")
+        UUID(settings.local_user_id)
+        return
+    if settings.mcp_mode != "remote":
+        raise ValueError("MCP_MODE must be remote or local")
     if not settings.auth_enabled:
-        raise ValueError("MCP requires cloud authentication; local mode is never exposed")
+        raise ValueError("Remote MCP requires cloud authentication; there is no local fallback")
     for value in (settings.mcp_resource_url, settings.mcp_issuer_url, settings.mcp_jwks_url):
         parts = urlsplit(value)
         if parts.scheme != "https" or not parts.hostname or parts.username or parts.password or parts.query or parts.fragment:

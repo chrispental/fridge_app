@@ -30,22 +30,58 @@ It runs in one of two modes:
 > everything, including burning through your API keys. If you want to reach the app
 > from elsewhere, use cloud mode behind HTTPS.
 
-## Optional remote MCP
+## Optional HTTP MCP
 
 The opt-in [FastMCP](https://gofastmcp.com/) HTTP server exposes five narrow tools
-for inventory, saved recipes, plans and shopping. Shopping imports require a human
-to review and approve the exact changes in the app. MCP is disabled by default and
-refuses local/no-login mode.
+for inventory, saved recipes, plans and shopping. Shopping imports require review
+and approval of the exact changes in the app. MCP is disabled by default.
 
-To use it, first configure a dedicated OAuth provider (the guide uses Auth0),
-register your CLI client, verify its account-to-kitchen mapping, and set the
-backend's `MCP_GRANTS` allowlist. Ordinary Supabase login tokens do not work as
-MCP credentials. Nothing is provisioned or deployed automatically.
+### Try local MCP without accounts or keys
 
-See the [step-by-step MCP guide](docs/mcp.md) for provider settings, safe grant
-setup, Claude Code/Codex/OpenCode configuration, all five tool calls, shopping
-approval, revocation, and troubleshooting. Live provider/client verification is
-required before production use.
+Run the standalone, isolated stack from this repository:
+
+```sh
+docker compose -f docker-compose.mcp-local.yml -p fridge-mcp-local up --build -d
+```
+
+Open **http://127.0.0.1:18080**, then connect your CLI to
+**http://127.0.0.1:18080/mcp**. For example:
+
+```sh
+claude mcp add --transport http fridge-local http://127.0.0.1:18080/mcp
+# Or, for Codex:
+codex mcp add fridge-local --url http://127.0.0.1:18080/mcp
+```
+
+No Auth0, OAuth login, `.env` setup, or API keys are needed. This stack explicitly
+opts into `MCP_MODE=local`, uses an initially empty named-volume kitchen separate
+from your saved kitchen, and binds UI/API ports only to `127.0.0.1` (18080/18000).
+Add inventory by hand; AI features are unavailable without keys. All five MCP
+tools are available locally, with the same preview/approve/import/replay workflow.
+MCP requests with any browser `Origin` are rejected; use a CLI for tools and the
+regular browser app for human review.
+
+Use only on a trusted local computer and Docker host. No-login review is an
+accident guard, not isolation from other local programs. Never tunnel or publicly
+proxy this stack, change its bind address/ports, or merge it with a cloud Compose
+file. If the fixed ports are busy, stop the known conflicting preview first.
+
+Stop with `docker compose -f docker-compose.mcp-local.yml -p fridge-mcp-local down`;
+its kitchen survives. Adding `--volumes` permanently deletes this isolated test
+kitchen. See the [local MCP quickstart](docs/mcp.md#simplest-local-quickstart) for
+OpenCode configuration, limitations, human approval, and cleanup.
+
+### Remote MCP with a cloud kitchen
+
+`MCP_MODE=remote` is the default and still requires Supabase cloud mode plus a
+dedicated OAuth provider, registered CLI client, verified account-to-kitchen
+mapping, and `MCP_GRANTS` allowlist. Invalid configuration fails closed; there is
+no automatic local fallback. Ordinary Supabase tokens are not MCP credentials.
+
+The [full remote MCP guide](docs/mcp.md#remote-cloud-setup) covers provider settings,
+Claude Code/Codex/OpenCode configuration, scopes, shopping approval, revocation,
+and troubleshooting. Nothing is provisioned automatically. Live provider/client
+verification is required before production use.
 
 ## Screenshots
 
@@ -153,7 +189,8 @@ and refreshed Home screens for desktop and mobile. Imported design assets live i
 ## Prerequisites
 
 - Docker + Docker Compose
-- An OpenRouter API key — create one at https://openrouter.ai/keys (pay-as-you-go)
+- An OpenRouter API key for AI features — create one at https://openrouter.ai/keys
+  (pay-as-you-go). The isolated local MCP quickstart above needs no API keys.
 - Optionally, a Brave Search API key — https://brave.com/search/api/ — for
   related recipe links, weather-aware grilling, and delivery search.
   Without it those extras are silently skipped; suggestions still work.
@@ -170,8 +207,9 @@ Then open **http://localhost:8080**. The API is on http://localhost:8000
 (docs at http://localhost:8000/docs). This is local mode — no login; for accounts,
 see [Cloud mode with Supabase](#cloud-mode-with-supabase).
 
-Ports bind to `127.0.0.1` by default. `FRIDGE_BIND_HOST` overrides that address for
-an authenticated deployment behind HTTPS.
+In this normal stack, ports bind to `127.0.0.1` by default. `FRIDGE_BIND_HOST`
+overrides that address for an authenticated deployment behind HTTPS; it does not
+affect the standalone local MCP stack's fixed loopback bindings.
 
 To stop: `docker compose down`. Your data lives in `./data/` and survives restarts.
 
@@ -198,8 +236,11 @@ To stop: `docker compose down`. Your data lives in `./data/` and survives restar
 | `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` | Same project + publishable key (`sb_publishable_…`), baked into the frontend build | — |
 | `BLOB_BACKEND` | `auto` (Supabase in cloud mode, disk otherwise), `local`, or `supabase` | `auto` |
 | `LOCAL_USER_ID` | Fixed user id in local mode — don't change after first run | `00000000-…-000000000001` |
-| `FRIDGE_BIND_HOST` | Docker host interface for published ports | `127.0.0.1` |
-| `CORS_ORIGINS` | Comma-separated allowed origins | `http://localhost:5173,http://localhost:8080` |
+| `FRIDGE_BIND_HOST` | Normal Compose stack's host interface; unused by the standalone local MCP stack | `127.0.0.1` |
+| `CORS_ORIGINS` | Comma-separated allowed REST origins; does not allow browser-origin local MCP calls | `http://localhost:5173,http://localhost:8080` |
+| `MCP_ENABLED` | Opt in to the five-tool HTTP MCP server | `false` |
+| `MCP_MODE` | `remote` requires cloud OAuth; `local` is only for the standalone loopback stack | `remote` |
+| `MCP_RESOURCE_URL` | Canonical MCP URL; fixed `http://127.0.0.1:18080/mcp` locally, exact HTTPS URL remotely | — |
 
 Swap models freely — that's the point of OpenRouter. Browse slugs at
 https://openrouter.ai/models.

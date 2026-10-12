@@ -5,6 +5,8 @@ import { api } from '../api/client.js'
 import { useAuth } from '../auth/useAuth.js'
 import { PageHeader, PageSkeleton } from '../components/ui.jsx'
 
+const LOCAL_APPROVAL_ORIGIN = 'http://127.0.0.1:18080'
+
 // Read the clock only in state initialization, timers, and event handlers. Render
 // and query scheduling use the state snapshot instead of reading the clock.
 function readClock() {
@@ -30,7 +32,7 @@ function IngredientList({ title, items, description }) {
   )
 }
 
-function ApprovalReview({ approvalId }) {
+function ApprovalReview({ approvalId, localMode }) {
   const { session } = useAuth()
   const queryClient = useQueryClient()
   const queryKey = ['mcp-approvals', session?.user?.id || 'local', approvalId]
@@ -108,7 +110,9 @@ function ApprovalReview({ approvalId }) {
       <div className="card narrow" style={{ padding: 'var(--sp-5)' }} role="alert">
         <h1>Couldn’t load this approval</h1>
         <p>{approval.error?.status === 404
-          ? 'This request is unavailable for your account. Check the link and that you signed in to the right kitchen.'
+          ? localMode
+            ? 'This request is unavailable in this local kitchen. Check the link and that local MCP is enabled.'
+            : 'This request is unavailable for your account. Check the link and that you signed in to the right kitchen.'
           : approval.error?.message || 'Check your connection and try again.'}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
           <button type="button" className="btn primary" onClick={reload} disabled={approval.isFetching}>Reload approval</button>
@@ -141,6 +145,12 @@ function ApprovalReview({ approvalId }) {
         title="Review shopping changes"
         subtitle="Your approval lets this client add the changes below to your shopping list. Opening this page does not approve anything."
       />
+      {localMode && (
+        <aside className="banner info" aria-label="Local approval limits">
+          <strong>Local-only approval. No login is required.</strong>
+          <p>This review guards against accidental changes only. Trusted programs running on this computer can approve requests too. Only connect clients you trust.</p>
+        </aside>
+      )}
       <section className="card" style={{ padding: 'var(--sp-5)' }} aria-label="Approval details">
         <p><strong>Requesting client:</strong> {data.client_id}</p>
         {session?.user?.email && <p><strong>Your account:</strong> {session.user.email}</p>}
@@ -227,15 +237,19 @@ function ApprovalReview({ approvalId }) {
 export default function McpApprovalPage() {
   const { approvalId } = useParams()
   const { authEnabled, session } = useAuth()
-  if (!authEnabled || !session) {
+  const localMode = !authEnabled
+  if ((authEnabled && !session) || (localMode && window.location.origin !== LOCAL_APPROVAL_ORIGIN)) {
     return (
       <div className="card narrow" style={{ padding: 'var(--sp-5)' }}>
         <h1>Shopping approval unavailable</h1>
-        <p>Client approvals require a signed-in cloud kitchen with MCP enabled.</p>
+        <p>{localMode
+          ? `Local client approvals are available only at ${LOCAL_APPROVAL_ORIGIN} with local MCP enabled. Open the approval link supplied by your local client.`
+          : 'Client approvals require a signed-in cloud kitchen with MCP enabled.'}</p>
         <Link className="btn" to="/shopping">Back to shopping list</Link>
       </div>
     )
   }
+  // The backend verifies that MCP is explicitly enabled before returning a review.
   // A newer link must never inherit another request's mutation or error state.
-  return <ApprovalReview key={approvalId} approvalId={approvalId} />
+  return <ApprovalReview key={approvalId} approvalId={approvalId} localMode={localMode} />
 }
