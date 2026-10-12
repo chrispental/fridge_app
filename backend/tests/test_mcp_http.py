@@ -1,10 +1,12 @@
-"""Real SDK HTTP transport and tool-dispatch tests, without listening sockets.
+"""Real standalone FastMCP HTTP and tool-dispatch tests, without listening sockets.
 
 The app's ASGI endpoint and lifespan run in process; JWTs use a synthetic JWKS key
 and every database row lives in this test's disposable in-memory SQLite database.
 """
 import json
 import time
+from contextlib import asynccontextmanager
+from importlib.metadata import version
 from types import SimpleNamespace
 
 import httpx
@@ -12,16 +14,19 @@ import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi import HTTPException
-from mcp.server.auth.provider import AccessToken
-from mcp.server.mcpserver.exceptions import ToolError
+from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
+from fastmcp.server.auth import AccessToken, RemoteAuthProvider, TokenVerifier
 from mcp_types.version import LATEST_HANDSHAKE_VERSION
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from starlette.routing import Mount
 
 from app import mcp_auth, mcp_server, models
+from app import main as app_main
 from app.config import settings
-from app.database import Base
+from app.database import Base, get_db
 from app.services import mcp_tools
 
 ORIGIN = "https://fridge.example"
@@ -90,7 +95,7 @@ def http_setup(monkeypatch):
 
 @pytest.fixture
 async def client(http_setup):
-    async with http_setup.server.session_manager.run():
+    async with http_setup.app.lifespan(http_setup.app):
         async with httpx.AsyncClient(
             transport=httpx.ASGITransport(app=http_setup.app), base_url=ORIGIN,
             headers={
@@ -132,6 +137,86 @@ def tool_error(response, text=None):
     return result
 
 
+def test_server_uses_standalone_fastmcp_package(http_setup):
+    assert version("fastmcp") == "4.1.0"
+    assert type(http_setup.server) is FastMCP
+    assert type(http_setup.server).__module__.startswith("fastmcp.")
+    assert isinstance(http_setup.server.auth, RemoteAuthProvider)
+    assert isinstance(http_setup.server.auth.token_verifier, TokenVerifier)
+    assert http_setup.server.auth.required_scopes == ["fridge:read"]
+
+
+@pytest.mark.anyio
+async def test_production_fastapi_lifespan_runs_mounted_fastmcp(http_setup, monkeypatch):
+    # Exercise the production parent lifespan and middleware with disposable
+    # services. Mounted ASGI lifespans are not started by FastAPI automatically.
+    events = []
+    original_lifespan = http_setup.app.lifespan
+
+    @asynccontextmanager
+    async def recorded_lifespan(app):
+        assert app is http_setup.app
+        async with original_lifespan(app):
+            events.append("mcp_started")
+            try:
+                yield
+            finally:
+                events.append("mcp_stopped")
+
+    def isolated_db():
+        with http_setup.sessions() as db:
+            yield db
+
+    def start_worker():
+        events.append("worker_started")
+        return (
+            SimpleNamespace(set=lambda: events.append("worker_stopped")),
+            SimpleNamespace(join=lambda timeout: events.append(("worker_joined", timeout))),
+        )
+
+    monkeypatch.setattr(app_main, "mcp_server", http_setup.server)
+    monkeypatch.setattr(app_main, "mcp_app", http_setup.app)
+    monkeypatch.setattr(app_main, "run_migrations", lambda engine: events.append("migrations"))
+    monkeypatch.setattr(app_main, "get_blob_storage", lambda: SimpleNamespace(
+        check=lambda: events.append("storage_checked"),
+    ))
+    monkeypatch.setattr(app_main, "start_worker", start_worker)
+    monkeypatch.setattr(http_setup.app.router, "lifespan_context", recorded_lifespan)
+    monkeypatch.setattr(app_main.app, "dependency_overrides", {
+        **app_main.app.dependency_overrides, get_db: isolated_db,
+    })
+    monkeypatch.setattr(app_main.app.router, "routes", [
+        *[route for route in app_main.app.routes
+          if not (isinstance(route, Mount) and route.path in {"", "/"})],
+        Mount("/", app=http_setup.app),
+    ])
+
+    async with app_main.app.router.lifespan_context(app_main.app):
+        assert events == ["migrations", "storage_checked", "worker_started", "mcp_started"]
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app_main.app), base_url=ORIGIN,
+            headers={
+                "Accept": "application/json, text/event-stream",
+                "MCP-Protocol-Version": LATEST_HANDSHAKE_VERSION,
+                "Authorization": f"Bearer {http_setup.token()}",
+            },
+        ) as mounted_client:
+            health = await mounted_client.get("/api/health")
+            assert health.status_code == 200
+            assert health.json()["database"] is True
+            result = successful_result(await call_tool(mounted_client, "read_inventory"))
+            assert [item["name"] for item in result["structuredContent"]["items"]] == ["alice apples"]
+            metadata = await mounted_client.get("/.well-known/oauth-protected-resource/mcp")
+            assert metadata.status_code == 200
+            assert metadata.json()["resource"] == RESOURCE
+            assert (await rpc(mounted_client, "tools/list", headers={"Authorization": ""})).status_code == 401
+        assert "mcp_stopped" not in events
+    assert events == [
+        "migrations", "storage_checked", "worker_started", "mcp_started",
+        "mcp_stopped", "worker_stopped", ("worker_joined", 2),
+    ]
+
+
 @pytest.mark.anyio
 async def test_initialize_list_and_call_use_real_http_transport(client):
     response = await rpc(client, "initialize", {
@@ -141,6 +226,7 @@ async def test_initialize_list_and_call_use_real_http_transport(client):
     result = successful_result(response)
     assert result["serverInfo"]["name"] == "Fridge Chef"
     assert "tools" in result["capabilities"]
+    assert "tasks" not in result["capabilities"]
     assert "mcp-session-id" not in response.headers
 
     tools = successful_result(await rpc(client, "tools/list"))["tools"]
@@ -367,20 +453,23 @@ async def test_authenticated_context_with_wrong_app_user_fails_closed(client, mo
 
 
 @pytest.mark.anyio
-async def test_sdk_rejects_mock_verifier_token_for_other_resource(client, monkeypatch):
+@pytest.mark.parametrize("resource", [None, RESOURCE + "/", "https://another.example/mcp"])
+async def test_auth_provider_rejects_mock_verifier_token_for_other_resource(client, monkeypatch, resource):
     async def verify(self, token):
         return AccessToken(
             token=token, client_id=CLIENT, subject="alice", scopes=["fridge:read"],
-            expires_at=int(time.time()) + 300, resource="https://another.example/mcp",
+            expires_at=int(time.time()) + 300, resource=resource,
             claims={"iss": ISSUER, "app_user_id": ALICE},
         )
 
     monkeypatch.setattr(mcp_auth.FridgeTokenVerifier, "verify_token", verify)
-    assert (await call_tool(client, "read_inventory")).status_code == 401
+    response = await call_tool(client, "read_inventory")
+    assert response.status_code == 401
+    assert "alice apples" not in response.text
 
 
 @pytest.mark.anyio
-async def test_sdk_rejects_mock_verifier_token_without_read_scope(client, monkeypatch):
+async def test_fastmcp_rejects_mock_verifier_token_without_read_scope(client, monkeypatch):
     async def verify(self, token):
         return AccessToken(
             token=token, client_id=CLIENT, subject="alice", scopes=["fridge:shopping"],
@@ -397,9 +486,13 @@ async def test_sdk_rejects_mock_verifier_token_without_read_scope(client, monkey
 @pytest.mark.anyio
 @pytest.mark.parametrize("headers,status", [
     ({"Host": "attacker.example"}, 421),
+    ({"Host": "localhost"}, 421),
+    ({"Host": "127.0.0.1"}, 421),
+    ({"Host": "fridge.example:443"}, 421),
     ({"Origin": "https://attacker.example"}, 403),
     ({"Origin": "null"}, 403),
     ({"Origin": "http://fridge.example"}, 403),
+    ({"Origin": "https://fridge.example:443"}, 403),
 ])
 async def test_transport_rejects_untrusted_host_and_origin(client, headers, status):
     assert (await rpc(client, "tools/list", headers=headers)).status_code == status
@@ -411,7 +504,15 @@ async def test_transport_accepts_its_configured_origin(client):
 
 
 @pytest.mark.anyio
-async def test_request_body_size_limit_applies_with_and_without_content_length(client):
+async def test_request_body_size_limit_applies_with_and_without_content_length(client, monkeypatch):
+    async def forbidden_verification(*args, **kwargs):
+        pytest.fail("An oversized request reached token verification")
+
+    def forbidden_operation(*args, **kwargs):
+        pytest.fail("An oversized request reached a domain operation")
+
+    monkeypatch.setattr(mcp_auth.FridgeTokenVerifier, "verify_token", forbidden_verification)
+    monkeypatch.setattr(mcp_tools, "inventory", forbidden_operation)
     oversized = b"x" * (16 * 1024 + 1)
     response = await client.post("/mcp", content=oversized, headers={"Content-Type": "application/json"})
     assert response.status_code == 413
@@ -425,6 +526,46 @@ async def test_request_body_size_limit_applies_with_and_without_content_length(c
     )
     assert "content-length" not in request.headers
     assert (await client.send(request)).status_code == 413
+
+
+@pytest.mark.anyio
+async def test_actual_body_limit_cannot_be_bypassed_with_small_content_length(client):
+    response = await client.post("/mcp", content=b"x" * (16 * 1024 + 1), headers={
+        "Content-Type": "application/json", "Content-Length": "1",
+    })
+    assert response.status_code == 413
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("content_length", ["-1", "invalid"])
+async def test_invalid_content_length_is_rejected_before_dispatch(client, monkeypatch, content_length):
+    def forbidden(*args, **kwargs):
+        pytest.fail("An invalid request reached a domain operation")
+
+    monkeypatch.setattr(mcp_tools, "inventory", forbidden)
+    response = await call_tool(client, "read_inventory", headers={"Content-Length": content_length})
+    assert response.status_code == 400
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("chunked", [False, True])
+async def test_request_body_at_exact_size_limit_is_accepted(client, chunked):
+    body = json.dumps({
+        "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+        "params": {"name": "read_inventory", "arguments": {}},
+    }).encode()
+    body += b" " * (16 * 1024 - len(body))
+
+    async def chunks():
+        yield body[:8192]
+        yield body[8192:]
+
+    response = await client.post(
+        "/mcp", content=chunks() if chunked else body,
+        headers={"Content-Type": "application/json"},
+    )
+    result = successful_result(response)["structuredContent"]
+    assert [item["name"] for item in result["items"]] == ["alice apples"]
 
 
 @pytest.mark.anyio

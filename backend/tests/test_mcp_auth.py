@@ -12,6 +12,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
+from fastmcp.server.auth import AccessToken, TokenVerifier
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -97,6 +98,12 @@ def test_mcp_is_disabled_by_default():
     assert Settings.model_fields["mcp_enabled"].default is False
 
 
+def test_verifier_uses_fastmcp_auth_contract():
+    verifier = mcp_auth.FridgeTokenVerifier()
+    assert isinstance(verifier, TokenVerifier)
+    assert verifier.required_scopes == [mcp_auth.READ_SCOPE]
+
+
 def test_valid_configuration_requires_explicit_mapping(mcp_config):
     mcp_auth.validate_configuration()
     grant = mcp_auth.validated_grants()[(SUBJECT, CLIENT)]
@@ -151,7 +158,7 @@ def test_missing_duplicate_or_excessive_grants_are_rejected(mcp_config, monkeypa
 def test_valid_token_resolves_only_the_explicit_app_user(token_factory):
     token = token_factory(app_user_id=OTHER_USER_ID, user_id=OTHER_USER_ID)
     verified = mcp_auth.FridgeTokenVerifier()._verify(token)
-    assert verified is not None
+    assert isinstance(verified, AccessToken)
     assert verified.token == token
     assert verified.client_id == CLIENT
     assert verified.subject == SUBJECT

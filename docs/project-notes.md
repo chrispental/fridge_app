@@ -54,7 +54,7 @@ code and PR state before acting; update or remove notes as decisions change.
 - **Cooking recovery:** Surface the latest unfinished cooking session throughout
   the app. Dismissing its reminder keeps the recipe's saved steps and timers.
 
-- **Remote MCP:** Optional, disabled by default, cloud mode only. Five tools with
+- **Remote MCP:** Optional, disabled by default, cloud mode only. Five tools implemented with the standalone FastMCP package and
   dedicated resource-bound OAuth tokens and explicit subject/client-to-app-user
   grants. Ordinary Supabase sessions and delegated OAuth tokens are not interchangeable.
   Shopping imports require a persisted first-party human approval of the exact delta,

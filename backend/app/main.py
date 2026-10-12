@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
     try:
         async with AsyncExitStack() as stack:
             if mcp_server is not None:
-                await stack.enter_async_context(mcp_server.session_manager.run())
+                await stack.enter_async_context(mcp_app.lifespan(mcp_app))
             yield
     finally:
         stop.set()
@@ -61,9 +61,10 @@ app.include_router(plans.router)
 app.include_router(shopping.router)
 app.include_router(export.router)
 
-# Mount last, at root, so SDK /mcp and resource metadata paths remain canonical.
+# Mount last, at root, so FastMCP /mcp and resource metadata paths remain canonical.
 # Disabled means absent, and enabled misconfiguration fails closed at startup.
 mcp_server = None
+mcp_app = None
 if settings.mcp_enabled:
     from .mcp_server import build_mcp_app
     from .routers import mcp_approvals

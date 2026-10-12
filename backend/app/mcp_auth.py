@@ -6,7 +6,7 @@ from uuid import UUID
 
 import anyio
 import jwt
-from mcp.server.auth.provider import AccessToken
+from fastmcp.server.auth import AccessToken, RemoteAuthProvider, TokenVerifier
 
 from .config import settings
 from .database import SessionLocal
@@ -70,7 +70,10 @@ def _jwk_client(url: str) -> jwt.PyJWKClient:
     return jwt.PyJWKClient(url, cache_keys=False, lifespan=300, timeout=5)
 
 
-class FridgeTokenVerifier:
+class FridgeTokenVerifier(TokenVerifier):
+    def __init__(self):
+        super().__init__(required_scopes=[READ_SCOPE])
+
     async def verify_token(self, token: str) -> AccessToken | None:
         # JWKS and SQLAlchemy are synchronous; do not block the ASGI event loop.
         return await anyio.to_thread.run_sync(self._verify, token)
@@ -110,3 +113,12 @@ class FridgeTokenVerifier:
             )
         except (jwt.PyJWTError, ValueError, TypeError, KeyError):
             return None
+
+
+class ResourceBoundRemoteAuthProvider(RemoteAuthProvider):
+    """Advertise the external issuer while enforcing the verifier's resource binding."""
+    async def verify_token(self, token: str) -> AccessToken | None:
+        verified = await super().verify_token(token)
+        if verified is None or verified.resource != settings.mcp_resource_url:
+            return None
+        return verified
