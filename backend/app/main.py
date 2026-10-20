@@ -1,6 +1,6 @@
 """FastAPI application entry point."""
 import logging
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,7 +30,10 @@ async def lifespan(app: FastAPI):
     get_blob_storage().check()
     stop, worker = start_worker()
     try:
-        yield
+        async with AsyncExitStack() as stack:
+            if mcp_server is not None:
+                await stack.enter_async_context(mcp_app.lifespan(mcp_app))
+            yield
     finally:
         stop.set()
         worker.join(timeout=2)
@@ -57,3 +60,18 @@ app.include_router(meals.router)
 app.include_router(plans.router)
 app.include_router(shopping.router)
 app.include_router(export.router)
+
+# Mount last, at root, so FastMCP /mcp and resource metadata paths remain canonical.
+# Disabled means absent, and enabled misconfiguration fails closed at startup.
+mcp_server = None
+mcp_app = None
+if settings.mcp_enabled:
+    from .mcp_server import LocalMcpAppGuard, build_mcp_app
+    from .routers import mcp_approvals
+
+    mcp_server, mcp_app = build_mcp_app()
+    if settings.mcp_mode == "local":
+        # Registered last so local origin checks also precede CORS preflights.
+        app.add_middleware(LocalMcpAppGuard)
+    app.include_router(mcp_approvals.router)
+    app.mount("/", mcp_app)

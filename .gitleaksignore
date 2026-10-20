@@ -1,0 +1,3 @@
+# Synthetic HS256 secret used only to verify that symmetric tokens are rejected.
+# Ignore this exact historical finding; keep all other secret scanning enabled.
+2e4ef75eab54bd95fade6c07b2fce48b9b5b0adc:backend/tests/test_mcp_auth.py:generic-api-key:249

@@ -206,3 +206,30 @@ class ActionReceipt(Base):
     action_key = Column(String(200), nullable=False)
     result_json = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=utcnow, nullable=False)
+
+
+class MCPShoppingApproval(Base):
+    """A short-lived, exact shopping change authorized in the first-party UI.
+
+    The random id identifies a request, not permission to approve or execute it.
+    Both the kitchen owner and verified OAuth client remain mandatory at import.
+    Keep the plan id as snapshot data so deleting a plan invalidates, rather than
+    deletes, its approval/audit record.
+    """
+
+    __tablename__ = "mcp_shopping_approvals"
+
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(36), ForeignKey("users.id", name="fk_mcp_approval_user"),
+                     nullable=False, index=True)
+    client_id = Column(String(255), nullable=False)
+    plan_id = Column(Integer, nullable=False)
+    status = Column(String(16), default="pending", nullable=False)
+    snapshot_json = Column(JSON, nullable=False)
+    source_digest = Column(String(64), nullable=False)
+    shopping_digest = Column(String(64), nullable=False)
+    result_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    approved_at = Column(DateTime, nullable=True)
+    consumed_at = Column(DateTime, nullable=True)
