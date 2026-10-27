@@ -28,7 +28,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: "false"
       - name: Scan all fetched history
-        run: gitleaks detect --redact --log-opts="--all" --config=.gitleaks.toml
+        run: gitleaks detect --redact --log-opts="--all --full-history --diff-merges=first-parent" --config=.gitleaks.toml
 
   # Audit proposed dependencies on every PR, including Dependabot/forks, with
   # a read-only token and no application secrets. Also keep weekly/manual runs
