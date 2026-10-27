@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  # Full-history secret scan. Runs on every PR (cheap, catches an accidental
-  # key commit before merge) and weekly.
+  # Keep the action's PR scan and explicitly scan all fetched history too.
+  # A clean PR diff must not hide a secret on another fetched branch.
   gitleaks:
     runs-on: ubuntu-latest
     permissions:
@@ -22,32 +22,39 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+      - name: Scan all fetched history
+        run: gitleaks detect --redact --log-opts="--all --full-history --diff-merges=first-parent" --config=.gitleaks.toml
 
-  # Dependency audits are visibility, not gates: with fully pinned deps they
-  # will eventually flag CVEs unrelated to any open PR, and Dependabot is the
-  # fix mechanism. Schedule + manual runs only.
+  # Audit proposed dependencies on every PR, including Dependabot/forks, with
+  # a read-only token and no application secrets. Also keep weekly/manual runs
+  # to catch newly disclosed advisories between dependency updates.
   pip-audit:
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
-      - run: pipx run pip-audit -r backend/requirements.txt
+          python-version: "3.14"
+      - run: pipx run --python "$(command -v python)" pip-audit -r backend/requirements.txt
 
   npm-audit:
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 20
-      - run: npm audit --omit=dev --audit-level=high
+          node-version: 22
+      # Audit production AND development dependencies without running package scripts.
+      - run: npm audit --package-lock-only --audit-level=low
