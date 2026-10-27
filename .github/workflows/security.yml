@@ -56,5 +56,5 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      # Audit the committed production lockfile without running package scripts.
-      - run: npm audit --omit=dev --audit-level=high
+      # Audit production AND development dependencies without running package scripts.
+      - run: npm audit --package-lock-only --audit-level=low
