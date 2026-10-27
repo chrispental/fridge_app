@@ -22,6 +22,8 @@ services:
       DATABASE_URL: postgresql+psycopg://postgres:fridge-test-only@db:5432/fridge_preview
       SUPABASE_URL: ""
       SUPABASE_SECRET_KEY: ""
+      MCP_ENABLED: "false"
+      MCP_MODE: remote
       BLOB_BACKEND: local
       UPLOAD_DIR: /app/data/uploads
     ports:

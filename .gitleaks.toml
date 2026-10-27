@@ -19,3 +19,13 @@ condition = "AND"
 regexTarget = "line"
 paths = ['''^design\.pen$''']
 regexes = ['''"fileToken": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"''']
+
+# Historical HS256 rejection fixture in the MCP test commit, never an account key.
+# Restrict to the exact test path and entire known synthetic literal, not JWTs or
+# arbitrary secrets. Current tests generate this key in memory instead.
+[[rules.allowlists]]
+description = "Historical synthetic MCP rejection-test key"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^backend/tests/test_mcp_auth\.py$''']
+regexes = ['''^\s*secret = "synthetic-test-secret-with-at-least-32-bytes"\s*$''']
