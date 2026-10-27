@@ -41,7 +41,10 @@ fixed `settings.local_user_id` with no header at all; in cloud mode the request 
 JWKS (`PyJWKClient`, ES256/RS256 only — legacy HS256 projects are rejected) with
 `aud=authenticated` and `iss={SUPABASE_URL}/auth/v1`. The `users` row is upserted on
 first sight. `/api/health` and `/docs` are the only unauthenticated routes. Routers never
-branch on the mode.
+branch on the mode. Because local mode has no credentials, `app/browser_guard.py` (ASGI middleware,
+local mode only) refuses unsafe requests whose `Origin` isn't the app and any request
+whose `Host` isn't in `LOCAL_ALLOWED_HOSTS`, so other web pages in the user's browser
+can't post to the API or DNS-rebind onto it.
 
 **Per-user scoping — `backend/app/services/scope.py`.** The one place that knows how
 ownership is enforced: `get_prefs(db, user_id)` (get-or-create, seeds default staples —
@@ -139,8 +142,8 @@ are kept; the UI asks for confirmation first and states that nothing was actuall
 route so the path isn't captured as an id.
 
 **Recipe book — `backend/app/services/recipe_import.py`.** `POST /meals/import` takes a
-URL or pasted text. URLs are fetched with a public-host check (private/loopback addresses
-are refused), schema.org `Recipe` JSON-LD is parsed deterministically (ingredient lines
+URL or pasted text. URLs are fetched with a public-host check enforced at connect time,
+redirect hops and re-resolved names included (non-global addresses are refused), schema.org `Recipe` JSON-LD is parsed deterministically (ingredient lines
 via `parse_ingredient_line`, metric amounts stay unknown), and only pages without it fall
 back to the meal model with `prompts/import_system.md`. Imported meals have
 `status="saved"`; `Meal.favorite` pins any meal. `GET /meals/recipes` lists saved or
