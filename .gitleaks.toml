@@ -19,3 +19,15 @@ condition = "AND"
 regexTarget = "line"
 paths = ['''^design\.pen$''']
 regexes = ['''"fileToken": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"''']
+
+# Verified synthetic HS256 rejection fixture from commit
+# 2e4ef75eab54bd95fade6c07b2fce48b9b5b0adc (PR #61, still unmerged).
+# The fixture now generates its key in memory. Full-history scans still see
+# the old literal; allow only that entire line in that exact test path.
+# Do not exempt the commit, other keys, JWTs, or the whole test directory.
+[[rules.allowlists]]
+description = "Historical synthetic MCP rejection-test key"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^backend/tests/test_mcp_auth\.py$''']
+regexes = ['''^\s*secret = "synthetic-test-secret-with-at-least-32-bytes"\s*$''']
