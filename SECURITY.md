@@ -10,6 +10,10 @@ on localhost only**. That is a design decision, not an oversight:
 - Reports along the lines of "anyone who can reach the port can read/change
   data" are **out of scope** in local mode — the README tells users never to
   expose it to the internet or an untrusted network.
+- Web pages open in the same browser are kept out by `app/browser_guard.py`:
+  unsafe requests from another origin are refused, and so are requests addressed
+  to a hostname outside `LOCAL_ALLOWED_HOSTS` (DNS rebinding). Bypasses of that
+  guard are in scope.
 
 **Cloud mode** (Supabase Auth + Postgres + Storage) is meant to be reachable over
 the network, so in that mode access control *is* in scope:

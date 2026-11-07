@@ -83,6 +83,57 @@ def test_private_or_bad_urls_are_refused(url, monkeypatch):
         recipe_import.fetch_page(url)
 
 
+@pytest.mark.parametrize("address", ["::ffff:127.0.0.1", "100.64.0.1", "169.254.169.254", "fd00::1", "224.0.0.1"])
+def test_disguised_and_shared_addresses_are_not_public(address, monkeypatch):
+    monkeypatch.setattr(recipe_import.socket, "getaddrinfo", lambda *a, **k: [(None, None, None, None, (address, 80))])
+    with pytest.raises(ImportError_):
+        recipe_import.fetch_page("http://sneaky.example/x")
+
+
+def test_redirect_to_an_internal_address_is_refused(monkeypatch):
+    """A public page that redirects inward (or a name that re-resolves inward) must not
+    get the backend to connect there: every hop is checked when it connects."""
+    import socket
+    import threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    hits = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            self.send_response(302)
+            self.send_header("Location", f"http://internal.example:{port}/secret")
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    port = server.server_address[1]
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    # recipes.example stands in for a public site (served locally); internal.example
+    # resolves to a loopback address the check must refuse.
+    addresses = {"recipes.example": "127.0.0.1", "internal.example": "127.0.0.2"}
+    real_getaddrinfo = socket.getaddrinfo
+    monkeypatch.setattr(recipe_import.socket, "getaddrinfo", lambda host, *a, **k: (
+        [(None, None, None, None, (addresses[host], a[0] if a else 80))] if host in addresses
+        else real_getaddrinfo(host, *a, **k)))
+    monkeypatch.setattr(recipe_import, "_is_public_ip", lambda ip: str(ip) == "127.0.0.1")
+    try:
+        with pytest.raises(ImportError_):
+            recipe_import.fetch_page(f"http://recipes.example:{port}/start")
+    finally:
+        server.shutdown()
+        server.server_close()
+    assert hits == ["/start"]
+
+
+def test_fetches_connect_through_the_address_check():
+    transport = recipe_import._transport()
+    assert isinstance(transport._pool._network_backend, recipe_import._PublicOnlyBackend)
+
+
 def test_import_text_requires_something_to_work_with():
     with pytest.raises(ImportError_):
         import_recipe(text="hi")

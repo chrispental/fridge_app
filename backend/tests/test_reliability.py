@@ -187,7 +187,7 @@ def api_client(tmp_path):
     app.dependency_overrides[get_db] = provide_db
     app.dependency_overrides[get_current_user] = lambda: LOCAL_USER
     # Deliberately omit lifespan: the worker is exercised deterministically below.
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://localhost")
     yield client, sessions
     client.close()
     app.dependency_overrides.clear()

@@ -183,6 +183,7 @@ To stop: `docker compose down`. Your data lives in `./data/` and survives restar
 | `LOCAL_USER_ID` | Fixed user id in local mode — don't change after first run | `00000000-…-000000000001` |
 | `FRIDGE_BIND_HOST` | Docker host interface for published ports | `127.0.0.1` |
 | `CORS_ORIGINS` | Comma-separated allowed origins | `http://localhost:5173,http://localhost:8080` |
+| `LOCAL_ALLOWED_HOSTS` | Local mode: hostnames the app may be opened under; other hosts and cross-site writes are refused | `localhost,127.0.0.1,::1` |
 
 Swap models freely — that's the point of OpenRouter. Browse slugs at
 https://openrouter.ai/models.

@@ -14,6 +14,7 @@ from fractions import Fraction
 from html import unescape
 from urllib.parse import urlsplit
 
+import httpcore
 import httpx
 
 from ..config import settings
@@ -54,19 +55,58 @@ class ImportError_(ValueError):
 # --------------------------------------------------------------------------- #
 # Fetching
 # --------------------------------------------------------------------------- #
+def _is_public_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    # `::ffff:127.0.0.1` is loopback in disguise; judge the IPv4 address it wraps.
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    # is_global also rules out shared (CGNAT) space, which is_private misses.
+    return ip.is_global and not ip.is_multicast
+
+
+def _public_addresses(host: str, port: int) -> list[str]:
+    """Every address `host` resolves to, refusing the lot if any of them is not public.
+
+    The backend may sit next to private services (cloud metadata, the database, the
+    Docker network); an import must never reach them.
+    """
+    try:
+        infos = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+    except socket.gaierror:
+        raise ImportError_("That website could not be found.")
+    addresses = [info[4][0] for info in infos]
+    if not addresses or not all(_is_public_ip(ipaddress.ip_address(a)) for a in addresses):
+        raise ImportError_("That address is not a public website.")
+    return addresses
+
+
+class _PublicOnlyBackend(httpcore.SyncBackend):
+    """Resolve and check the host at connect time, then connect to the checked address.
+
+    Checking only the URL the user typed is not enough: a public page can redirect to
+    an internal one, and a hostname can resolve differently a second time (DNS
+    rebinding). Every connection, redirects included, goes through here. TLS still
+    verifies against the hostname, which httpcore passes to `start_tls` separately.
+    """
+
+    def connect_tcp(self, host, port, timeout=None, local_address=None, socket_options=None):
+        address = _public_addresses(host, port)[0]
+        return super().connect_tcp(address, port, timeout, local_address, socket_options)
+
+
+def _transport() -> httpx.HTTPTransport:
+    transport = httpx.HTTPTransport()
+    # httpx has no public hook for the network backend; the pool reads it per connection.
+    transport._pool._network_backend = _PublicOnlyBackend()
+    return transport
+
+
 def _check_public_url(url: str) -> str:
+    """Early, friendly rejection of an obviously bad URL. The connect-time check in
+    `_PublicOnlyBackend` is what actually enforces it."""
     parts = urlsplit(url.strip())
     if parts.scheme not in ("http", "https") or not parts.hostname:
         raise ImportError_("Enter a full web address starting with http:// or https://.")
-    try:
-        infos = socket.getaddrinfo(parts.hostname, parts.port or (443 if parts.scheme == "https" else 80), proto=socket.IPPROTO_TCP)
-    except socket.gaierror:
-        raise ImportError_("That website could not be found.")
-    for info in infos:
-        ip = ipaddress.ip_address(info[4][0])
-        # The backend may sit next to private services; never let an import reach them.
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
-            raise ImportError_("That address is not a public website.")
+    _public_addresses(parts.hostname, parts.port or (443 if parts.scheme == "https" else 80))
     return parts.geturl()
 
 
@@ -74,7 +114,9 @@ def fetch_page(url: str) -> str:
     """Download a public recipe page (bounded size); raises RuntimeError on network errors."""
     url = _check_public_url(url)
     try:
-        with httpx.Client(timeout=settings.brave_request_timeout, follow_redirects=True,
+        # An explicit transport also keeps env proxies from bypassing the address check.
+        with httpx.Client(transport=_transport(), timeout=settings.brave_request_timeout,
+                          follow_redirects=True, max_redirects=5,
                           headers={"User-Agent": _USER_AGENT, "Accept": "text/html,*/*;q=0.8",
                                    "Accept-Language": "en-US,en;q=0.9"}) as client:
             with client.stream("GET", url) as resp:

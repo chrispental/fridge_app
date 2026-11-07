@@ -40,7 +40,7 @@ def client(tmp_path, monkeypatch):
     database.SessionLocal.configure(bind=eng)
     monkeypatch.setattr(settings, "upload_dir", str(tmp_path / "uploads"))
     get_blob_storage.cache_clear()
-    with TestClient(app_main.app) as c:
+    with TestClient(app_main.app, base_url="http://localhost") as c:
         yield c
     database.SessionLocal.configure(bind=database.engine)
     get_blob_storage.cache_clear()

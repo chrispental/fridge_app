@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .browser_guard import LocalBrowserGuard
 from .config import settings
 from .database import engine
 from .migrations import run_migrations
@@ -42,6 +43,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Local mode has no login; keep other web pages in the user's browser out of the API.
+app.add_middleware(LocalBrowserGuard)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,

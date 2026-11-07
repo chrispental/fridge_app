@@ -42,10 +42,17 @@ class Settings(BaseSettings):
 
     # CORS (comma-separated origins)
     cors_origins: str = "http://localhost:5173,http://localhost:8080"
+    # Local mode only: hostnames the app may be reached under (see browser_guard.py).
+    # Anything else is refused, which stops DNS-rebinding pages. "*" turns this off.
+    local_allowed_hosts: str = "localhost,127.0.0.1,::1"
 
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def local_allowed_hosts_list(self) -> list[str]:
+        return [h.strip().strip("[]").lower() for h in self.local_allowed_hosts.split(",") if h.strip()]
 
     @property
     def auth_enabled(self) -> bool:

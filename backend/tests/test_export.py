@@ -62,7 +62,7 @@ def test_export_downloads_as_a_dated_json_file(tmp_path):
     app.dependency_overrides[get_db] = provide_db
     app.dependency_overrides[get_current_user] = lambda: LOCAL_USER
     # No lifespan (like the other HTTP fixtures): the module-level engine is not ours.
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://localhost")
     try:
         res = client.get("/api/export")
         assert res.status_code == 200
